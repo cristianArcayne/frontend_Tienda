@@ -1,0 +1,207 @@
+<div class="atelier-wrapper">
+  <!-- Tarjeta Contenedora Principal -->
+  <div class="atelier-card">
+    
+    <!-- PANEL IZQUIERDO: EDITORIAL / HERO -->
+    <div class="hero-panel">
+      <div class="hero-overlay">
+        <!-- Badge superior -->
+        <div class="hero-top-badges">
+          <span class="pill-badge">
+            <span class="dot"></span> EXPERIENCIA ATELIER • FITTING LAB IA
+          </span>
+          <span class="est-badge">EST. MMXIV</span>
+        </div>
+
+        <!-- Imagen de modelo editorial -->
+        <img 
+          src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80" 
+          alt="Alta Costura Atelier" 
+          class="hero-bg-img"
+        />
+
+        <!-- Badge flotante biométrico -->
+        <div class="hero-floating-card">
+          <div class="card-row">
+            <span class="label">CALIBRACIÓN BIOMÉTRICA</span>
+            <span class="val">99.4% FIEL</span>
+          </div>
+          <div class="card-sub-row">
+            <span>Scan 3D Silueta</span>
+            <span>Alta Precisión</span>
+          </div>
+        </div>
+
+        <!-- Cita inferior de alta costura -->
+        <div class="hero-quote-box">
+          <p class="quote-text font-serif">
+            “La sastrería contemporánea se encuentra con la precisión biométrica.”
+          </p>
+          <div class="hero-footer-sub">
+            <span class="brand-code">ATELIER NUMÉRIQUE V2.4</span>
+            <span class="locations">París • Milán • Madrid</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: FORMULARIO ACCESO AL VESTIDOR -->
+    <div class="form-panel">
+      <!-- Badge superior -->
+      <div class="portal-badge-container">
+        <span class="portal-badge">PORTAL PRIVADO</span>
+      </div>
+
+      <!-- Título y descripción -->
+      <h1 class="main-title font-serif">Acceso al Vestidor</h1>
+      <p class="main-subtitle">
+        Ingresa a tu espacio personalizado de estilismo o explora sin registro previo.
+      </p>
+
+      <!-- BARRA DE SELECCIÓN RÁPIDA DE ROLES DE PRUEBA -->
+      <div class="role-selector-bar">
+        <span class="role-label">MODO DEMO:</span>
+        <button type="button" class="role-chip" [class.active]="loginId() === '1001'" (click)="selectDemo('admin')">
+          ADMIN (1001)
+        </button>
+        <button type="button" class="role-chip" [class.active]="loginId() === '2001'" (click)="selectDemo('trabajador')">
+          TRABAJADOR (2001)
+        </button>
+        <button type="button" class="role-chip" [class.active]="loginId() === 'atelier@maison.com'" (click)="selectDemo('cliente')">
+          CLIENTE (atelier@maison.com)
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-header">
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'miembro'"
+          (click)="activeTab.set('miembro')"
+        >
+          MIEMBRO ATELIER
+        </button>
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'rapido'"
+          (click)="activeTab.set('rapido')"
+        >
+          ACCESO RÁPIDO
+        </button>
+      </div>
+
+      <!-- Alerta de Error -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <span class="material-symbols-outlined icon">error</span>
+        <span>{{ errorMessage() }}</span>
+      </div>
+
+      <!-- FORMULARIO -->
+      <form (ngSubmit)="onSubmit()" class="login-form">
+        <!-- Correo / CI -->
+        <div class="input-field-group">
+          <label class="field-label">CORREO ELECTRÓNICO O CI</label>
+          <input 
+            type="text" 
+            [value]="loginId()" 
+            (input)="loginId.set($any($event.target).value)" 
+            class="clean-input" 
+            placeholder="atelier@maison.com o CI"
+            required
+          />
+        </div>
+
+        <!-- Contraseña -->
+        <div class="input-field-group">
+          <div class="password-label-row">
+            <label class="field-label">CONTRASEÑA</label>
+            <a routerLink="/auth/forgot-password" class="link-forgot">¿Olvidaste tu contraseña?</a>
+          </div>
+          <div class="password-input-wrapper">
+            <input 
+              [type]="showPassword() ? 'text' : 'password'" 
+              [value]="password()" 
+              (input)="password.set($any($event.target).value)" 
+              class="clean-input" 
+              placeholder="••••••••••••"
+              required
+            />
+            <button type="button" class="btn-toggle-pw" (click)="togglePasswordVisibility()">
+              <span class="material-symbols-outlined">
+                {{ showPassword() ? 'visibility_off' : 'visibility' }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Checkbox Recordar Sesión -->
+        <div class="checkbox-row">
+          <label class="custom-checkbox">
+            <input 
+              type="checkbox" 
+              [checked]="rememberMe()" 
+              (change)="rememberMe.set($any($event.target).checked)"
+            />
+            <span class="checkmark"></span>
+            <span class="checkbox-text">Recordar sesión en este dispositivo</span>
+          </label>
+        </div>
+
+        <!-- Botón Principal -->
+        <button type="submit" class="btn-submit-atelier" [disabled]="isLoading()">
+          <span *ngIf="!isLoading()">INGRESAR A MI VESTIDOR &nbsp; →</span>
+          <span *ngIf="isLoading()">VALIDANDO ACCESO...</span>
+        </button>
+      </form>
+
+      <!-- Divisor Social -->
+      <div class="divider-row">
+        <span class="line"></span>
+        <span class="divider-text">o continúa con</span>
+        <span class="line"></span>
+      </div>
+
+      <!-- Botones Sociales -->
+      <div class="social-buttons-grid">
+        <button type="button" class="btn-social" (click)="enterAsGuest()">
+          <svg class="social-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.84.95-2.92-.91.04-2.03.61-2.68 1.37-.58.67-1.09 1.76-.95 2.82 1.02.08 2.06-.51 2.68-1.27z"/>
+          </svg>
+          APPLE
+        </button>
+        <button type="button" class="btn-social" (click)="enterAsGuest()">
+          <svg class="social-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12.24 10.285V13.4h6.887C18.2 15.6 16.3 17.5 12.24 17.5c-3.1 0-5.7-2.5-5.7-5.7s2.6-5.7 5.7-5.7c1.4 0 2.7.5 3.7 1.4l2.4-2.4C16.9 3.6 14.7 2.7 12.24 2.7 7.15 2.7 3 6.9 3 12s4.15 9.3 9.24 9.3c5.5 0 9.1-3.9 9.1-9.3 0-.6-.1-1.2-.2-1.7h-8.9z"/>
+          </svg>
+          GOOGLE
+        </button>
+      </div>
+
+      <!-- Tarjeta Acceso Invitado -->
+      <div class="guest-card">
+        <div class="guest-header">
+          <span class="guest-title">
+            <span class="material-symbols-outlined icon-hanger">checkroom</span>
+            PROBAR SIN REGISTRO
+          </span>
+          <span class="guest-badge">ACCESO INVITADO</span>
+        </div>
+        <p class="guest-desc">
+          Explora el catálogo y prueba todas las prendas en el vestidor virtual de inmediato con medidas estándar.
+        </p>
+        <button type="button" class="btn-guest" (click)="enterAsGuest()">
+          ENTRAR COMO INVITADO &nbsp; →
+        </button>
+      </div>
+
+      <!-- Enlace Registro Footer -->
+      <div class="footer-register">
+        <span>¿Aún no tienes cuenta?</span>
+        <a routerLink="/auth/register" class="link-register">REGÍSTRATE AQUÍ</a>
+      </div>
+
+    </div>
+  </div>
+</div>

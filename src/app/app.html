@@ -1,0 +1,60 @@
+<div class="app-shell">
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR (Visible cuando está autenticado o en vistas internas) -->
+  <header class="top-nav" *ngIf="currentUser()">
+    <div class="nav-container">
+      <!-- Marca -->
+      <a routerLink="/" class="brand-link">
+        <span class="brand-name font-serif">ATELIER NUMÉRIQUE</span>
+        <span class="brand-sub">HAUTE COUTURE & FITTING LAB</span>
+      </a>
+
+      <!-- Enlaces según Rol -->
+      <nav class="nav-links">
+        <a *ngIf="isStaff()" routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">dashboard</span>
+          PANEL
+        </a>
+        <a *ngIf="isStaff()" routerLink="/bitacora" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">history_edu</span>
+          BITÁCORA DE USO
+        </a>
+        <a routerLink="/vestidor" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">checkroom</span>
+          VESTIDOR VIRTUAL
+        </a>
+      </nav>
+
+      <!-- Usuario y Salida -->
+      <div class="user-actions">
+        <div class="user-pill">
+          <span class="user-title">{{ currentUser()?.nombre }}</span>
+          <span class="user-role-badge">{{ currentUser()?.rol | uppercase }}</span>
+        </div>
+        <button class="btn-logout" (click)="logout()" title="Cerrar Sesión">
+          <span class="material-symbols-outlined">logout</span>
+          SALIR
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL ENRUTADO -->
+  <main class="main-content" [class.no-nav]="!currentUser()">
+    <div class="content-container">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <!-- FOOTER EDITORIAL -->
+  <footer class="app-footer" *ngIf="currentUser()">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="font-serif footer-brand">ATELIER NUMÉRIQUE V2.4</span>
+        <span class="footer-locations">París • Milán • Madrid • Fitting Biométrico 99.4%</span>
+      </div>
+      <div class="footer-right">
+        <span>Sistemas de Información 2 • Base de Datos: bd_tienda_virtual</span>
+      </div>
+    </div>
+  </footer>
+</div>
