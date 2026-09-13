@@ -1,7 +1,7 @@
 export interface User {
   ci: string;
   nombre: string;
-  rol: 'administrador' | 'trabajador' | 'empleado' | 'cliente' | string;
+  rol: 'administrador' | 'trabajador' | 'empleado' | 'cliente' | 'invitado' | string;
   email?: string;
 }
 
@@ -25,4 +25,32 @@ export interface ForgotPasswordResponse {
   message: string;
   reset_token: string;
   ci: string;
+}
+
+export interface UsuarioDetail {
+  ci: string;
+  nombre: string;
+  rol: string;
+  apellido?: string | null;
+  correo_electronico?: string | null;
+  telefono?: string | null;
+  genero?: string | null;
+  edad?: number | null;
+  id_sucursal?: number | null;
+  sucursal_nombre?: string | null;
+}
+
+export interface EmpresaConfig {
+  razon_social: string;
+  nombre_comercial: string;
+  ruc_nit: string;
+  direccion: string;
+  ciudad: string;
+  telefono: string;
+  email: string;
+  sitio_web: string;
+  simbolo_moneda: string;
+  codigo_moneda: string;
+  iva_porcentaje: number;
+  precios_con_impuesto: boolean;
 }

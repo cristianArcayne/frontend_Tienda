@@ -1,60 +1,166 @@
-<div class="app-shell">
-  <!-- BARRA DE NAVEGACIÓN SUPERIOR (Visible cuando está autenticado o en vistas internas) -->
-  <header class="top-nav" *ngIf="currentUser()">
-    <div class="nav-container">
-      <!-- Marca -->
-      <a routerLink="/" class="brand-link">
-        <span class="brand-name font-serif">ATELIER NUMÉRIQUE</span>
-        <span class="brand-sub">HAUTE COUTURE & FITTING LAB</span>
-      </a>
+<div class="pos-layout" [class.auth-mode]="!currentUser()">
 
-      <!-- Enlaces según Rol -->
-      <nav class="nav-links">
-        <a *ngIf="isStaff()" routerLink="/dashboard" routerLinkActive="active" class="nav-item">
-          <span class="material-symbols-outlined">dashboard</span>
-          PANEL
+  <!-- SIDEBAR OSCURO (Visible cuando hay sesión activa) -->
+  <aside class="pos-sidebar" *ngIf="currentUser()">
+    
+    <!-- BRAND / LOGO TIENDA -->
+    <div class="sidebar-brand">
+      <div class="brand-icon-box">
+        <span class="material-symbols-outlined">storefront</span>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">Mi Minimarket</span>
+        <span class="brand-sub">Sistema POS</span>
+      </div>
+    </div>
+
+    <!-- NAVEGACIÓN AGRUPADA DEL SIDEBAR -->
+    <div class="sidebar-menu">
+      
+      <!-- GRUPO: INVENTARIO -->
+      <div class="menu-group">
+        <span class="group-title">INVENTARIO</span>
+        <a routerLink="/vestidor" routerLinkActive="active" class="menu-item">
+          <span class="material-symbols-outlined">inventory_2</span>
+          <span>Productos</span>
         </a>
-        <a *ngIf="isStaff()" routerLink="/bitacora" routerLinkActive="active" class="nav-item">
+        <a routerLink="/vestidor" class="menu-item">
+          <span class="material-symbols-outlined">category</span>
+          <span>Categorías</span>
+        </a>
+        <a routerLink="/vestidor" class="menu-item">
+          <span class="material-symbols-outlined">percent</span>
+          <span>Promociones</span>
+        </a>
+      </div>
+
+      <!-- GRUPO: CONTACTOS (Solo personal o admin) -->
+      <div class="menu-group" *ngIf="isStaff()">
+        <span class="group-title">CONTACTOS</span>
+        <a routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+          <span class="material-symbols-outlined">group</span>
+          <span>Clientes</span>
+        </a>
+        <a class="menu-item">
+          <span class="material-symbols-outlined">local_shipping</span>
+          <span>Proveedores</span>
+        </a>
+      </div>
+
+      <!-- GRUPO: TPV / VENTAS -->
+      <div class="menu-group" *ngIf="isStaff()">
+        <span class="group-title">TPV</span>
+        <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+          <span class="material-symbols-outlined">point_of_sale</span>
+          <span>Facturación Electrónica</span>
+        </a>
+        <a routerLink="/dashboard" class="menu-item">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <span>Comprobante de Recepción</span>
+        </a>
+      </div>
+
+      <!-- GRUPO: ANÁLISIS -->
+      <div class="menu-group" *ngIf="isStaff()">
+        <span class="group-title">ANÁLISIS</span>
+        <a routerLink="/dashboard" class="menu-item">
+          <span class="material-symbols-outlined">bar_chart</span>
+          <span>Reportes</span>
+        </a>
+      </div>
+
+      <!-- GRUPO: SISTEMA (Control de Usuarios, Configuración y Bitácora) -->
+      <div class="menu-group" *ngIf="isStaff()">
+        <span class="group-title">SISTEMA</span>
+        
+        <!-- CONTROL DE USUARIOS (ADMINISTRADOR) -->
+        <a *ngIf="isAdmin()" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+          <span class="material-symbols-outlined">manage_accounts</span>
+          <span>Usuarios</span>
+        </a>
+
+        <!-- BITÁCORA DE USO (ADMINISTRADOR Y EMPLEADO) -->
+        <a routerLink="/bitacora" routerLinkActive="active" class="menu-item">
           <span class="material-symbols-outlined">history_edu</span>
-          BITÁCORA DE USO
+          <span>Bitácora de Uso</span>
         </a>
-        <a routerLink="/vestidor" routerLinkActive="active" class="nav-item">
-          <span class="material-symbols-outlined">checkroom</span>
-          VESTIDOR VIRTUAL
-        </a>
-      </nav>
 
-      <!-- Usuario y Salida -->
-      <div class="user-actions">
-        <div class="user-pill">
-          <span class="user-title">{{ currentUser()?.nombre }}</span>
-          <span class="user-role-badge">{{ currentUser()?.rol | uppercase }}</span>
+        <!-- CONFIGURACIÓN (ADMINISTRADOR) -->
+        <a *ngIf="isAdmin()" routerLink="/configuracion" routerLinkActive="active" class="menu-item">
+          <span class="material-symbols-outlined">settings</span>
+          <span>Configuración</span>
+        </a>
+
+        <a *ngIf="isAdmin()" class="menu-item">
+          <span class="material-symbols-outlined">badge</span>
+          <span>Config. SRI</span>
+        </a>
+
+        <a *ngIf="isAdmin()" class="menu-item">
+          <span class="material-symbols-outlined">cloud_sync</span>
+          <span>Backup</span>
+        </a>
+      </div>
+
+      <!-- MODO CLIENTE / INVITADO -->
+      <div class="menu-group" *ngIf="!isStaff()">
+        <span class="group-title">MI CUENTA</span>
+        <a routerLink="/vestidor" routerLinkActive="active" class="menu-item">
+          <span class="material-symbols-outlined">shopping_bag</span>
+          <span>Catálogo de Tienda</span>
+        </a>
+        <div *ngIf="isGuest()" class="guest-notice-box">
+          <p>Estás en modo invitado</p>
+          <a routerLink="/auth/login" class="btn-guest-login">Iniciar Sesión</a>
         </div>
-        <button class="btn-logout" (click)="logout()" title="Cerrar Sesión">
-          <span class="material-symbols-outlined">logout</span>
-          SALIR
-        </button>
       </div>
-    </div>
-  </header>
 
-  <!-- CONTENIDO PRINCIPAL ENRUTADO -->
-  <main class="main-content" [class.no-nav]="!currentUser()">
-    <div class="content-container">
+    </div>
+
+    <!-- BOTÓN INFERIOR CERRAR SESIÓN (Rojo oscuro como en la imagen) -->
+    <div class="sidebar-footer">
+      <button class="btn-sidebar-logout" (click)="logout()">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Cerrar Sesión</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- CONTENEDOR CENTRAL / DERECHO -->
+  <div class="pos-main-wrapper">
+    
+    <!-- BARRA SUPERIOR (TOPBAR) -->
+    <header class="pos-topbar" *ngIf="currentUser()">
+      <div class="topbar-title-section">
+        <h2 class="topbar-title">{{ currentSectionTitle }}</h2>
+      </div>
+
+      <div class="topbar-right-section">
+        <!-- Fecha en vivo -->
+        <div class="live-date">
+          <span class="material-symbols-outlined date-icon">calendar_today</span>
+          <span>{{ currentFormattedDate }}</span>
+        </div>
+
+        <!-- Usuario con Avatar Circular -->
+        <div class="user-profile-badge">
+          <div class="user-avatar-circle">
+            {{ currentUser()?.nombre?.charAt(0)?.toUpperCase() || 'U' }}
+          </div>
+          <div class="user-names-col">
+            <span class="user-display-name">{{ currentUser()?.nombre }}</span>
+            <span class="user-display-role">{{ currentUser()?.rol }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ÁREA DE CONTENIDO ROUTER OUTLET -->
+    <main class="pos-content-area" [class.full-page]="!currentUser()">
       <router-outlet></router-outlet>
-    </div>
-  </main>
+    </main>
 
-  <!-- FOOTER EDITORIAL -->
-  <footer class="app-footer" *ngIf="currentUser()">
-    <div class="footer-container">
-      <div class="footer-left">
-        <span class="font-serif footer-brand">ATELIER NUMÉRIQUE V2.4</span>
-        <span class="footer-locations">París • Milán • Madrid • Fitting Biométrico 99.4%</span>
-      </div>
-      <div class="footer-right">
-        <span>Sistemas de Información 2 • Base de Datos: bd_tienda_virtual</span>
-      </div>
-    </div>
-  </footer>
+  </div>
+
 </div>

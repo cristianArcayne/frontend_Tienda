@@ -26,6 +26,14 @@ export class AuthService {
     );
   }
 
+  guestLogin(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/guest-login`, {}).pipe(
+      tap(res => {
+        this.setSession(res);
+      })
+    );
+  }
+
   register(data: any): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/register`, data).pipe(
       tap(res => {

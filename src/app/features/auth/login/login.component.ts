@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -12,21 +12,22 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  loginId = signal('atelier@maison.com');
-  password = signal('cliente123');
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  loginId = signal('admin');
+  password = signal('admin123');
   rememberMe = signal(true);
   showPassword = signal(false);
   isLoading = signal(false);
   errorMessage = signal('');
-  activeTab = signal<'miembro' | 'rapido'>('miembro');
+  statusMessage = signal('Sesión cerrada correctamente');
 
-  constructor(private authService: AuthService, private router: Router) {}
-
-  selectDemo(role: 'admin' | 'trabajador' | 'cliente') {
+  selectDemo(role: 'admin' | 'empleado' | 'cliente') {
     if (role === 'admin') {
       this.loginId.set('1001');
       this.password.set('admin123');
-    } else if (role === 'trabajador') {
+    } else if (role === 'empleado') {
       this.loginId.set('2001');
       this.password.set('trabajador123');
     } else {
@@ -42,7 +43,7 @@ export class LoginComponent {
 
   onSubmit() {
     if (!this.loginId() || !this.password()) {
-      this.errorMessage.set('Por favor ingresa tu identificador y contraseña.');
+      this.errorMessage.set('Por favor ingresa tu usuario/correo y contraseña.');
       return;
     }
 
@@ -65,13 +66,24 @@ export class LoginComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.error?.detail || 'Error al iniciar sesión. Verifique sus credenciales.');
+        this.errorMessage.set(err.error?.detail || 'Credenciales incorrectas.');
       }
     });
   }
 
   enterAsGuest() {
-    this.selectDemo('cliente');
-    this.onSubmit();
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.authService.guestLogin().subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.router.navigate(['/vestidor']);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        // Fallback local guest
+        this.router.navigate(['/vestidor']);
+      }
+    });
   }
 }
