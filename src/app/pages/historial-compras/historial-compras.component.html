@@ -1,0 +1,124 @@
+<div class="historial-container p-24">
+  <div class="page-header m-b-24">
+    <div>
+      <h1 class="f-w-600 m-b-4">Historial de compras</h1>
+      <p class="text-muted m-0">Compras anteriores en {{ tenantSchema }}</p>
+    </div>
+
+    <button mat-stroked-button color="primary" (click)="cargarHistorial()" [disabled]="cargando">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  <mat-card class="filter-card m-b-24">
+    <mat-card-content>
+      <div class="filters-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select [(ngModel)]="estadoFiltro">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option *ngFor="let estado of estados" [value]="estado.value">
+              {{ estado.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha desde</mat-label>
+          <input matInput type="date" [(ngModel)]="fechaDesdeFiltro">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha hasta</mat-label>
+          <input matInput type="date" [(ngModel)]="fechaHastaFiltro">
+        </mat-form-field>
+
+        <div class="filter-actions">
+          <button mat-flat-button color="primary" (click)="aplicarFiltros()">
+            <mat-icon>filter_alt</mat-icon>
+            Filtrar
+          </button>
+          <button mat-stroked-button (click)="limpiarFiltros()">
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div *ngIf="cargando" class="p-48 text-center">
+    <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+    <p class="m-t-16">Cargando compras...</p>
+  </div>
+
+  <div *ngIf="!cargando && compras.length === 0" class="empty-state p-48 text-center">
+    <mat-icon>receipt_long</mat-icon>
+    <h3>No tienes compras registradas</h3>
+    <p class="text-muted">Cuando realices una compra, aparecera aqui con su detalle.</p>
+  </div>
+
+  <div *ngIf="!cargando && compras.length > 0" class="compras-list">
+    <mat-card class="compra-card" *ngFor="let compra of compras; trackBy: trackCompra">
+      <mat-card-content>
+        <div class="compra-header">
+          <div>
+            <div class="compra-numero">Compra #{{ compra.compra_id }}</div>
+            <div class="text-muted f-s-14">{{ compra.fecha | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+
+          <div class="compra-total">
+            {{ compra.total | currency:'BOB ':'symbol':'1.2-2' }}
+            <div *ngIf="+compra.descuento_fidelizacion > 0" class="text-muted f-s-12">
+              Descuento fidelización: -{{ compra.descuento_fidelizacion | currency:'BOB ':'symbol':'1.2-2' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-grid m-t-16">
+          <div class="meta-item">
+            <span>Estado</span>
+            <strong class="estado-badge" [class]="'estado-' + compra.estado">
+              {{ estadoLabel(compra.estado) }}
+            </strong>
+          </div>
+          <div class="meta-item">
+            <span>Tipo</span>
+            <strong>{{ compra.tipo || '-' }}</strong>
+          </div>
+          <div class="meta-item">
+            <span>Productos</span>
+            <strong>{{ totalProductos(compra) }}</strong>
+          </div>
+        </div>
+
+        <div class="productos-title m-t-20">Detalle de productos</div>
+
+        <div class="productos-list">
+          <div class="producto-row" *ngFor="let producto of compra.productos; trackBy: trackProducto">
+            <div class="producto-main">
+              <div class="producto-nombre">{{ producto.producto_nombre }}</div>
+              <div class="producto-sku text-muted">SKU: {{ producto.variante_sku || '-' }}</div>
+            </div>
+
+            <div class="producto-cantidad">x{{ producto.cantidad }}</div>
+
+            <div class="producto-precios">
+              <div>{{ producto.precio_unitario | currency:'BOB ':'symbol':'1.2-2' }}</div>
+              <strong>{{ producto.precio_subtotal | currency:'BOB ':'symbol':'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-paginator
+    *ngIf="!cargando && totalCompras > 0"
+    [length]="totalCompras"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="[5, 10, 20]"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+</div>

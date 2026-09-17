@@ -1,0 +1,162 @@
+.dialog-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.dialog-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.dialog-content {
+  padding-top: 8px;
+}
+
+.dialog-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 4px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+}
+
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.product-card {
+  border: 1px solid #e6e9ef;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03);
+}
+
+.product-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.product-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.variantes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.variante-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+}
+
+.variante-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.variante-sku {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.variante-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.carrito-card {
+  box-shadow: none;
+  border: 1px dashed #e5e7eb;
+  background: #fff;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px 12px;
+  color: #6b7280;
+}
+
+.empty-state.compact {
+  padding: 12px 8px;
+}
+
+.empty-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 4px;
+}
+
+.empty-text {
+  margin: 0;
+  font-weight: 500;
+}
+
+.empty-help {
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #111827;
+  color: #fff;
+  border-radius: 10px;
+}
+
+.table-field {
+  width: 110px;
+}
+
+.table-field .mat-mdc-form-field-infix {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.dialog-actions {
+  padding-top: 8px;
+}
+
+@media (max-width: 960px) {
+  .dialog-stack {
+    gap: 12px;
+  }
+}

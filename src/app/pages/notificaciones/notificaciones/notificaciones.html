@@ -1,0 +1,240 @@
+<mat-card>
+  <mat-card-header>
+    <div class="page-header">
+      <div>
+        <mat-card-title>Notificaciones</mat-card-title>
+        <mat-card-subtitle>Promociones y suscripciones push</mat-card-subtitle>
+      </div>
+      <button mat-icon-button color="primary" matTooltip="Actualizar" (click)="loadPromociones(); loadNotificaciones()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <section class="push-panel">
+      <div>
+        <div class="push-title">Suscripcion del navegador</div>
+        <div class="push-meta">
+          <mat-chip selected [color]="pushActiva ? 'primary' : 'accent'">
+            {{ pushActiva ? 'Activa' : 'Inactiva' }}
+          </mat-chip>
+          <span>Permiso: {{ pushPermission }}</span>
+        </div>
+      </div>
+
+      <div class="push-actions">
+        <button mat-raised-button color="primary" type="button" (click)="activarNotificaciones()" [disabled]="isPushBusy || pushActiva">
+          <mat-icon class="m-r-8">notifications_active</mat-icon>
+          Activar
+        </button>
+        <button mat-button type="button" (click)="desactivarNotificaciones()" [disabled]="isPushBusy || !pushActiva">
+          Desactivar
+        </button>
+        <button mat-stroked-button color="primary" type="button" (click)="probarNotificacion()" [disabled]="isPushBusy || !pushActiva">
+          Probar
+        </button>
+      </div>
+    </section>
+
+    <mat-tab-group>
+      <mat-tab label="Promociones">
+        <div class="tab-content">
+          <form class="promo-form" [formGroup]="promocionForm" (ngSubmit)="crearPromocion()">
+            <mat-form-field appearance="outline">
+              <mat-label>Titulo</mat-label>
+              <input matInput formControlName="titulo">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Producto</mat-label>
+              <mat-select formControlName="producto" [disabled]="isLoadingProductos">
+                <mat-option value="" disabled>
+                  {{ isLoadingProductos ? 'Cargando productos...' : (productos.length ? 'Selecciona un producto' : 'No hay productos disponibles') }}
+                </mat-option>
+                <mat-option *ngFor="let producto of productos" [value]="producto.id">
+                  {{ producto.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo descuento</mat-label>
+              <mat-select formControlName="tipo_descuento">
+                <mat-option *ngFor="let tipo of tiposDescuento" [value]="tipo.value">
+                  {{ tipo.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Valor</mat-label>
+              <input matInput type="number" formControlName="valor_descuento">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Inicio</mat-label>
+              <input matInput type="datetime-local" formControlName="fecha_inicio">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fin</mat-label>
+              <input matInput type="datetime-local" formControlName="fecha_fin">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="description-field">
+              <mat-label>Descripcion</mat-label>
+              <textarea matInput rows="2" formControlName="descripcion"></textarea>
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="isSaving">
+                <mat-icon class="m-r-8">campaign</mat-icon>
+                Crear promocion
+              </button>
+            </div>
+          </form>
+
+          <mat-divider></mat-divider>
+
+          <div *ngIf="isLoadingPromociones" class="loading-box">
+            <mat-spinner diameter="42"></mat-spinner>
+          </div>
+
+          <div *ngIf="!isLoadingPromociones && promociones.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="promociones" class="w-full">
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef>ID</th>
+                <td mat-cell *matCellDef="let item">{{ item.id }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="titulo">
+                <th mat-header-cell *matHeaderCellDef>Titulo</th>
+                <td mat-cell *matCellDef="let item">{{ item.titulo }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="descripcion">
+                <th mat-header-cell *matHeaderCellDef>Descripcion</th>
+                <td mat-cell *matCellDef="let item">{{ item.descripcion }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="producto_nombre">
+                <th mat-header-cell *matHeaderCellDef>Producto</th>
+                <td mat-cell *matCellDef="let item">{{ getProductoNombre(item) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="tipo_descuento">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let item">{{ item.tipo_descuento }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="valor_descuento">
+                <th mat-header-cell *matHeaderCellDef>Valor</th>
+                <td mat-cell *matCellDef="let item">{{ getDescuento(item) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let item">
+                  <mat-chip selected [color]="getEstadoColor(item.estado)">
+                    {{ item.estado || 'Sin estado' }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="fecha_inicio">
+                <th mat-header-cell *matHeaderCellDef>Inicio</th>
+                <td mat-cell *matCellDef="let item">{{ item.fecha_inicio | date:'short' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="fecha_fin">
+                <th mat-header-cell *matHeaderCellDef>Fin</th>
+                <td mat-cell *matCellDef="let item">
+                  {{ item.fecha_fin | date:'short' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let item">
+                  <button mat-icon-button color="primary" matTooltip="Publicar" (click)="publicarPromocion(item)" [disabled]="isPublishingId === item.id">
+                    <mat-icon>send</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="promocionesColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: promocionesColumns;"></tr>
+            </table>
+          </div>
+
+          <div *ngIf="!isLoadingPromociones && promociones.length === 0" class="empty-state">
+            <mat-icon class="empty-icon">campaign</mat-icon>
+            <p class="empty-text">No hay promociones registradas</p>
+          </div>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Suscripciones">
+        <div class="tab-content">
+          <div *ngIf="isLoadingNotificaciones" class="loading-box">
+            <mat-spinner diameter="42"></mat-spinner>
+          </div>
+
+          <div *ngIf="!isLoadingNotificaciones && notificaciones.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="notificaciones" class="w-full">
+              <ng-container matColumnDef="usuario">
+                <th mat-header-cell *matHeaderCellDef>Usuario</th>
+                <td mat-cell *matCellDef="let item">{{ item.usuario || 'Sin usuario' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="endpoint">
+                <th mat-header-cell *matHeaderCellDef>Endpoint</th>
+                <td mat-cell *matCellDef="let item" class="endpoint-cell" [matTooltip]="item.endpoint">
+                  {{ getEndpointCorto(item.endpoint) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="activa">
+                <th mat-header-cell *matHeaderCellDef>Activa</th>
+                <td mat-cell *matCellDef="let item">
+                  <mat-chip selected [color]="item.activa ? 'primary' : 'warn'">
+                    {{ item.activa ? 'Si' : 'No' }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="ultima_promocion">
+                <th mat-header-cell *matHeaderCellDef>Ultima promocion</th>
+                <td mat-cell *matCellDef="let item">{{ item.ultima_promocion || '-' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="ultimo_envio">
+                <th mat-header-cell *matHeaderCellDef>Ultimo envio</th>
+                <td mat-cell *matCellDef="let item">
+                  <span *ngIf="item.ultimo_envio">{{ item.ultimo_envio | date:'short' }}</span>
+                  <span *ngIf="!item.ultimo_envio" class="muted">Sin envio</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="ultimo_error">
+                <th mat-header-cell *matHeaderCellDef>Ultimo error</th>
+                <td mat-cell *matCellDef="let item" class="error-cell">
+                  {{ item.ultimo_error || '-' }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="notificacionesColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: notificacionesColumns;"></tr>
+            </table>
+          </div>
+
+          <div *ngIf="!isLoadingNotificaciones && notificaciones.length === 0" class="empty-state">
+            <mat-icon class="empty-icon">notifications_off</mat-icon>
+            <p class="empty-text">No hay suscripciones push registradas</p>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card-content>
+</mat-card>

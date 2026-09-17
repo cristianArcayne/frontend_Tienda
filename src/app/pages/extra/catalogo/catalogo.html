@@ -1,0 +1,108 @@
+<div class="catalogo-container p-24">
+  <!-- Cabecera y Búsqueda -->
+  <div class="header-section m-b-32">
+    <h1 class="f-w-600 m-b-8">Explorar Catálogo</h1>
+    <p class="text-muted m-b-24">Encuentra los prductos que tanto buscas</p>
+
+    <div class="search-bar">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Buscar prodcutos...</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput (input)="onSearch($event)" placeholder="Ej: Mesa de madera, Silla ergonómica...">
+      </mat-form-field>
+    </div>
+
+    <div class="catalog-actions m-t-16">
+      <button mat-stroked-button color="primary" [disabled]="cantidadComparador === 0" (click)="irComparador()">
+        <mat-icon>compare_arrows</mat-icon>
+        Comparador ({{ cantidadComparador }})
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros de Categoría -->
+  <div class="filters-section m-b-32">
+    <mat-chip-listbox aria-label="Selección de Categoría">
+      <mat-chip-option [selected]="categoriaSeleccionada === null" (click)="seleccionarCategoria(null)" color="primary">
+        Todos
+      </mat-chip-option>
+      <mat-chip-option *ngFor="let cat of categorias" [selected]="categoriaSeleccionada === cat.id"
+        (click)="seleccionarCategoria(cat.id)" color="primary">
+        {{ cat.nombre }}
+      </mat-chip-option>
+    </mat-chip-listbox>
+  </div>
+
+  <!-- Grid de Productos -->
+  <div class="products-grid" *ngIf="!cargando && productos.length > 0">
+    <mat-card class="product-card" *ngFor="let prod of productos" (click)="verDetalles(prod.id)" [style.cursor]="puedeVerDetalle ? 'pointer' : 'default'">
+      <div class="image-wrapper">
+        <img [src]="prod.imagen_principal || 'assets/images/products/placeholder.jpg'" [alt]="prod.nombre"
+          class="product-image">
+        <div class="category-badge">{{ prod.categoria_nombre }}</div>
+        <button class="fav-btn" mat-icon-button (click)="$event.stopPropagation(); toggleFavorito(prod)"
+          [matTooltip]="esFavorito(prod.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'">
+          <mat-icon [class.favorito-activo]="esFavorito(prod.id)">
+            {{ esFavorito(prod.id) ? 'favorite' : 'favorite_border' }}
+          </mat-icon>
+        </button>
+      </div>
+
+      <mat-card-content class="p-16">
+        <h3 class="f-w-600 m-b-4 text-truncate">{{ prod.nombre }}</h3>
+        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+          <span *ngFor="let e of getEstrellas(prod.calificacion_promedio ?? 0)" style="color: #f59e0b; line-height: 1;">
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">{{ e }}</mat-icon>
+          </span>
+          <span style="font-size: 12px; color: #666;">
+            {{ prod.total_resenas ? '(' + prod.total_resenas + ')' : 'Sin reseñas' }}
+          </span>
+        </div>
+        <p class="text-muted f-s-14 m-b-16 text-truncate-2">{{ prod.descripcion }}</p>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="price-tag">
+            <span class="f-s-12 text-muted">Desde</span>
+            <div class="f-w-700 f-s-18">{{ prod.precio_minimo | currency:'BOB ':'symbol':'1.0-0' }}</div>
+          </div>
+          <button *ngIf="puedeVerDetalle" mat-mini-fab color="primary" matTooltip="Ver detalles">
+            <mat-icon>visibility</mat-icon>
+          </button>
+        </div>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          class="compare-btn w-100 m-t-16"
+          [class.compare-active]="esComparado(prod.id)"
+          (click)="$event.stopPropagation(); toggleComparador(prod)">
+          <mat-icon>{{ esComparado(prod.id) ? 'done' : 'compare_arrows' }}</mat-icon>
+          {{ esComparado(prod.id) ? 'En comparador' : 'Comparar' }}
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Estado de Carga inicial -->
+  <div *ngIf="cargando" class="p-48 text-center">
+    <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+    <p class="m-t-16">Buscando los mejores muebles...</p>
+  </div>
+
+  <!-- No se encontraron resultados -->
+  <div *ngIf="!cargando && productos.length === 0" class="p-48 text-center empty-state">
+    <mat-icon style="font-size: 64px; height: 64px; width: 64px; color: #ddd;">search_off</mat-icon>
+    <h3 class="m-t-24">No encontramos lo que buscas</h3>
+    <p class="text-muted">Prueba con otros términos o categorías</p>
+    <button mat-stroked-button color="primary" class="m-t-16" (click)="seleccionarCategoria(null)">Ver todo el
+      catálogo</button>
+  </div>
+
+  <!-- Spinner cargando más productos -->
+  <div *ngIf="cargandoMas" class="p-24 text-center">
+    <mat-spinner diameter="32" style="margin: 0 auto;"></mat-spinner>
+  </div>
+
+  <!-- Sentinel para infinite scroll -->
+  <div #sentinel style="height: 1px;"></div>
+</div>

@@ -1,0 +1,274 @@
+.database-management-container {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.main-card {
+  border-radius: 12px;
+  overflow: hidden;
+
+  mat-card-header {
+    padding: 24px 24px 16px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf0 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1a1a2e;
+
+      .title-icon {
+        color: #5c6bc0;
+        font-size: 1.6rem;
+        width: 1.6rem;
+        height: 1.6rem;
+      }
+    }
+
+    mat-card-subtitle {
+      margin-top: 4px;
+      font-size: 0.875rem;
+      color: #666;
+    }
+  }
+
+  mat-card-content {
+    padding: 0 !important;
+  }
+}
+
+.section {
+  padding: 28px 24px;
+
+  &:first-of-type {
+    padding-bottom: 24px;
+  }
+
+  &:last-of-type {
+    padding-top: 24px;
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.5;
+
+    code {
+      background: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85em;
+    }
+
+    strong {
+      color: #c62828;
+    }
+  }
+}
+
+.section-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    color: white;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  &.backup-icon {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+  }
+
+  &.restore-icon {
+    background: linear-gradient(135deg, #c62828, #ef5350);
+  }
+}
+
+.section-info {
+  flex: 1;
+}
+
+.section-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 42px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.btn-spinner {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.file-selected-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-radius: 8px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+  word-break: break-all;
+
+  .file-icon {
+    color: #f57c00;
+    flex-shrink: 0;
+  }
+}
+
+.restore-confirm-btn {
+  align-self: flex-start;
+}
+
+mat-divider {
+  margin: 0 24px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tablet (≤ 768px) */
+@media (max-width: 768px) {
+  .database-management-container {
+    padding: 16px;
+  }
+
+  .main-card {
+    mat-card-header {
+      padding: 20px 16px 14px;
+
+      mat-card-title {
+        font-size: 1.2rem;
+      }
+    }
+  }
+
+  .section {
+    padding: 20px 16px;
+  }
+
+  mat-divider {
+    margin: 0 16px;
+  }
+
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .restore-confirm-btn {
+    align-self: stretch;
+  }
+}
+
+/* Mobile (≤ 480px) */
+@media (max-width: 480px) {
+  .database-management-container {
+    padding: 12px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .main-card {
+    mat-card-header {
+      padding: 16px 12px 12px;
+
+      mat-card-title {
+        font-size: 1.1rem;
+        gap: 8px;
+      }
+
+      mat-card-subtitle {
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  .section {
+    padding: 16px 12px;
+  }
+
+  mat-divider {
+    margin: 0 12px;
+  }
+
+  .file-selected-panel {
+    padding: 12px;
+  }
+
+  .action-btn {
+    font-size: 0.85rem;
+    height: 44px;
+  }
+}

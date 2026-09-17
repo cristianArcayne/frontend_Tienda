@@ -1,0 +1,67 @@
+<mat-card-header>
+  <div class="page-header">
+    <mat-card-title>Gestión de Marcas</mat-card-title>
+    <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="crearMarca()">
+      <mat-icon class="m-r-8">add</mat-icon>
+      Crear Nueva Marca
+    </button>
+  </div>
+</mat-card-header>
+
+<mat-card-content>
+  <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <div *ngIf="!isLoading && dataSource.length > 0" class="table-responsive">
+    <table mat-table [dataSource]="dataSource" class="w-full">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let element">{{ element.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let element">
+          <button
+            *ngIf="puedeEditar"
+            mat-icon-button
+            matTooltip="Editar"
+            (click)="editarMarca(element)"
+            color="primary">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            *ngIf="puedeEliminar"
+            mat-icon-button
+            matTooltip="Eliminar"
+            (click)="eliminarMarca(element)"
+            color="warn">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+  <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">info</mat-icon>
+    <p class="empty-text">No hay marcas disponibles</p>
+  </div>
+
+  <mat-paginator
+    *ngIf="dataSource.length > 0"
+    [length]="totalItems"
+    [pageSize]="pageSize"
+    hidePageSize="true"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+</mat-card-content>

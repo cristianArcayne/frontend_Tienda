@@ -1,0 +1,43 @@
+<div class="blue_theme light-theme" dir="ltr">
+  <mat-sidenav-container class="mainWrapper" autosize autoFocus>
+    <!-- ============================================================== -->
+    <!-- Vertical Sidebar -->
+    <!-- ============================================================== -->
+    <mat-sidenav #leftsidenav [mode]="isOver ? 'over' : 'side'" [opened]="!isOver"
+      (openedChange)="onSidenavOpenedChange($event)" (closedStart)="onSidenavClosedStart()" 
+      class="sidebarNav">
+      <div class="flex-layout">
+        <app-sidebar (toggleMobileNav)="sidenav.toggle()" [showToggle]="isOver"></app-sidebar>
+        <ng-scrollbar class="position-relative sidebar-scrollbar">
+          <mat-nav-list class="sidebar-list">
+            @for(item of navItems; track item) {
+            <app-nav-item [item]="item" (notify)="sidenav.toggle()">
+            </app-nav-item>
+            }
+          </mat-nav-list>
+        </ng-scrollbar>
+      </div>
+    </mat-sidenav>
+
+    <!-- ============================================================== -->
+    <!-- Main Content -->
+    <!-- ============================================================== -->
+    <mat-sidenav-content class="contentWrapper" #content>
+      <!-- ============================================================== -->
+      <!-- VerticalHeader -->
+      <!-- ============================================================== -->
+      <app-header [showToggle]="!isOver" (toggleMobileNav)="sidenav.toggle()"></app-header>
+
+      <div class="body-wrapper">
+        <main class="pageWrapper maxWidth">
+          <!-- ============================================================== -->
+          <!-- Outlet -->
+          <!-- ============================================================== -->
+          <router-outlet></router-outlet>
+        </main>
+      </div>
+
+    </mat-sidenav-content>
+
+  </mat-sidenav-container>
+</div>

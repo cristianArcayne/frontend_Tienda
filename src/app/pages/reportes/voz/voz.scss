@@ -1,0 +1,121 @@
+.voz-container { padding: 16px 0; text-align: center; }
+
+/* IDLE */
+.voz-hint { color: #666; margin-bottom: 24px; }
+
+.voz-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.voz-btn {
+  width: 72px;
+  height: 72px;
+  transition: all 0.3s;
+}
+
+.voz-btn mat-icon { font-size: 32px; width: 32px; height: 32px; line-height: 32px; }
+
+.voz-divider { color: #999; font-size: 14px; }
+
+.voz-upload-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.voz-file-input {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* RECORDING */
+.voz-recording {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin: 24px 0;
+}
+
+.voz-recording-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f44336;
+  font-weight: 500;
+}
+
+.voz-recording-dot {
+  width: 10px;
+  height: 10px;
+  background: #f44336;
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.voz-recording-text { font-size: 15px; }
+
+.voz-recording-buttons {
+  display: flex;
+  gap: 24px;
+}
+
+.voz-recording-buttons .grabando {
+  background-color: #f44336;
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
+}
+
+/* TRANSCRIBING */
+.voz-transcribing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0;
+  color: #666;
+}
+
+/* TRANSCRIBED */
+.voz-result {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.voz-textarea { width: 100%; }
+
+.voz-result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* SHARED */
+.voz-error { margin-top: 16px; color: #f44336; }
+
+.query-json {
+  background: #f5f5f5;
+  border-radius: 4px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.query-json h4 { margin: 0 0 8px 0; font-size: 13px; color: #555; }
+.query-json pre { margin: 0; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; }

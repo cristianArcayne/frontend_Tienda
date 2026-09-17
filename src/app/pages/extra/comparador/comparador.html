@@ -1,0 +1,117 @@
+<div class="comparador-container p-24">
+  <div class="toolbar m-b-24">
+    <div>
+      <h1 class="f-w-600 m-b-4">Comparador de muebles</h1>
+      <p class="text-muted m-0">Comparacion de productos para {{ tenantSchema }}</p>
+    </div>
+
+    <div class="toolbar-actions">
+      <button mat-stroked-button color="primary" (click)="irCatalogo()">
+        <mat-icon>storefront</mat-icon>
+        Catalogo
+      </button>
+      <button mat-stroked-button color="warn" [disabled]="productoIds.length === 0" (click)="vaciar()">
+        <mat-icon>delete_sweep</mat-icon>
+        Vaciar
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="summary-card m-b-24">
+    <mat-card-content>
+      <div class="summary-content">
+        <div>
+          <div class="f-w-600">Productos seleccionados: {{ productoIds.length }}/{{ comparadorService.maxProductos }}</div>
+          <div class="text-muted f-s-14">Minimo {{ comparadorService.minProductos }} productos para comparar.</div>
+        </div>
+        <mat-chip-set class="selected-products" *ngIf="productosSeleccionados.length > 0">
+          <mat-chip *ngFor="let producto of productosSeleccionados">
+            {{ nombreProductoSeleccionado(producto) }}
+            <button matChipRemove (click)="quitar(producto.id)">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div *ngIf="productoIds.length < comparadorService.minProductos" class="empty-state p-48 text-center">
+    <mat-icon>compare_arrows</mat-icon>
+    <h3>Selecciona al menos 2 muebles</h3>
+    <p class="text-muted">Vuelve al catalogo y marca entre 2 y 4 productos para ver la tabla comparativa.</p>
+    <button mat-flat-button color="primary" (click)="irCatalogo()">Ir al catalogo</button>
+  </div>
+
+  <div *ngIf="cargando" class="p-48 text-center">
+    <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+    <p class="m-t-16">Armando comparacion...</p>
+  </div>
+
+  <mat-card *ngIf="error && !cargando" class="error-card m-b-24">
+    <mat-card-content>
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </mat-card-content>
+  </mat-card>
+
+  <ng-container *ngIf="respuesta && !cargando">
+    <div class="product-strip m-b-24">
+      <mat-card class="product-card" *ngFor="let producto of respuesta.productos; trackBy: trackProducto">
+        <div class="image-wrapper">
+          <img [src]="producto.imagen_principal || 'assets/images/products/placeholder.jpg'" [alt]="producto.nombre">
+          <button mat-icon-button class="remove-btn" matTooltip="Quitar" (click)="quitar(producto.id)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <mat-card-content>
+          <h3 class="f-w-600 m-b-4">{{ producto.nombre }}</h3>
+          <p class="text-muted f-s-14 m-b-12">{{ producto.categoria_nombre || 'Sin categoria' }}</p>
+          <div class="f-w-700 price m-b-12">
+            {{ producto.precio_minimo || '-' }}
+          </div>
+          <button mat-stroked-button color="primary" class="w-100" (click)="verDetalle(producto.id)">
+            <mat-icon>visibility</mat-icon>
+            Ver detalle
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-card class="comparison-card">
+      <mat-card-content>
+        <div class="table-scroll desktop-comparison">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Caracteristica</th>
+                <th *ngFor="let producto of respuesta.productos; trackBy: trackProducto">
+                  {{ producto.nombre }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let caracteristica of respuesta.caracteristicas; trackBy: trackCaracteristica">
+                <td class="feature-name">{{ caracteristica.etiqueta }}</td>
+                <td *ngFor="let producto of respuesta.productos; trackBy: trackProducto">
+                  {{ valorCaracteristica(caracteristica, producto) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-comparison">
+          <div class="mobile-feature" *ngFor="let caracteristica of respuesta.caracteristicas; trackBy: trackCaracteristica">
+            <div class="mobile-feature-title">{{ caracteristica.etiqueta }}</div>
+
+            <div class="mobile-value" *ngFor="let producto of respuesta.productos; trackBy: trackProducto">
+              <div class="mobile-product-name">{{ producto.nombre }}</div>
+              <div class="mobile-product-value">{{ valorCaracteristica(caracteristica, producto) }}</div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+</div>

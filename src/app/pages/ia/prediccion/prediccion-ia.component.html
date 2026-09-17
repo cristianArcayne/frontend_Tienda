@@ -1,0 +1,175 @@
+<div class="prediccion-container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <mat-icon class="title-icon">insights</mat-icon>
+        Predicción de Demanda
+      </h1>
+      <p class="subtitle">Predicción por variante de producto &mdash; modelo Random Forest</p>
+    </div>
+    <div class="header-actions">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="date-field">
+        <mat-label>Proyectar hasta</mat-label>
+        <input matInput [matDatepicker]="picker" [min]="hoy"
+               (dateChange)="onFechaChange($event.value)"
+               placeholder="Fecha límite">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-checkbox
+        [checked]="soloAlerta()"
+        (change)="onToggleAlerta($event.checked)"
+        color="primary">
+        Solo con alerta
+      </mat-checkbox>
+
+      <button mat-raised-button color="primary" (click)="cargarPrediccion()" [disabled]="cargando()">
+        <mat-icon>{{ haCargado() ? 'refresh' : 'model_training' }}</mat-icon>
+        {{ haCargado() ? 'Actualizar' : 'Predecir' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary pills -->
+  @if (totalItems > 0) {
+    <div class="summary-row">
+      <div class="summary-pill">
+        <mat-icon>inventory</mat-icon>
+        <span>Total variantes: <strong>{{ totalItems }}</strong></span>
+      </div>
+      <div class="summary-pill pill-danger">
+        <mat-icon>warning</mat-icon>
+        <span>Con alerta (pág.): <strong>{{ conAlerta() }}</strong></span>
+      </div>
+      <div class="summary-pill pill-ok">
+        <mat-icon>check_circle</mat-icon>
+        <span>Sin alerta (pág.): <strong>{{ sinAlerta() }}</strong></span>
+      </div>
+    </div>
+  }
+
+  <!-- Table card -->
+  <mat-card>
+    @if (cargando()) {
+      <div class="loading-container">
+        <mat-spinner diameter="44"></mat-spinner>
+        <p>Ejecutando predicciones de demanda...</p>
+      </div>
+    } @else if (!haCargado()) {
+      <div class="empty-state">
+        <mat-icon>model_training</mat-icon>
+        <p>Presiona <strong>Predecir</strong> para ejecutar el modelo de predicción de demanda.</p>
+      </div>
+    } @else if (predicciones().length === 0) {
+      <div class="empty-state">
+        <mat-icon>ssid_chart</mat-icon>
+        <p>
+          @if (soloAlerta()) {
+            No hay variantes con alerta en el período seleccionado
+          } @else {
+            No hay predicciones disponibles
+          }
+        </p>
+        @if (soloAlerta()) {
+          <button mat-stroked-button (click)="soloAlerta.set(false)">
+            Mostrar todas
+          </button>
+        }
+      </div>
+    } @else {
+      <mat-card-content class="table-wrapper">
+        <table mat-table [dataSource]="predicciones()">
+
+          <!-- Categoría -->
+          <ng-container matColumnDef="categoria">
+            <th mat-header-cell *matHeaderCellDef>Categoría</th>
+            <td mat-cell *matCellDef="let p">{{ p.categoria }}</td>
+          </ng-container>
+
+          <!-- Producto -->
+          <ng-container matColumnDef="producto">
+            <th mat-header-cell *matHeaderCellDef>Producto</th>
+            <td mat-cell *matCellDef="let p">{{ p.producto }}</td>
+          </ng-container>
+
+          <!-- SKU -->
+          <ng-container matColumnDef="sku">
+            <th mat-header-cell *matHeaderCellDef>SKU</th>
+            <td mat-cell *matCellDef="let p">
+              <code class="sku-code">{{ p.variante_sku }}</code>
+            </td>
+          </ng-container>
+
+          <!-- Stock actual -->
+          <ng-container matColumnDef="stock_actual">
+            <th mat-header-cell *matHeaderCellDef>Stock actual</th>
+            <td mat-cell *matCellDef="let p">
+              <span [class.stock-bajo]="p.stock_actual <= p.limite_minimo">{{ p.stock_actual }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Límite mínimo -->
+          <ng-container matColumnDef="limite_minimo">
+            <th mat-header-cell *matHeaderCellDef>Límite mínimo</th>
+            <td mat-cell *matCellDef="let p">{{ p.limite_minimo }}</td>
+          </ng-container>
+
+          <!-- Demanda proyectada -->
+          <ng-container matColumnDef="demanda_proyectada">
+            <th mat-header-cell *matHeaderCellDef>Demanda proyectada</th>
+            <td mat-cell *matCellDef="let p">
+              <span class="demanda-val">{{ p.demanda_proyectada }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Déficit -->
+          <ng-container matColumnDef="deficit">
+            <th mat-header-cell *matHeaderCellDef>Déficit</th>
+            <td mat-cell *matCellDef="let p">
+              @if (p.deficit > 0) {
+                <span class="deficit-negativo">&minus;{{ p.deficit }}</span>
+              } @else {
+                <span class="deficit-ok">{{ p.deficit }}</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Alerta -->
+          <ng-container matColumnDef="alerta">
+            <th mat-header-cell *matHeaderCellDef>Alerta</th>
+            <td mat-cell *matCellDef="let p">
+              @if (p.alerta) {
+                <span class="alerta-chip chip-alerta" matTooltip="Demanda supera stock disponible">
+                  <mat-icon>warning</mat-icon>
+                  Alerta
+                </span>
+              } @else {
+                <span class="alerta-chip chip-ok" matTooltip="Stock suficiente">
+                  <mat-icon>check_circle</mat-icon>
+                  OK
+                </span>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas;"
+              [class.row-alerta]="row.alerta">
+          </tr>
+        </table>
+      </mat-card-content>
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        hidePageSize
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    }
+  </mat-card>
+
+</div>

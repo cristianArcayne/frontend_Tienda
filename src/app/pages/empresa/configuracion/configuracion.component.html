@@ -1,0 +1,170 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Configurar mi Empresa</mat-card-title>
+    <mat-card-subtitle>Configure la identidad corporativa y datos de contacto de su tienda</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content class="p-24">
+    <form #configForm="ngForm" (ngSubmit)="guardar(configForm)" class="m-t-16">
+      
+      <div class="row">
+        
+        <!-- SECCIÓN DE IDENTIDAD Y LOGO (Izquierda) -->
+        <div class="col-lg-4 col-12 d-flex flex-column align-items-center border-right p-b-24">
+          <h4 class="f-s-16 f-w-600 m-b-16">Logo de la Empresa</h4>
+          
+          <div class="logo-preview-container m-b-24">
+            <div *ngIf="config.logoUrl" class="logo-preview-box">
+              <img [src]="config.logoUrl" alt="Logo de la empresa" class="logo-img">
+              <button mat-mini-fab color="warn" class="btn-remove-logo" type="button" (click)="eliminarLogo()" matTooltip="Eliminar logo">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+            
+            <div *ngIf="!config.logoUrl" class="logo-placeholder">
+              <mat-icon class="placeholder-icon">storefront</mat-icon>
+              <span class="placeholder-text m-t-8">Sin logo</span>
+            </div>
+          </div>
+
+          <input 
+            type="file" 
+            #logoInput 
+            accept="image/*" 
+            class="hidden-input" 
+            (change)="onLogoSelected($event)">
+          
+          <button 
+            mat-stroked-button 
+            color="primary" 
+            type="button" 
+            (click)="logoInput.click()">
+            <mat-icon>photo_camera</mat-icon>
+            Subir Nuevo Logo
+          </button>
+          <span class="upload-hint m-t-8 text-center">Formatos recomendados: PNG, JPG (Max: 1MB)</span>
+        </div>
+
+        <!-- FORMULARIO DE DATOS (Derecha) -->
+        <div class="col-lg-8 col-12">
+          <h4 class="f-s-16 f-w-600 m-b-16">Datos Generales</h4>
+          
+          <div class="row m-b-16">
+            <div class="col-12 col-sm-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nombre de la Empresa</mat-label>
+                <input 
+                  matInput 
+                  required 
+                  name="nombre" 
+                  [(ngModel)]="config.nombre" 
+                  placeholder="Ej: Tienda Amiga S.A.C.">
+                <mat-error *ngIf="configForm.controls['nombre']?.errors?.['required']">
+                  El nombre es requerido
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Correo Electrónico Corporativo</mat-label>
+                <input 
+                  matInput 
+                  required 
+                  email 
+                  name="email" 
+                  [(ngModel)]="config.email" 
+                  placeholder="contacto@empresa.com">
+                <mat-error *ngIf="configForm.controls['email']?.errors?.['required']">
+                  El correo es requerido
+                </mat-error>
+                <mat-error *ngIf="configForm.controls['email']?.errors?.['email']">
+                  Ingrese un correo válido
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="row m-b-16">
+            <div class="col-12 col-sm-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Teléfono de Contacto</mat-label>
+                <input 
+                  matInput 
+                  name="telefono" 
+                  [(ngModel)]="config.telefono" 
+                  placeholder="Ej: +51 987654321">
+              </mat-form-field>
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ubicación / Dirección Física</mat-label>
+                <input 
+                  matInput 
+                  name="direccion" 
+                  [(ngModel)]="config.direccion" 
+                  placeholder="Av. Principal 123, Ciudad">
+              </mat-form-field>
+            </div>
+          </div>
+
+          <h4 class="f-s-16 f-w-600 m-t-24 m-b-16">Redes Sociales</h4>
+          
+          <div class="row m-b-24">
+            <div class="col-12 col-sm-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Facebook URL</mat-label>
+                <input 
+                  matInput 
+                  name="facebook" 
+                  [(ngModel)]="config.facebook" 
+                  placeholder="https://facebook.com/empresa">
+                <mat-icon matPrefix class="m-r-8 text-primary">facebook</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <div class="col-12 col-sm-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Instagram URL</mat-label>
+                <input 
+                  matInput 
+                  name="instagram" 
+                  [(ngModel)]="config.instagram" 
+                  placeholder="https://instagram.com/empresa">
+                <mat-icon matPrefix class="m-r-8 text-danger">photo_camera</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <div class="col-12 col-sm-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>TikTok URL</mat-label>
+                <input 
+                  matInput 
+                  name="tiktok" 
+                  [(ngModel)]="config.tiktok" 
+                  placeholder="https://tiktok.com/@empresa">
+                <mat-icon matPrefix class="m-r-8 text-dark">play_circle_outline</mat-icon>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end m-t-24">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              type="submit" 
+              [disabled]="configForm.invalid || guardando"
+              class="d-flex align-items-center">
+              <mat-spinner *ngIf="guardando" diameter="18" class="m-r-8"></mat-spinner>
+              <mat-icon *ngIf="!guardando" class="m-r-8">save</mat-icon>
+              Guardar Configuración
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </form>
+  </mat-card-content>
+</mat-card>

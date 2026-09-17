@@ -1,0 +1,67 @@
+<h2 mat-dialog-title>
+  {{ isEditMode ? 'Editar Proveedor' : 'Crear Nuevo Proveedor' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Nombre del Proveedor *</mat-label>
+      <input
+        matInput
+        formControlName="nombre"
+        placeholder="Ej: Empresa XYZ, Distribuidor ABC"
+      />
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es requerido
+      </mat-error>
+      <mat-error *ngIf="form.get('nombre')?.hasError('minlength')">
+        Mínimo 2 caracteres
+      </mat-error>
+      <mat-error *ngIf="form.get('nombre')?.hasError('maxlength')">
+        Máximo 200 caracteres
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Dirección</mat-label>
+      <textarea
+        matInput
+        formControlName="direccion"
+        placeholder="Ej: Calle Principal 123, Apartamento 4B"
+        rows="3"
+      ></textarea>
+      <mat-error *ngIf="form.get('direccion')?.hasError('maxlength')">
+        Máximo 500 caracteres
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Teléfono</mat-label>
+      <input
+        matInput
+        formControlName="telefono"
+        placeholder="Ej: +1-555-0123 o 555-0123"
+      />
+      <mat-error *ngIf="form.get('telefono')?.hasError('maxlength')">
+        Máximo 50 caracteres
+      </mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="guardar()"
+    [disabled]="isSaving || !form.valid">
+    <span *ngIf="!isSaving">
+      {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+    </span>
+    <span *ngIf="isSaving" style="display: flex; align-items: center; gap: 8px;">
+      <mat-spinner diameter="16"></mat-spinner>
+      {{ isEditMode ? 'Actualizando...' : 'Guardando...' }}
+    </span>
+  </button>
+</mat-dialog-actions>

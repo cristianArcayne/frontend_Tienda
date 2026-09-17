@@ -1,0 +1,232 @@
+.suscripcion-container {
+  padding: 24px;
+
+  @media (max-width: 600px) { padding: 12px; }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      .title-icon { color: #1976d2; font-size: 26px; width: 26px; height: 26px; }
+    }
+    .header-actions { display: flex; gap: 8px; }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 24px;
+    gap: 16px;
+    color: #666;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: #9e9e9e;
+    mat-icon { font-size: 64px; width: 64px; height: 64px; margin-bottom: 16px; }
+    h3 { font-size: 18px; margin: 0 0 8px; }
+    p { margin: 0; font-size: 14px; }
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+
+    @media (max-width: 960px) { grid-template-columns: 1fr; }
+  }
+
+  .estado-card, .plan-card, .historial-card {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08) !important;
+  }
+
+  mat-card-content { padding: 24px !important; }
+
+  .card-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #9e9e9e;
+    margin-bottom: 16px;
+  }
+
+  .estado-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    .badge-icon { font-size: 10px; width: 10px; height: 10px; }
+  }
+
+  .dias-restantes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: #f0f4ff;
+    border: 1px solid #c5cae9;
+
+    .dias-numero { font-size: 28px; font-weight: 700; color: #3949ab; line-height: 1; }
+    .dias-label { font-size: 11px; color: #7986cb; }
+
+    &.dias-criticos {
+      background: #fff3e0;
+      border-color: #ffcc80;
+      .dias-numero { color: #e65100; }
+      .dias-label { color: #ff9800; }
+    }
+  }
+
+  .divider { margin: 16px 0 !important; }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    @media (max-width: 500px) { grid-template-columns: 1fr; }
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .info-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #9e9e9e;
+  }
+
+  .info-value {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+    &.plan-nombre { font-size: 15px; font-weight: 700; color: #1976d2; }
+    &.texto-critico { color: #e65100; font-weight: 700; }
+  }
+
+  .info-value-small {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .auto-renovar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    .auto-renovar-info { display: flex; flex-direction: column; gap: 2px; }
+  }
+
+  .acciones {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  // Plan card
+  .plan-nombre-grande {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+
+  .precio-row {
+    margin-bottom: 16px;
+    .precio-valor { font-size: 28px; font-weight: 700; color: #1976d2; }
+    .precio-periodo { font-size: 14px; color: #666; margin-left: 2px; }
+  }
+
+  .limites-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+
+  .limite-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    mat-icon { color: #5c6bc0; font-size: 20px; }
+    .limite-valor { font-size: 18px; font-weight: 700; color: #333; line-height: 1; }
+    .limite-label { font-size: 11px; color: #888; }
+  }
+
+  .features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .feature-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #bdbdbd;
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: #e0e0e0; }
+    &.feature-activa {
+      color: #444;
+      mat-icon { color: #43a047; }
+    }
+  }
+
+  // Historial
+  .historial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .sin-cambios {
+    color: #9e9e9e;
+    font-size: 14px;
+    text-align: center;
+    padding: 24px;
+    margin: 0;
+  }
+
+  .table-container { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    mat-header-cell { font-weight: 700; font-size: 12px; color: #555; }
+    mat-cell { font-size: 13px; }
+  }
+}

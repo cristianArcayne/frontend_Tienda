@@ -1,0 +1,100 @@
+// ── Contenedor full-screen ──────────────────────────────────────────────────
+.login-container {
+  width: 100%;
+  min-height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.login-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+}
+
+// ── Card ────────────────────────────────────────────────────────────────────
+.cardWithShadow {
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.p-32 {
+  padding: 32px;
+}
+
+// ── Igualar altura de inputs (evita que el sufijo infle el campo) ───────────
+::ng-deep mat-form-field {
+  margin-bottom: 4px;
+
+  .mat-mdc-form-field-icon-suffix .mat-mdc-icon-button {
+    --mdc-icon-button-state-layer-size: 36px;
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+
+// ── Utilidades locales ──────────────────────────────────────────────────────
+.m-t-24  { margin-top: 24px; }
+.m-t-30  { margin-top: 30px; }
+.m-t-8   { margin-top: 8px; }
+.m-b-12  { margin-bottom: 12px; }
+.m-b-24  { margin-bottom: 24px; }
+.m-l-auto { margin-left: auto; }
+.m-r-8   { margin-right: 8px; }
+
+.f-s-14  { font-size: 14px; }
+.f-w-500 { font-weight: 500; }
+.f-w-600 { font-weight: 600; }
+
+.d-block { display: block; }
+.d-flex  { display: flex; }
+.align-items-center  { align-items: center; }
+.justify-content-center { justify-content: center; }
+.w-100   { width: 100%; }
+.text-center { text-align: center; }
+.text-muted  { color: #999; }
+.text-primary { color: #667eea; }
+.cursor-pointer { cursor: pointer; }
+
+.text-decoration-none {
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+h3 {
+  font-weight: 600;
+  margin: 0;
+}
+
+::ng-deep mat-spinner circle {
+  stroke: white !important;
+}
+
+// ── Mobile (≤ 480px) ────────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px 12px;
+    align-items: flex-start;
+  }
+
+  .p-32 {
+    padding: 20px 16px;
+  }
+
+}

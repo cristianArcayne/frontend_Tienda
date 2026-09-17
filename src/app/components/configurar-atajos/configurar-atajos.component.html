@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>Atajos de Teclado</h2>
+
+<mat-dialog-content>
+  <p class="text-muted m-b-16">
+    Asigna combinaciones <strong>Alt+1</strong> a <strong>Alt+0</strong> a las páginas de la aplicación.
+    Las teclas solo funcionan para administradores y vendedores.
+  </p>
+
+  <table mat-table [dataSource]="paginas" class="w-100">
+    <ng-container matColumnDef="icono">
+      <th mat-header-cell *matHeaderCellDef class="col-icono"></th>
+      <td mat-cell *matCellDef="let pagina" class="col-icono">
+        <i *ngIf="pagina.iconName" class="icon-20" [class]="pagina.iconName"></i>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="pagina">
+      <th mat-header-cell *matHeaderCellDef>Página</th>
+      <td mat-cell *matCellDef="let pagina">{{ pagina.displayName }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="atajo">
+      <th mat-header-cell *matHeaderCellDef>Atajo</th>
+      <td mat-cell *matCellDef="let pagina">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-select
+            [value]="pagina.key"
+            (selectionChange)="onKeyChange(pagina, $event.value)"
+          >
+            <mat-option *ngFor="let opt of keyOptions" [value]="opt.value" [disabled]="opt.value !== null && isKeyOcupada(opt.value, pagina)">
+              {{ opt.label }}
+              <span *ngIf="opt.value !== null && isKeyOcupada(opt.value, pagina)" class="text-muted">
+                (ocupado)
+              </span>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="restablecer()">
+    <mat-icon>restore</mat-icon>
+    Restablecer valores
+  </button>
+  <button mat-button (click)="cerrar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()">
+    <mat-icon>save</mat-icon>
+    Guardar
+  </button>
+</mat-dialog-actions>

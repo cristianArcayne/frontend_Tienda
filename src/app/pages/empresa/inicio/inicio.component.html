@@ -1,0 +1,99 @@
+<section class="empresa-landing">
+  <mat-card class="landing-card">
+    <div class="landing-hero">
+      <h1 class="landing-title">Kreativ-Flow</h1>
+      <p class="landing-subtitle">
+        Plataforma SaaS para tiendas de muebles en linea. Gestiona catalogos,
+        ventas, clientes y reportes con una experiencia moderna y escalable.
+      </p>
+      <div class="landing-actions">
+        <button mat-raised-button color="primary" routerLink="/empresa/registro">
+          Registrar Empresa
+        </button>
+        <button mat-stroked-button color="primary" (click)="abrirLogin()">
+          Iniciar Sesion
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
+  <mat-card class="landing-card">
+    <h2 class="landing-section-title">Por que Kreativ-Flow?</h2>
+    <mat-divider></mat-divider>
+    <div class="feature-grid">
+      <mat-card class="feature-card">
+        <mat-icon>storefront</mat-icon>
+        <h3 class="feature-title">Catalogo inteligente</h3>
+        <p class="feature-text">Muestra tus muebles con fichas completas, fotos y variantes.</p>
+      </mat-card>
+      <mat-card class="feature-card">
+        <mat-icon>insights</mat-icon>
+        <h3 class="feature-title">Analitica accionable</h3>
+        <p class="feature-text">Reportes dinamicos para ventas, stock y rendimiento.</p>
+      </mat-card>
+      <mat-card class="feature-card">
+        <mat-icon>verified_user</mat-icon>
+        <h3 class="feature-title">Seguridad total</h3>
+        <p class="feature-text">Roles y permisos para controlar cada acceso.</p>
+      </mat-card>
+    </div>
+  </mat-card>
+
+  <mat-card class="landing-card">
+    <h2 class="landing-section-title">Planes disponibles</h2>
+    <mat-divider></mat-divider>
+
+    @if (isLoading) {
+      <div style="display: flex; justify-content: center; padding: 32px;">
+        <mat-spinner diameter="48"></mat-spinner>
+      </div>
+    }
+
+    @if (!isLoading && errorMessage) {
+      <div class="landing-error">{{ errorMessage }}</div>
+    }
+
+    @if (!isLoading && !errorMessage) {
+      <div class="plan-grid">
+        @for (plan of planes; track plan.id) {
+          <mat-card class="plan-card">
+            <div class="plan-header">
+              <h3 class="plan-title">{{ plan.nombre }}</h3>
+              <mat-chip-set>
+                <mat-chip>{{ plan.activo ? 'Activo' : 'Inactivo' }}</mat-chip>
+              </mat-chip-set>
+            </div>
+            <p class="plan-description">{{ plan.descripcion }}</p>
+            <div class="plan-prices">
+              <span>Mensual: {{ getPrecio(plan, 'mensual') | currency:'USD':'symbol':'1.0-0' }}</span>
+              <span>Anual: {{ getPrecio(plan, 'anual') | currency:'USD':'symbol':'1.0-0' }}</span>
+            </div>
+            <div class="plan-limits">
+              <div>
+                Limites: {{ plan.limite_usuarios }} usuarios, {{ plan.limite_productos }} productos,
+                {{ plan.limite_clientes }} clientes, {{ plan.limite_proveedores }} proveedores.
+              </div>
+            </div>
+            <div class="plan-features">
+              @if (getFeatures(plan).length === 0) {
+                <span class="plan-feature-muted">Sin features extra</span>
+              }
+              @for (feature of getFeatures(plan); track feature) {
+                <span class="plan-feature">- {{ feature }}</span>
+              }
+            </div>
+            <div class="plan-cta">
+              <button
+                mat-raised-button
+                color="primary"
+                [routerLink]="['/empresa/registro']"
+                [queryParams]="{ plan: plan.id }">
+                Seleccionar plan
+              </button>
+            </div>
+          </mat-card>
+        }
+      </div>
+    }
+  </mat-card>
+</section>

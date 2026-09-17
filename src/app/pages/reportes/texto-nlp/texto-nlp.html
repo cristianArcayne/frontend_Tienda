@@ -1,0 +1,20 @@
+<div class="nlp-container">
+  <p class="nlp-hint">Escribe en lenguaje natural qué reporte deseas ver.</p>
+  <div class="nlp-input-row">
+    <mat-form-field appearance="outline" class="nlp-input">
+      <mat-label>Ej: los 10 productos más vendidos de mayo</mat-label>
+      <textarea matInput [(ngModel)]="texto" rows="3" placeholder="Describe el reporte que necesitas..."></textarea>
+    </mat-form-field>
+  </div>
+  <div class="nlp-actions">
+    <button mat-raised-button color="primary" (click)="enviar()" [disabled]="procesando || !texto.trim()">
+      <mat-spinner *ngIf="procesando" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
+      <mat-icon *ngIf="!procesando">auto_awesome</mat-icon>
+      {{ procesando ? 'Interpretando...' : 'Interpretar y Ejecutar' }}
+    </button>
+  </div>
+  <div *ngIf="queryInterpretada" class="query-json">
+    <h4>Query interpretada:</h4>
+    <pre>{{ queryInterpretada | json }}</pre>
+  </div>
+</div>

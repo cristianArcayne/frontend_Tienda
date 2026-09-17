@@ -1,0 +1,56 @@
+.title-icon {
+  vertical-align: middle;
+  margin-right: 8px;
+  color: #2e7d32;
+}
+
+.renovar-info {
+  background: #f1f8e9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.label {
+  color: #666;
+  min-width: 60px;
+}
+
+.campo-full {
+  width: 100%;
+  display: block;
+}
+
+mat-dialog-content {
+  min-width: 360px;
+
+  @media (max-width: 480px) {
+    min-width: unset;
+  }
+}
+
+.actions-spacer {
+  height: 8px;
+  flex-shrink: 0;
+}
+
+app-renovar-dialog .mat-mdc-dialog-actions {
+  padding-top: 12px;
+}
+
+app-renovar-dialog .mat-mdc-dialog-content {
+  overflow: visible;
+  padding-bottom: 0;
+}

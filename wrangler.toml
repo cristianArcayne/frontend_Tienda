@@ -1,0 +1,7 @@
+name = "campusflow-frontend"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+account_id = "2f12b42076aba0aec88627a485b39487"
+
+[site]
+bucket = "./dist/materialm/browser"

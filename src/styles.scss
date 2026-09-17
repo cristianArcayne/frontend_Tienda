@@ -1,0 +1,35 @@
+/* You can add global styles to this file, and also import other style files */
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Ocultar barras de desplazamiento visuales globalmente */
+::-webkit-scrollbar {
+  display: none !important;
+}
+
+* {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE y Edge antiguo */
+}
+
+.snack-alerta .mdc-snackbar__surface {
+  background-color: #e65100 !important;
+  color: #fff !important;
+}
+.snack-alerta .mat-mdc-snack-bar-action {
+  color: #ffe0b2 !important;
+  font-weight: 600;
+}
+
+.dialog-acciones .mat-mdc-dialog-content {
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+}
+.dialog-acciones .mat-mdc-dialog-actions {
+  padding-top: 16px !important;
+  border-top: 1px solid #f0f0f0;
+}

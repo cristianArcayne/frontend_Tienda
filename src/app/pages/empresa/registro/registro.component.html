@@ -1,0 +1,106 @@
+<section class="empresa-registro">
+  <mat-card class="registro-card">
+    <h1 class="registro-title">Registro de Empresa</h1>
+    <p class="registro-subtitle">Completa los datos para crear tu tienda en Kreativ-Flow.</p>
+  </mat-card>
+
+  <form [formGroup]="form">
+    <mat-card class="registro-card">
+      <h2 class="registro-section-title">Selecciona tu plan</h2>
+      <mat-divider></mat-divider>
+
+    @if (isLoadingPlanes) {
+      <div style="display: flex; justify-content: center; padding: 32px;">
+        <mat-spinner diameter="48"></mat-spinner>
+      </div>
+    }
+
+    @if (!isLoadingPlanes && errorMessage) {
+      <div style="color: #c62828; padding: 16px 0;">{{ errorMessage }}</div>
+    }
+
+    @if (!isLoadingPlanes && !errorMessage) {
+      <mat-radio-group formControlName="plan" class="registro-plan-list">
+        @for (plan of planes; track plan.id) {
+          <mat-card class="registro-plan-card">
+            <label class="registro-plan-row">
+              <mat-radio-button [value]="plan.id"></mat-radio-button>
+              <div class="registro-plan-body">
+                <div class="registro-plan-header">
+                  <strong>{{ plan.nombre }}</strong>
+                  <span>
+                    {{ getPrecio(plan, form.get('ciclo')?.value || 'mensual') | currency:'USD':'symbol':'1.0-0' }}
+                    /{{ form.get('ciclo')?.value === 'anual' ? 'anio' : 'mes' }}
+                  </span>
+                </div>
+                <p class="registro-plan-text">{{ plan.descripcion }}</p>
+              </div>
+            </label>
+          </mat-card>
+        }
+      </mat-radio-group>
+    }
+
+    <div class="registro-ciclo">
+      <mat-form-field appearance="outline" class="registro-ciclo-field">
+        <mat-label>Ciclo</mat-label>
+        <mat-select formControlName="ciclo">
+          <mat-option value="mensual">Mensual</mat-option>
+          <mat-option value="anual">Anual</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <mat-card class="registro-card registro-card-spaced">
+    <h2 class="registro-section-title">Datos de la empresa</h2>
+    <mat-divider></mat-divider>
+    <div class="registro-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre de la empresa</mat-label>
+        <input matInput formControlName="nombre" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Correo de la empresa</mat-label>
+        <input matInput formControlName="correo" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Usuario admin</mat-label>
+        <input matInput formControlName="username" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email admin</mat-label>
+        <input matInput formControlName="email" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" formControlName="password" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Confirmar password</mat-label>
+        <input matInput type="password" formControlName="password_confirm" />
+      </mat-form-field>
+    </div>
+
+    <div class="registro-actions">
+      <button mat-stroked-button color="primary" routerLink="/">Volver</button>
+      <button mat-raised-button color="primary" (click)="registrarEmpresa()" [disabled]="isSubmitting">
+        @if (!isSubmitting) {
+          {{ esPlanGratis() ? 'Registrar' : 'Pagar y registrar' }}
+        }
+        @if (isSubmitting) {
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <mat-spinner diameter="16"></mat-spinner>
+            Procesando...
+          </span>
+        }
+      </button>
+    </div>
+  </mat-card>
+  </form>
+</section>

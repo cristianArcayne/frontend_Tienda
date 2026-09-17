@@ -1,0 +1,51 @@
+<div class="beneficios-container p-24">
+  <div class="page-header m-b-24">
+    <div>
+      <h1 class="f-w-600 m-b-4">Mis Beneficios</h1>
+      <p class="text-muted m-0">Tu descuento de fidelización de este mes</p>
+    </div>
+
+    <button mat-stroked-button color="primary" (click)="cargarBeneficio()" [disabled]="cargando">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  <div *ngIf="cargando" class="p-48 text-center">
+    <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+    <p class="m-t-16">Cargando tu beneficio...</p>
+  </div>
+
+  <mat-card *ngIf="!cargando && beneficio" class="beneficio-card">
+    <mat-card-content>
+      <div *ngIf="beneficio.elegible" class="estado-banner estado-elegible">
+        <mat-icon>redeem</mat-icon>
+        <span>¡Tienes un descuento de {{ beneficio.monto_descuento | currency:'BOB ':'symbol':'1.2-2' }}
+          disponible! Se aplicará automáticamente en tu próxima compra.</span>
+      </div>
+
+      <div *ngIf="!beneficio.elegible && beneficio.usado" class="estado-banner estado-usado">
+        <mat-icon>check_circle</mat-icon>
+        <span>Ya usaste tu descuento de fidelización de este mes. Vuelve a estar disponible el próximo mes.</span>
+      </div>
+
+      <div *ngIf="!beneficio.elegible && !beneficio.usado" class="estado-banner estado-progreso">
+        <mat-icon>trending_up</mat-icon>
+        <span>Te faltan {{ faltante() | currency:'BOB ':'symbol':'1.2-2' }} en compras completadas este mes
+          para desbloquear tu descuento.</span>
+      </div>
+
+      <div class="progreso-wrapper m-t-24">
+        <div class="d-flex justify-content-between">
+          <span>Acumulado este mes: <strong>{{ beneficio.acumulado | currency:'BOB ':'symbol':'1.2-2' }}</strong></span>
+          <span>Meta: <strong>{{ beneficio.monto_minimo | currency:'BOB ':'symbol':'1.2-2' }}</strong></span>
+        </div>
+        <mat-progress-bar class="m-t-8" mode="determinate" [value]="progreso()"></mat-progress-bar>
+      </div>
+
+      <p *ngIf="!beneficio.activo" class="text-muted m-t-16">
+        El programa de fidelización no está activo actualmente en esta tienda.
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>

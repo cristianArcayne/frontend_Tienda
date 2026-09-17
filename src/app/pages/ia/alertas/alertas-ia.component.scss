@@ -1,0 +1,192 @@
+.alertas-container {
+  padding: 24px;
+
+  @media (max-width: 600px) {
+    padding: 12px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    @media (max-width: 960px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .header-left {
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 4px;
+        font-size: 22px;
+        font-weight: 600;
+
+        .title-icon {
+          color: #f57c00;
+          font-size: 26px;
+          width: 26px;
+          height: 26px;
+        }
+
+        .no-leidas-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 22px;
+          height: 22px;
+          padding: 0 6px;
+          border-radius: 11px;
+          background: #d32f2f;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 700;
+          line-height: 1;
+        }
+      }
+
+      .subtitle {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      @media (max-width: 960px) {
+        width: 100%;
+      }
+    }
+  }
+
+  .filters-card {
+    margin-bottom: 20px;
+
+    mat-card-content {
+      padding: 16px !important;
+    }
+
+    .filters-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+
+      mat-form-field {
+        width: 200px;
+
+        @media (max-width: 600px) {
+          flex: 1 1 150px;
+        }
+      }
+
+      .result-count {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #666;
+
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      }
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 24px;
+    gap: 16px;
+    color: #666;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 24px;
+    gap: 12px;
+    color: #bdbdbd;
+
+    mat-icon { font-size: 52px; width: 52px; height: 52px; }
+    p { margin: 0; font-size: 15px; }
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    padding: 0 !important;
+
+    table {
+      width: 100%;
+    }
+  }
+
+  // Row states
+  .row-leida {
+    opacity: 0.55;
+  }
+
+  .row-no-leida {
+    background: #fff;
+  }
+
+  // Tipo chips
+  .tipo-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &.chip-danger {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ef9a9a;
+    }
+
+    &.chip-warning {
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffcc80;
+    }
+  }
+
+  .sku-code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #37474f;
+  }
+
+  .stock-critico {
+    color: #d32f2f;
+    font-weight: 700;
+  }
+
+  .deficit-val {
+    color: #d32f2f;
+    font-weight: 600;
+  }
+
+  .icon-leida {
+    color: #bdbdbd;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    vertical-align: middle;
+  }
+}

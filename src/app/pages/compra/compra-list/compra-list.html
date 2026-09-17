@@ -1,0 +1,82 @@
+<mat-card>
+  <mat-card-header>
+    <div class="page-header">
+      <mat-card-title>Gestión de Compras</mat-card-title>
+      <button
+        *ngIf="puedeCrear"
+        mat-raised-button
+        color="primary"
+        (click)="nuevaCompra()">
+        <mat-icon class="m-r-8">add</mat-icon>
+        Registrar Compra
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="!puedeVer" class="empty-state">
+      <mat-icon class="empty-icon">lock</mat-icon>
+      <p class="empty-text">No tienes permiso para acceder a esta sección</p>
+    </div>
+
+    <div *ngIf="puedeVer && isLoading" class="d-flex justify-content-center p-y-40">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <div *ngIf="puedeVer && !isLoading && dataSource.length > 0" class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-full">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let element">{{ element.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="proveedor">
+          <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+          <td mat-cell *matCellDef="let element">{{ element.proveedor_nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let element">{{ element.total | currency:'BOB' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              mat-icon-button
+              matTooltip="Ver detalle"
+              (click)="verDetalle(element)"
+              color="primary">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+
+    <div *ngIf="puedeVer && !isLoading && dataSource.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">receipt</mat-icon>
+      <p class="empty-text">No hay compras registradas</p>
+      <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="nuevaCompra()">
+        Registrar primera compra
+      </button>
+    </div>
+
+    <mat-paginator
+      *ngIf="puedeVer && dataSource.length > 0"
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      hidePageSize="true"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

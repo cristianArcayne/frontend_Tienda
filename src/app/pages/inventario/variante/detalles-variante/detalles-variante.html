@@ -1,0 +1,44 @@
+<h2 mat-dialog-title>
+  <mat-icon style="vertical-align: middle; margin-right: 8px;">info</mat-icon>
+  Detalles de Variante
+</h2>
+
+<mat-dialog-content>
+  <div style="display: grid; gap: 16px; margin-top: 12px;">
+    <div>
+      <strong>SKU:</strong>
+      <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.sku }}</p>
+    </div>
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 150px;">
+        <strong>Precio:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.precio | currency:'USD' }}</p>
+      </div>
+      <div *ngIf="!data.ocultarCostos" style="flex: 1; min-width: 150px;">
+        <strong>Costo Ponderado:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.costo_ponderado | currency:'USD' }}</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 150px;">
+        <strong>Cantidad:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.cantidad }}</p>
+      </div>
+      <div *ngIf="!data.ocultarCostos" style="flex: 1; min-width: 150px;">
+        <strong>Límite de Cantidad:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.limite_cantidad }}</p>
+      </div>
+    </div>
+
+    <div>
+      <strong>Producto:</strong>
+      <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.producto_nombre }}</p>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

@@ -1,0 +1,166 @@
+<div class="qbe-container">
+  <div *ngIf="!vistas.length" class="empty-state">
+    <mat-spinner diameter="30"></mat-spinner>
+    <p class="empty-text">Cargando vistas disponibles...</p>
+  </div>
+
+  <div *ngIf="vistas.length" class="ganancias-panel">
+    <h3>Ganancias del Mes</h3>
+    <div class="ganancias-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Mes</mat-label>
+        <mat-select [(ngModel)]="gananciasMes">
+          <mat-option *ngFor="let m of meses" [value]="m.valor">{{ m.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Agrupar por</mat-label>
+        <mat-select [(ngModel)]="gananciasGroupBy">
+          <mat-option *ngFor="let g of groupByOptions" [value]="g.valor">{{ g.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button color="accent" (click)="generarGanancias()" [disabled]="gananciasCargando">
+        <mat-spinner *ngIf="gananciasCargando" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
+        <mat-icon *ngIf="!gananciasCargando">trending_up</mat-icon>
+        Generar
+      </button>
+    </div>
+  </div>
+
+  <mat-divider *ngIf="vistas.length" class="m-y-16"></mat-divider>
+
+  <form *ngIf="vistas.length" [formGroup]="form" class="qbe-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Vista Lógica</mat-label>
+      <mat-select formControlName="vista_logica" (selectionChange)="onVistaChange()">
+        <mat-option *ngFor="let v of vistas" [value]="v.nombre">
+          {{ v.etiqueta }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div *ngIf="vistaSeleccionada" class="qbe-section">
+      <h3>Filtros</h3>
+      <div formArrayName="filtros">
+        <div *ngFor="let f of filtros.controls; let i = index" [formGroupName]="i" class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Campo</mat-label>
+            <mat-select formControlName="campo">
+              <mat-option *ngFor="let c of camposDisponibles" [value]="c.nombre">{{ c.etiqueta }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Operador</mat-label>
+            <mat-select formControlName="operador">
+              <mat-option *ngFor="let op of getOperadoresParaFiltro(f)" [value]="op">{{ traducirOperador(op) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Valor</mat-label>
+            <input matInput formControlName="valor" />
+          </mat-form-field>
+          <button mat-icon-button color="warn" (click)="removerFiltro(i)" type="button"><mat-icon>close</mat-icon></button>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="agregarFiltro()" type="button" class="m-b-16">
+        <mat-icon>add</mat-icon> Agregar Filtro
+      </button>
+    </div>
+
+    <div *ngIf="vistaSeleccionada" class="qbe-section">
+      <h3>Agrupación y Métricas</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Agrupar por</mat-label>
+        <mat-select formControlName="agrupar_por" multiple>
+          <mat-option *ngFor="let c of camposAgrupables" [value]="c.nombre">{{ c.etiqueta }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div formArrayName="metricas">
+        <div *ngFor="let m of metricas.controls; let i = index" [formGroupName]="i" class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Campo</mat-label>
+            <mat-select formControlName="campo">
+              <mat-option *ngFor="let c of camposAgregables" [value]="c.nombre">{{ c.etiqueta }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Operación</mat-label>
+            <mat-select formControlName="operacion">
+              <mat-option value="sum">Suma</mat-option>
+              <mat-option value="count">Conteo</mat-option>
+              <mat-option value="avg">Promedio</mat-option>
+              <mat-option value="min">Mínimo</mat-option>
+              <mat-option value="max">Máximo</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Alias</mat-label>
+            <input matInput formControlName="alias" />
+          </mat-form-field>
+          <button mat-icon-button color="warn" (click)="removerMetrica(i)" type="button"><mat-icon>close</mat-icon></button>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="agregarMetrica()" type="button" class="m-b-16">
+        <mat-icon>add</mat-icon> Agregar Métrica
+      </button>
+    </div>
+
+    <div *ngIf="vistaSeleccionada" class="qbe-section">
+      <h3>Having</h3>
+      <div formArrayName="filtros_having">
+        <div *ngFor="let h of filtrosHaving.controls; let i = index" [formGroupName]="i" class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Alias</mat-label>
+            <input matInput formControlName="alias" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Operador</mat-label>
+            <mat-select formControlName="operador">
+              <mat-option value="gte">>=</mat-option>
+              <mat-option value="lte">&lt;=</mat-option>
+              <mat-option value="gt">&gt;</mat-option>
+              <mat-option value="lt">&lt;</mat-option>
+              <mat-option value="exact">=</mat-option>
+              <mat-option value="neq">!=</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Valor</mat-label>
+            <input matInput formControlName="valor" />
+          </mat-form-field>
+          <button mat-icon-button color="warn" (click)="removerHaving(i)" type="button"><mat-icon>close</mat-icon></button>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="agregarHaving()" type="button" class="m-b-16">
+        <mat-icon>add</mat-icon> Agregar Having
+      </button>
+    </div>
+
+    <div *ngIf="vistaSeleccionada" class="qbe-section">
+      <h3>Orden y Paginación</h3>
+      <div class="orden-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Ordenar por</mat-label>
+          <input matInput formControlName="ordenar_por" placeholder="-campo o campo" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Página</mat-label>
+          <input matInput type="number" formControlName="pagina" min="1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Por página</mat-label>
+          <input matInput type="number" formControlName="cantidad_por_pagina" min="1" max="200" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="qbe-actions">
+      <button mat-raised-button color="primary" (click)="enviarQBE()" [disabled]="isLoading || !vistaSeleccionada" type="button">
+        <mat-spinner *ngIf="isLoading" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
+        <mat-icon *ngIf="!isLoading">play_arrow</mat-icon>
+        Ejecutar
+      </button>
+    </div>
+  </form>
+</div>

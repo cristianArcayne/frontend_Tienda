@@ -1,0 +1,416 @@
+<div style="padding: 16px;">
+  <button mat-button (click)="volver()" style="margin-bottom: 16px;">
+    <mat-icon>arrow_back</mat-icon>
+    {{ isCliente ? 'Volver al Catalogo' : 'Volver a Productos' }}
+  </button>
+
+  <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <div *ngIf="!isLoading && producto">
+    <mat-card>
+      <mat-card-header>
+        <div class="page-header">
+          <mat-card-title>Detalles del Producto</mat-card-title>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+          <!-- Imagen Principal -->
+          <div style="flex: 0 0 250px;">
+            <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px; text-align: center; min-height: 250px; display: flex; align-items: center; justify-content: center; background: #f5f5f5;">
+              <img *ngIf="getImagenSeleccionadaUrl()"
+                   [src]="getImagenSeleccionadaUrl()"
+                   [alt]="producto.nombre"
+                   (click)="abrirLightbox(imagenSeleccionadaIndex)"
+                   style="max-width: 100%; max-height: 234px; object-fit: contain; border-radius: 4px; cursor: zoom-in;">
+              <mat-icon *ngIf="!getImagenSeleccionadaUrl()"
+                       style="font-size: 64px; width: 64px; height: 64px; color: #ccc;">
+                image
+              </mat-icon>
+            </div>
+            <div *ngIf="producto.imagenes && producto.imagenes.length > 1" style="display: flex; justify-content: center; gap: 8px; margin-top: 8px;">
+              <button mat-icon-button (click)="anteriorImagen()" aria-label="Imagen anterior">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <button mat-icon-button (click)="siguienteImagen()" aria-label="Imagen siguiente">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Datos del Producto -->
+          <div style="flex: 1; min-width: 300px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 16px 0;">
+              <h3 style="margin: 0; color: #1976d2;">{{ producto.nombre }}</h3>
+              <button mat-icon-button (click)="toggleFavorito()"
+                [matTooltip]="esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                [style.color]="esFavorito ? '#e91e63' : '#666'">
+                <mat-icon>{{ esFavorito ? 'favorite' : 'favorite_border' }}</mat-icon>
+              </button>
+            </div>
+
+            <div style="display: grid; gap: 12px;">
+              <div>
+                <strong>ID:</strong> {{ producto.id }}
+              </div>
+              <div>
+                <strong>Descripción:</strong> {{ producto.descripcion || 'Sin descripción' }}
+              </div>
+              <div>
+                <strong>Activo:</strong>
+                <span [style.color]="producto.activo ? '#4caf50' : '#f44336'">
+                  {{ producto.activo ? 'Sí' : 'No' }}
+                </span>
+              </div>
+              <div>
+                <strong>Categoría:</strong> {{ producto.categoria_nombre }}
+              </div>
+              <div>
+                <strong>Marca:</strong> {{ producto.marca_nombre }}
+              </div>
+            </div>
+
+            <!-- Sección de Imágenes -->
+            <div style="margin-top: 24px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <strong>Imágenes del producto:</strong>
+                <button *ngIf="modelo3dDisponible" mat-stroked-button color="primary" (click)="abrirModelo3d()">
+                  <mat-icon style="margin-right: 6px;">view_in_ar</mat-icon>
+                  Ver 3D
+                </button>
+              </div>
+
+              <div *ngIf="!isCliente" style="margin-top: 12px; padding: 16px; border: 2px dashed #ccc; border-radius: 8px; text-align: center;">
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-bottom: 12px;">
+                  <label style="font-weight: 600;">Tipo de multimedio</label>
+                  <select [(ngModel)]="tipoMultimedia"
+                          style="min-width: 220px; padding: 8px 12px; border-radius: 6px; border: 1px solid #cfd3d7;">
+                    <option value="imagen">Imagen</option>
+                    <option value="video">Video</option>
+                    <option value="realidad_aumentada">Realidad Aumentada</option>
+                  </select>
+                </div>
+                <input type="file"
+                       id="fileInput"
+                    [attr.accept]="tipoMultimedia === 'video' ? 'video/*' : (tipoMultimedia === 'imagen' ? 'image/*' : (tipoMultimedia === 'realidad_aumentada' ? '.glb,.gltf' : null))"
+                       (change)="onFileSelected($event)"
+                       style="display: none;">
+
+                <div *ngIf="!archivoSeleccionado && !previewUrl">
+                  <label for="fileInput" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #1976d2; color: white; border-radius: 4px;">
+                    <mat-icon>cloud_upload</mat-icon>
+                    {{ tipoMultimedia === 'realidad_aumentada' ? 'Seleccionar archivo 3D' : (tipoMultimedia === 'video' ? 'Seleccionar video' : 'Seleccionar imagen') }}
+                  </label>
+                  <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
+                    {{ tipoMultimedia === 'video' ? 'MP4, WebM (máx 50MB)' : (tipoMultimedia === 'realidad_aumentada' ? 'Archivo AR (máx 50MB)' : 'JPEG, PNG, WebP (máx 5MB)') }}
+                  </p>
+                </div>
+
+                <div *ngIf="previewUrl" style="position: relative; display: inline-block;">
+                  <img *ngIf="tipoMultimedia === 'imagen'"
+                       [src]="previewUrl"
+                       alt="Preview"
+                       style="max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 4px;">
+                  <video *ngIf="tipoMultimedia === 'video'"
+                         [src]="previewUrl"
+                         style="max-width: 150px; max-height: 150px; border-radius: 4px;"
+                         controls>
+                  </video>
+                  <model-viewer *ngIf="tipoMultimedia === 'realidad_aumentada'"
+                                [attr.src]="previewUrl"
+                                camera-controls
+                                ar
+                                ar-modes="webxr scene-viewer quick-look"
+                                shadow-intensity="1"
+                                style="width: 180px; height: 150px; background: #f3f4f6; border-radius: 4px;">
+                  </model-viewer>
+                  <button mat-icon-button
+                          (click)="cancelarSeleccion()"
+                          style="position: absolute; top: -8px; right: -8px; background: white;">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+
+                <div *ngIf="archivoSeleccionado" style="margin-top: 12px;">
+                  <button mat-raised-button
+                          color="primary"
+                          (click)="agregarImagen()"
+                          [disabled]="isSaving">
+                    <span *ngIf="!isSaving">
+                      <mat-icon>cloud_upload</mat-icon>
+                      {{ tipoMultimedia === 'realidad_aumentada' ? 'Subir archivo 3D' : (tipoMultimedia === 'video' ? 'Subir video' : 'Subir archivo') }}
+                    </span>
+                    <span *ngIf="isSaving">
+                      <mat-spinner diameter="20"></mat-spinner>
+                      Subiendo...
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Galería de imágenes -->
+              <div *ngIf="producto.imagenes && producto.imagenes.length > 0" style="margin-top: 16px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                     <div *ngFor="let img of producto.imagenes; let i = index"
+                       [style.border-color]="!isCliente && img.es_principal ? '#1976d2' : '#e0e0e0'"
+                       [style.box-shadow]="i === imagenSeleccionadaIndex ? '0 0 0 2px #1976d2' : 'none'"
+                       (click)="abrirLightbox(i)"
+                       style="position: relative; border: 2px solid; border-radius: 4px; padding: 6px; background: white; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;">
+                    <img [src]="img.archivo_url"
+                      alt="Imagen"
+                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 2px; display: block;">
+                    <mat-icon *ngIf="img.es_principal && !isCliente"
+                            style="position: absolute; top: -8px; right: -8px; font-size: 18px; width: 18px; height: 18px; background: #4caf50; color: white; border-radius: 50%; padding: 2px;">
+                      check
+                    </mat-icon>
+                    <div *ngIf="!isCliente" style="display: flex; gap: 8px; justify-content: center; width: 100%;">
+                      <button mat-icon-button
+                              matTooltip="Establecer como principal"
+                              matTooltipPosition="above"
+                              (click)="establecerPrincipal(img)"
+                              [disabled]="img.es_principal || isSaving"
+                              style="width: 30px; height: 30px; padding: 0; line-height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                        <mat-icon style="font-size: 18px; width: 18px; height: 18px;">star</mat-icon>
+                      </button>
+                      <button mat-icon-button
+                              matTooltip="Eliminar imagen"
+                              matTooltipPosition="above"
+                              (click)="eliminarImagen(img)"
+                              [disabled]="isSaving"
+                              color="warn"
+                              style="width: 30px; height: 30px; padding: 0; line-height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                        <mat-icon style="font-size: 18px; width: 18px; height: 18px;">delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="!producto.imagenes || producto.imagenes.length === 0" style="margin-top: 16px; padding: 16px; background: #f5f5f5; border-radius: 4px; text-align: center;">
+                <mat-icon style="font-size: 32px; width: 32px; height: 32px; color: #ccc;">image</mat-icon>
+                <p style="color: #999; margin: 8px 0 0 0;">No hay imágenes. Sube una usando el botón de arriba.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sección de Recomendados -->
+    <mat-card *ngIf="productosRecomendados.length > 0" style="margin-top: 16px;">
+      <mat-card-header>
+        <mat-card-title>Productos Recomendados</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="recomendados-scroll">
+          <div *ngFor="let rec of productosRecomendados"
+               class="recomendado-card"
+               [routerLink]="['/inventario/productos', rec.id]">
+            <div class="recomendado-img">
+              <img *ngIf="rec.imagen_principal"
+                   [src]="rec.imagen_principal"
+                   [alt]="rec.nombre">
+              <mat-icon *ngIf="!rec.imagen_principal">image</mat-icon>
+            </div>
+            <div class="recomendado-info">
+              <div class="recomendado-nombre" [title]="rec.nombre">{{ rec.nombre }}</div>
+              <div class="recomendado-precio">Desde {{ rec.precio_minimo | currency:'BOB' }}</div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sección de Variantes -->
+    <mat-card style="margin-top: 16px;">
+      <mat-card-header>
+        <div class="page-header">
+          <mat-card-title>Variantes del Producto</mat-card-title>
+          <button *ngIf="permisosService.puedeCrearVariante()" mat-raised-button color="primary" (click)="crearVariante()">
+            <mat-icon class="m-r-8">add</mat-icon>
+            Agregar Variante
+          </button>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div *ngIf="isLoadingVariantes" class="d-flex justify-content-center p-y-40">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="!isLoadingVariantes && permisosService.puedeVerVariante() && variantes.length > 0" class="table-responsive">
+          <table mat-table [dataSource]="variantes" class="w-full">
+            <ng-container matColumnDef="sku">
+              <th mat-header-cell *matHeaderCellDef>SKU</th>
+              <td mat-cell *matCellDef="let element">{{ element.sku }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="precio">
+              <th mat-header-cell *matHeaderCellDef>Precio</th>
+              <td mat-cell *matCellDef="let element">{{ element.precio | currency:'USD' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="cantidad">
+              <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+              <td mat-cell *matCellDef="let element">{{ element.cantidad }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="costo_ponderado">
+              <th mat-header-cell *matHeaderCellDef>Costo Prom.</th>
+              <td mat-cell *matCellDef="let element">{{ element.costo_ponderado | currency:'USD' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="limite_cantidad">
+              <th mat-header-cell *matHeaderCellDef>Límite</th>
+              <td mat-cell *matCellDef="let element">{{ element.limite_cantidad }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let element">
+                <button mat-icon-button color="primary" matTooltip="Agregar al carrito" (click)="agregarAlCarrito(element)" [disabled]="element.cantidad <= 0">
+                  <mat-icon>add_shopping_cart</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Ver" (click)="verVariante(element)" color="accent">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button *ngIf="permisosService.puedeEditarVariante()" mat-icon-button matTooltip="Editar" (click)="editarVariante(element)" color="primary">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button *ngIf="permisosService.puedeEliminarVariante()" mat-icon-button matTooltip="Eliminar" (click)="eliminarVariante(element)" color="warn">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumnsVariante; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnsVariante;"></tr>
+          </table>
+        </div>
+
+        <div *ngIf="!isLoadingVariantes && permisosService.puedeVerVariante() && variantes.length === 0" class="empty-state">
+          <mat-icon class="empty-icon">info</mat-icon>
+          <p class="empty-text">Este producto no tiene variantes</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sección de Reseñas -->
+    <mat-card style="margin-top: 16px;">
+      <mat-card-header>
+        <mat-card-title>
+          Reseñas
+          <span *ngIf="resenas.length > 0" style="font-size: 14px; color: #666; font-weight: 400; margin-left: 8px;">
+            ({{ resenas.length }})
+            <span *ngFor="let e of getEstrellas(calificacionPromedio || 0)" style="color: #f59e0b; font-size: 18px;">
+              <mat-icon style="font-size: 18px; width: 18px; height: 18px; vertical-align: middle;">{{ e }}</mat-icon>
+            </span>
+            {{ calificacionPromedio }}/5
+          </span>
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div *ngIf="isLoadingResenas" style="text-align: center; padding: 16px;">
+          <mat-spinner diameter="32" style="margin: 0 auto;"></mat-spinner>
+        </div>
+
+        <!-- Mi reseña (si ya existe y no está en edición) -->
+        <div *ngIf="!isLoadingResenas && miResena && !editandoResena"
+             style="margin-bottom: 16px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #1976d2;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong>Tu reseña</strong>
+              <div style="margin: 4px 0;">
+                <span *ngFor="let e of getEstrellas(miResena.calificacion)" style="color: #f59e0b;">
+                  <mat-icon style="font-size: 20px; width: 20px; height: 20px; vertical-align: middle;">{{ e }}</mat-icon>
+                </span>
+              </div>
+              <p style="margin: 4px 0 0 0; color: #333;">{{ miResena.comentario || 'Sin comentario' }}</p>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button mat-icon-button matTooltip="Editar" color="primary" (click)="iniciarEdicion()" [disabled]="guardandoResena">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Eliminar" color="warn" (click)="eliminarResena()" [disabled]="guardandoResena">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editar mi reseña -->
+        <div *ngIf="!isLoadingResenas && editandoResena"
+             style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+          <strong>Editar tu reseña</strong>
+          <div style="margin: 8px 0;">
+            <span *ngFor="let i of [1,2,3,4,5]"
+                  (click)="setEditCalificacion(i)"
+                  style="cursor: pointer; color: #f59e0b; font-size: 28px;">
+              <mat-icon style="font-size: 28px; width: 28px; height: 28px; vertical-align: middle;">
+                {{ i <= editCalificacion ? 'star' : 'star_border' }}
+              </mat-icon>
+            </span>
+          </div>
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>Comentario (opcional)</mat-label>
+            <textarea matInput [(ngModel)]="editComentario" rows="3"></textarea>
+          </mat-form-field>
+          <div style="display: flex; gap: 8px;">
+            <button mat-raised-button color="primary" (click)="guardarEdicion()" [disabled]="guardandoResena || editCalificacion < 1">
+              Guardar
+            </button>
+            <button mat-stroked-button (click)="cancelarEdicion()" [disabled]="guardandoResena">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulario nueva reseña (solo cliente sin reseña previa) -->
+        <div *ngIf="!isLoadingResenas && isCliente && !miResena && !editandoResena"
+             style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+          <strong>Deja tu reseña</strong>
+          <div style="margin: 8px 0;">
+            <span *ngFor="let i of [1,2,3,4,5]"
+                  (click)="setNuevaCalificacion(i)"
+                  style="cursor: pointer; color: #f59e0b; font-size: 28px;">
+              <mat-icon style="font-size: 28px; width: 28px; height: 28px; vertical-align: middle;">
+                {{ i <= nuevaCalificacion ? 'star' : 'star_border' }}
+              </mat-icon>
+            </span>
+          </div>
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>Comentario (opcional)</mat-label>
+            <textarea matInput [(ngModel)]="nuevoComentario" rows="3"></textarea>
+          </mat-form-field>
+          <button mat-raised-button color="primary" (click)="enviarResena()" [disabled]="guardandoResena || nuevaCalificacion < 1">
+            Enviar reseña
+          </button>
+        </div>
+
+        <!-- Sin reseñas -->
+        <div *ngIf="!isLoadingResenas && resenas.length === 0" style="color: #999; padding: 8px 0;">
+          Aún no hay reseñas para este producto.
+        </div>
+
+        <!-- Lista de reseñas de otros usuarios -->
+        <div *ngFor="let resena of resenas"
+             [style.display]="resena.id === miResena?.id ? 'none' : 'block'"
+             style="padding: 12px 0; border-bottom: 1px solid #eee;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <strong>{{ resena.usuario_username }}</strong>
+            <span *ngFor="let e of getEstrellas(resena.calificacion)" style="color: #f59e0b;">
+              <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">{{ e }}</mat-icon>
+            </span>
+            <span style="font-size: 12px; color: #999;">{{ resena.fecha_creacion | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <p style="margin: 0; color: #555;">{{ resena.comentario || 'Sin comentario' }}</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

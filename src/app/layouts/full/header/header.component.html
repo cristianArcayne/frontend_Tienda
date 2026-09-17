@@ -1,0 +1,62 @@
+<mat-toolbar class="topbar">
+  <button mat-icon-button aria-label="Toggle Menu" (click)="toggleMobileNav.emit()" 
+    class="d-flex justify-content-center">
+    <i class="iconify icon-20" data-icon="solar:hamburger-menu-line-duotone"></i>
+  </button>
+
+  <!-- Spacer para empujar el menú de usuario a la derecha -->
+  <span class="spacer"></span>
+
+  <!-- Alertas IA -->
+  <button mat-icon-button routerLink="/ia/alertas" matTooltip="Alertas de Reabastecimiento IA" class="m-r-8"
+          *ngIf="!esCliente()">
+    <mat-icon
+      [matBadge]="conteoAlertasNoLeidas()"
+      matBadgeColor="warn"
+      [matBadgeHidden]="conteoAlertasNoLeidas() === 0">
+      notifications
+    </mat-icon>
+  </button>
+
+  <!-- Favoritos -->
+  <button mat-icon-button routerLink="/favoritos" matTooltip="Mis Favoritos" class="m-r-8">
+    <mat-icon [matBadge]="favoritosService.obtenerCantidadItems()" matBadgeColor="warn" [matBadgeHidden]="favoritosService.obtenerCantidadItems() === 0">favorite</mat-icon>
+  </button>
+
+  <!-- Carrito de Compras -->
+  <button mat-icon-button routerLink="/extra/carrito" matTooltip="Ver Carrito" class="m-r-8">
+    <mat-icon [matBadge]="cartService.obtenerCantidadItems()" matBadgeColor="warn" [matBadgeHidden]="cartService.obtenerCantidadItems() === 0">shopping_cart</mat-icon>
+  </button>
+
+  <!-- Menú de Usuario -->
+
+  <button 
+    mat-button 
+    [matMenuTriggerFor]="userMenu"
+    class="user-menu-button">
+    <mat-icon>account_circle</mat-icon>
+    <span class="username-text">{{ currentUsername }}</span>
+    <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+
+  <!-- Menú Desplegable -->
+  <mat-menu #userMenu="matMenu">
+    <button mat-menu-item>
+      <mat-icon>person</mat-icon>
+      <span>Mi Perfil</span>
+    </button>
+    <button mat-menu-item>
+      <mat-icon>settings</mat-icon>
+      <span>Configuración</span>
+    </button>
+    <button mat-menu-item *ngIf="!esCliente()" (click)="abrirConfigAtajos()">
+      <mat-icon>keyboard</mat-icon>
+      <span>Atajos de Teclado</span>
+    </button>
+    <mat-divider></mat-divider>
+    <button mat-menu-item (click)="cerrarSesion()" class="logout-button">
+      <mat-icon>logout</mat-icon>
+      <span>Cerrar Sesión</span>
+    </button>
+  </mat-menu>
+</mat-toolbar>

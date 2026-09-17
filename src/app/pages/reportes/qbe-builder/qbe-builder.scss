@@ -1,0 +1,24 @@
+.qbe-container { padding: 16px 0; }
+.qbe-form { display: flex; flex-direction: column; gap: 8px; }
+.full-width { width: 100%; }
+.qbe-section { margin: 16px 0; }
+.qbe-section h3 { margin: 0 0 12px 0; font-weight: 500; color: #333; font-size: 15px; }
+.filtro-row { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.filtro-row mat-form-field { flex: 1; min-width: 150px; }
+.m-b-16 { margin-bottom: 16px; }
+.m-y-16 { margin: 16px 0; }
+.orden-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.qbe-actions { margin-top: 16px; }
+.ganancias-panel { background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 16px; margin-bottom: 8px; }
+.ganancias-panel h3 { margin: 0 0 12px 0; font-weight: 500; color: #e65100; font-size: 15px; }
+.ganancias-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.ganancias-row mat-form-field { flex: 1; min-width: 140px; }
+.ganancias-row button { height: 56px; white-space: nowrap; }
+@media (max-width: 768px) {
+  .filtro-row { flex-direction: column; }
+  .filtro-row mat-form-field { width: 100%; }
+  .orden-grid { grid-template-columns: 1fr; }
+  .ganancias-row { flex-direction: column; }
+  .ganancias-row mat-form-field { width: 100%; }
+  .ganancias-row button { width: 100%; }
+}

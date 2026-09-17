@@ -1,0 +1,238 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Procesar Pago</h2>
+    <button mat-icon-button (click)="cancelar()" aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div mat-dialog-content class="dialog-content">
+    <div class="total-banner p-16 m-b-16 text-center">
+      <span class="total-label">Total a Pagar:</span>
+      <h2 class="total-amount m-t-4">S/ {{ data.total | number:'1.2-2' }}</h2>
+    </div>
+
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" class="payment-tabs">
+      
+      <!-- PAGO EN EFECTIVO -->
+      <mat-tab label="Efectivo">
+        <div class="tab-content p-t-16">
+          <p class="instruction-text">Ingrese el monto entregado por el cliente para calcular el vuelto.</p>
+          
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Monto Entregado (Billete)</mat-label>
+            <input 
+              matInput 
+              type="number" 
+              [(ngModel)]="efectivoEntregado" 
+              (ngModelChange)="calcularVuelto()"
+              placeholder="Ej: 100" 
+              min="0">
+            <span matPrefix class="m-r-4">S/</span>
+          </mat-form-field>
+
+          <div class="vuelto-box p-16 m-b-16" [class.insufficient]="!efectivoSuficiente && efectivoEntregado > 0">
+            <div class="row">
+              <div class="col-6">
+                <span class="box-label">Cambio / Vuelto:</span>
+              </div>
+              <div class="col-6 text-right">
+                <strong class="box-value">S/ {{ vuelto | number:'1.2-2' }}</strong>
+              </div>
+            </div>
+            <p *ngIf="!efectivoSuficiente && efectivoEntregado > 0" class="error-text m-t-8">
+              El monto entregado es menor al total a pagar.
+            </p>
+          </div>
+
+          <div class="action-buttons m-t-16">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              class="w-full py-12"
+              [disabled]="!efectivoSuficiente || efectivoEntregado <= 0"
+              (click)="confirmarPago('efectivo')">
+              Confirmar Pago en Efectivo
+            </button>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- PAGO POR QR -->
+      <mat-tab label="Pago QR">
+        <div class="tab-content p-t-16 text-center">
+          <p class="instruction-text">Escanee el código QR con su aplicación bancaria y suba el comprobante.</p>
+          
+          <!-- QR Mockup -->
+          <div class="qr-container m-b-16 d-flex justify-content-center">
+            <div class="qr-box p-8">
+              <!-- SVG Mockup of QR Code -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="120" height="120" style="display:block;">
+                <rect width="100" height="100" fill="#fff"/>
+                <!-- Square corner 1 -->
+                <rect x="10" y="10" width="20" height="20" fill="#333"/>
+                <rect x="13" y="13" width="14" height="14" fill="#fff"/>
+                <rect x="16" y="16" width="8" height="8" fill="#333"/>
+                <!-- Square corner 2 -->
+                <rect x="70" y="10" width="20" height="20" fill="#333"/>
+                <rect x="73" y="13" width="14" height="14" fill="#fff"/>
+                <rect x="76" y="16" width="8" height="8" fill="#333"/>
+                <!-- Square corner 3 -->
+                <rect x="10" y="70" width="20" height="20" fill="#333"/>
+                <rect x="13" y="73" width="14" height="14" fill="#fff"/>
+                <rect x="16" y="76" width="8" height="8" fill="#333"/>
+                <!-- Random QR pixels -->
+                <rect x="35" y="15" width="5" height="5" fill="#333"/>
+                <rect x="45" y="10" width="10" height="5" fill="#333"/>
+                <rect x="60" y="25" width="5" height="5" fill="#333"/>
+                <rect x="35" y="30" width="10" height="10" fill="#333"/>
+                <rect x="50" y="35" width="5" height="5" fill="#333"/>
+                <rect x="25" y="45" width="5" height="5" fill="#333"/>
+                <rect x="15" y="55" width="5" height="5" fill="#333"/>
+                <rect x="40" y="50" width="15" height="5" fill="#333"/>
+                <rect x="60" y="45" width="5" height="15" fill="#333"/>
+                <rect x="75" y="45" width="10" height="5" fill="#333"/>
+                <rect x="35" y="65" width="5" height="10" fill="#333"/>
+                <rect x="45" y="75" width="10" height="5" fill="#333"/>
+                <rect x="65" y="70" width="5" height="5" fill="#333"/>
+                <rect x="70" y="80" width="15" height="10" fill="#333"/>
+                <rect x="90" y="70" width="5" height="5" fill="#333"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- File Upload -->
+          <div class="file-uploader m-b-16">
+            <input 
+              type="file" 
+              #fileInput 
+              accept="image/*" 
+              class="hidden-input" 
+              (change)="onFileSelected($event)">
+            
+            <button 
+              mat-stroked-button 
+              color="primary" 
+              type="button" 
+              class="w-full py-8"
+              [disabled]="qrCargando || qrVerificado"
+              (click)="fileInput.click()">
+              <mat-icon>cloud_upload</mat-icon>
+              {{ qrComprobanteNombre || 'Subir Comprobante de Pago' }}
+            </button>
+            <p *ngIf="qrComprobanteNombre" class="selected-file-text m-t-4">
+              Archivo seleccionado: {{ qrComprobanteNombre }}
+            </p>
+          </div>
+
+          <!-- QR Verification Actions -->
+          <div *ngIf="qrComprobanteNombre && !qrVerificado" class="verification-box m-b-16">
+            <button 
+              mat-raised-button 
+              color="accent" 
+              class="w-full"
+              [disabled]="qrCargando"
+              (click)="verificarQR()">
+              <mat-spinner *ngIf="qrCargando" diameter="18" class="inline-spinner m-r-8"></mat-spinner>
+              {{ qrCargando ? 'Verificando Comprobante...' : 'Verificar Pago QR' }}
+            </button>
+          </div>
+
+          <!-- Success QR State -->
+          <div *ngIf="qrVerificado" class="verified-box p-12 m-b-16 text-center">
+            <mat-icon class="verified-icon text-success">check_circle</mat-icon>
+            <p class="text-success m-t-4"><strong>Pago QR Verificado con Éxito</strong></p>
+          </div>
+
+          <div class="action-buttons">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              class="w-full py-12"
+              [disabled]="!qrVerificado"
+              (click)="confirmarPago('qr')">
+              Confirmar Venta
+            </button>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- PAGO CON TARJETA -->
+      <mat-tab label="Tarjeta">
+        <div class="tab-content p-t-16">
+          <p class="instruction-text">Ingrese los datos de la tarjeta de crédito o débito.</p>
+          
+          <form #cardForm="ngForm" (ngSubmit)="procesarTarjeta(cardForm)">
+            <mat-form-field appearance="outline" class="w-full m-b-8">
+              <mat-label>Nombre del Titular</mat-label>
+              <input 
+                matInput 
+                required 
+                name="tarjetaNombre" 
+                [(ngModel)]="tarjeta.nombre" 
+                placeholder="Ej: Juan Pérez"
+                [disabled]="tarjetaProcesando">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full m-b-8">
+              <mat-label>Número de Tarjeta</mat-label>
+              <input 
+                matInput 
+                required 
+                name="tarjetaNumero" 
+                [(ngModel)]="tarjeta.numero" 
+                (ngModelChange)="formatearNumeroTarjeta()"
+                placeholder="4111 1111 1111 1111" 
+                maxlength="19"
+                [disabled]="tarjetaProcesando">
+              <mat-icon matSuffix>credit_card</mat-icon>
+            </mat-form-field>
+
+            <div class="row">
+              <div class="col-6">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Expiración (MM/AA)</mat-label>
+                  <input 
+                    matInput 
+                    required 
+                    name="tarjetaExpiracion" 
+                    [(ngModel)]="tarjeta.expiracion" 
+                    (ngModelChange)="formatearExpiracion()"
+                    placeholder="MM/AA" 
+                    maxlength="5"
+                    [disabled]="tarjetaProcesando">
+                </mat-form-field>
+              </div>
+              <div class="col-6">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>CVV</mat-label>
+                  <input 
+                    matInput 
+                    required 
+                    name="tarjetaCvv" 
+                    [(ngModel)]="tarjeta.cvv" 
+                    placeholder="123" 
+                    maxlength="4"
+                    [disabled]="tarjetaProcesando">
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="action-buttons m-t-16">
+              <button 
+                mat-raised-button 
+                color="primary" 
+                type="submit" 
+                class="w-full py-12"
+                [disabled]="cardForm.invalid || tarjetaProcesando">
+                <mat-spinner *ngIf="tarjetaProcesando" diameter="18" class="inline-spinner m-r-8"></mat-spinner>
+                {{ tarjetaProcesando ? 'Validando Tarjeta...' : 'Pagar S/ ' + (data.total | number:'1.2-2') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+</div>

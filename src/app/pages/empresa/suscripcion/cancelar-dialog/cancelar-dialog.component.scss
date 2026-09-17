@@ -1,0 +1,47 @@
+.advertencia {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  color: #e65100;
+  margin-bottom: 16px;
+
+  mat-icon {
+    color: #e65100;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+.campo-full {
+  width: 100%;
+  display: block;
+  margin-bottom: 4px;
+}
+
+mat-dialog-content {
+  min-width: 360px;
+
+  @media (max-width: 480px) {
+    min-width: unset;
+  }
+}
+
+.actions-spacer {
+  height: 8px;
+  flex-shrink: 0;
+}
+
+app-cancelar-dialog .mat-mdc-dialog-actions {
+  padding-top: 12px;
+}
+
+app-cancelar-dialog .mat-mdc-dialog-content {
+  overflow: visible;
+  padding-bottom: 0;
+}
+

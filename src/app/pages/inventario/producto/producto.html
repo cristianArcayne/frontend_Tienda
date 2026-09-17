@@ -1,0 +1,101 @@
+<mat-card>
+  <mat-card-header>
+    <div class="page-header">
+      <mat-card-title>Gestión de Productos</mat-card-title>
+      <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="crearProducto()">
+        <mat-icon class="m-r-8">add</mat-icon>
+        Crear Nuevo Producto
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <div *ngIf="!isLoading && dataSource.length > 0" class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-full">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let element">{{ element.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="categoria_nombre">
+          <th mat-header-cell *matHeaderCellDef>Categoría</th>
+          <td mat-cell *matCellDef="let element">{{ element.categoria_nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="marca_nombre">
+          <th mat-header-cell *matHeaderCellDef>Marca</th>
+          <td mat-cell *matCellDef="let element">{{ element.marca_nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="imagenes">
+          <th mat-header-cell *matHeaderCellDef>Imagen</th>
+          <td mat-cell *matCellDef="let element">
+            <img *ngIf="getImagenPrincipal(element)" 
+                 [src]="getImagenPrincipal(element)" 
+                 alt="Imagen"
+                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+            <mat-icon *ngIf="!getImagenPrincipal(element)" 
+                     style="font-size: 32px; width: 32px; height: 32px; color: #ccc;">
+              image
+            </mat-icon>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              *ngIf="puedeVerDetalle"
+              mat-icon-button
+              matTooltip="Ver Detalles"
+              (click)="verDetalles(element)"
+              color="accent">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button
+              *ngIf="puedeEditar"
+              mat-icon-button
+              matTooltip="Editar"
+              (click)="editarProducto(element)"
+              color="primary">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              *ngIf="puedeEliminar"
+              mat-icon-button
+              matTooltip="Eliminar"
+              (click)="eliminarProducto(element)"
+              color="warn">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">info</mat-icon>
+      <p class="empty-text">No hay productos disponibles</p>
+    </div>
+
+    <mat-paginator
+      *ngIf="dataSource.length > 0"
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      hidePageSize="true"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

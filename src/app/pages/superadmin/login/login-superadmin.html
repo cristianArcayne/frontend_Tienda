@@ -1,0 +1,37 @@
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #e8eaf6;">
+  <mat-card style="width: 100%; max-width: 400px; padding: 32px;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #1976d2;">admin_panel_settings</mat-icon>
+      <h2 style="margin: 8px 0 4px; color: #333;">Panel Superadmin</h2>
+      <p style="margin: 0; color: #888; font-size: 13px;">Acceso exclusivo para administradores</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 8px;">
+        <mat-label>Usuario</mat-label>
+        <input matInput formControlName="username" autocomplete="username" />
+        <mat-icon matSuffix>person</mat-icon>
+        <mat-error *ngIf="form.get('username')?.hasError('required')">Campo requerido</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="width: 100%;">
+        <mat-label>Contraseña</mat-label>
+        <input matInput formControlName="password"
+               [type]="hidePassword ? 'password' : 'text'"
+               autocomplete="current-password" />
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+          <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="form.get('password')?.hasError('required')">Campo requerido</mat-error>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary"
+              type="submit"
+              [disabled]="isLoading"
+              style="width: 100%; margin-top: 16px; height: 44px;">
+        <mat-spinner diameter="20" *ngIf="isLoading" style="display: inline-block;"></mat-spinner>
+        <span *ngIf="!isLoading">Ingresar</span>
+      </button>
+    </form>
+  </mat-card>
+</div>

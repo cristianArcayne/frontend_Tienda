@@ -1,0 +1,111 @@
+<mat-card>
+  <mat-card-header>
+    <div class="page-header">
+      <mat-card-title>Gestión de Usuarios</mat-card-title>
+      <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="crearUsuario()">
+        <mat-icon class="m-r-8">add</mat-icon>
+        Crear Nuevo Usuario
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Estado de carga -->
+    <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <!-- Tabla con usuarios -->
+    <div *ngIf="!isLoading && dataSource.length > 0" class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-full">
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+        </ng-container>
+
+        <!-- Username Column -->
+        <ng-container matColumnDef="username">
+          <th mat-header-cell *matHeaderCellDef>Username</th>
+          <td mat-cell *matCellDef="let element">{{ element.username }}</td>
+        </ng-container>
+
+        <!-- Nombre Column -->
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let element">{{ element.nombre }}</td>
+        </ng-container>
+
+        <!-- Apellido Column -->
+        <ng-container matColumnDef="apellido">
+          <th mat-header-cell *matHeaderCellDef>Apellido</th>
+          <td mat-cell *matCellDef="let element">{{ element.apellido }}</td>
+        </ng-container>
+
+        <!-- Email Column -->
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Correo</th>
+          <td mat-cell *matCellDef="let element">
+            <span *ngIf="element.email">{{ element.email }}</span>
+            <span *ngIf="!element.email" style="color: #bbb; font-style: italic;">Sin correo</span>
+          </td>
+        </ng-container>
+
+        <!-- Rol Column -->
+        <ng-container matColumnDef="grupos">
+          <th mat-header-cell *matHeaderCellDef>Grupos</th>
+          <td mat-cell *matCellDef="let element">{{ element.grupos?.join(', ') }}</td>
+        </ng-container>
+
+        <!-- Super Usuario Column -->
+        <ng-container matColumnDef="is_superuser">
+          <th mat-header-cell *matHeaderCellDef>Super Usuario</th>
+          <td mat-cell *matCellDef="let element">{{ element.is_superuser ? 'Sí' : 'No' }}</td>
+        </ng-container>
+
+        <!-- Acciones Column -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              *ngIf="puedeEditar"
+              mat-icon-button
+              matTooltip="Editar"
+              (click)="editarUsuario(element)"
+              color="primary"
+              [disabled]="element.is_superuser">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              *ngIf="puedeEliminar"
+              mat-icon-button
+              matTooltip="Eliminar"
+              (click)="eliminarUsuario(element)"
+              color="warn"
+              [disabled]="element.is_superuser">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.superuser-row]="row.is_superuser"></tr>
+      </table>
+    </div>
+
+    <!-- Sin datos -->
+    <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">info</mat-icon>
+      <p class="empty-text">No hay usuarios disponibles</p>
+    </div>
+
+    <!-- Paginador -->
+    <mat-paginator
+      *ngIf="dataSource.length > 0"
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      hidePageSize="true"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

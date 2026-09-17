@@ -1,0 +1,95 @@
+.dialog-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .dialog-subtitle {
+    font-size: 13px;
+    font-weight: 400;
+    color: #666;
+  }
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 560px;
+
+  @media (max-width: 600px) {
+    min-width: 0;
+  }
+}
+
+.panel {
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 10px;
+
+    mat-icon {
+      color: #2e7d32;
+    }
+  }
+
+  .readonly-info {
+    margin: 0;
+    color: #444;
+  }
+
+  .proveedor-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    mat-form-field {
+      flex: 1;
+    }
+  }
+}
+
+.w-full {
+  width: 100%;
+}
+
+.table-field {
+  width: 100px;
+
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 4px 0;
+  font-size: 15px;
+}
+
+.empty-state.compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  gap: 8px;
+  color: #bdbdbd;
+
+  .empty-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .empty-text {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.dialog-actions {
+  gap: 8px;
+}

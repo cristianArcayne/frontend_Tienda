@@ -1,0 +1,27 @@
+@use "../variables" as *;
+
+html .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  height: $header-height;
+  background-color: var(--mat-sys-background);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.topbar-dd {
+  min-width: 200px !important;
+}
+
+.text-hover-primary:hover {
+  .hover-text {
+    color: $primary;
+  }
+}
+
+.object-cover {
+  object-fit: cover;
+}

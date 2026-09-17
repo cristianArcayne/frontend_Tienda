@@ -1,0 +1,36 @@
+<h2 mat-dialog-title>
+  <mat-icon style="vertical-align: middle; margin-right: 8px; color: #f44336;">warning</mat-icon>
+  Eliminar Usuario
+</h2>
+
+<mat-dialog-content>
+  <p style="margin: 0; font-size: 16px;">
+    ¿Estás seguro de que deseas eliminar el usuario <strong>{{ data.usuario.username }}</strong>?
+  </p>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #999;">
+    Esta acción no se puede deshacer.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button 
+    mat-button 
+    (click)="cancelar()"
+    [disabled]="isDeleting">
+    Cancelar
+  </button>
+  <button 
+    mat-raised-button 
+    color="warn" 
+    (click)="confirmarEliminacion()"
+    [disabled]="isDeleting">
+    <span *ngIf="!isDeleting">
+      <mat-icon style="vertical-align: middle; margin-right: 4px;">delete</mat-icon>
+      Eliminar
+    </span>
+    <span *ngIf="isDeleting" style="display: flex; align-items: center; gap: 8px;">
+      <mat-spinner diameter="16"></mat-spinner>
+      Eliminando...
+    </span>
+  </button>
+</mat-dialog-actions>

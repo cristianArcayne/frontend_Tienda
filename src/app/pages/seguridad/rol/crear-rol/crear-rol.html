@@ -1,0 +1,79 @@
+<h2 mat-dialog-title>
+  {{ isEditMode ? 'Editar Rol: ' + data.rol.name : 'Crear Nuevo Rol' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+    <!-- Campo Nombre -->
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Nombre del Rol</mat-label>
+      <input
+        matInput
+        formControlName="nombre"
+        placeholder="Ej: Administrador, Vendedor"
+      />
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es requerido
+      </mat-error>
+      <mat-error *ngIf="form.get('nombre')?.hasError('minlength')">
+        Mínimo 3 caracteres
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Permisos Disponibles -->
+    <div style="margin-top: 16px;">
+      <label style="display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px;">
+        Selecciona Permisos:
+      </label>
+
+      <div *ngIf="isLoading" style="display: flex; justify-content: center; padding: 16px;">
+        <mat-spinner diameter="30"></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!isLoading">
+        <!-- Buscador -->
+        <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 8px;">
+          <mat-label>Buscar permiso</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [value]="busqueda" (input)="busqueda = $any($event.target).value" placeholder="Ej: ver producto, add_venta..." />
+          <button *ngIf="busqueda" mat-icon-button matSuffix (click)="busqueda = ''" type="button">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-selection-list #permisosList
+          (selectionChange)="onSelectionChange($event)"
+          style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px;">
+          <mat-list-option
+            *ngFor="let permiso of permisosFiltrados"
+            [value]="permiso.id"
+            [selected]="seleccionados.has(permiso.id)">
+            <strong>{{ permiso.nombre }}</strong>
+            <div style="font-size: 12px; color: #999;">{{ permiso.codename }}</div>
+          </mat-list-option>
+        </mat-selection-list>
+
+        <div *ngIf="permisosFiltrados.length === 0" style="padding: 16px; text-align: center; color: #999; font-size: 14px;">
+          No se encontraron permisos con "{{ busqueda }}"
+        </div>
+      </ng-container>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="guardar()"
+    [disabled]="isSaving || !form.valid">
+    <span *ngIf="!isSaving">
+      {{ isEditMode ? 'Actualizar Rol' : 'Guardar Rol' }}
+    </span>
+    <span *ngIf="isSaving" style="display: flex; align-items: center; gap: 8px;">
+      <mat-spinner diameter="16"></mat-spinner>
+      {{ isEditMode ? 'Actualizando...' : 'Guardando...' }}
+    </span>
+  </button>
+</mat-dialog-actions>

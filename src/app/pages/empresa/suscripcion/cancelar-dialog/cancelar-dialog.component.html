@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>
+  <mat-icon class="title-icon">cancel</mat-icon>
+  Cancelar Suscripción
+</h2>
+
+<mat-dialog-content>
+  <div class="advertencia">
+    <mat-icon>warning</mat-icon>
+    <span>Al cancelar, la suscripción se desactivará y perderás acceso a las funcionalidades del plan actual al vencimiento.</span>
+  </div>
+
+  <mat-form-field appearance="outline" class="campo-full">
+    <mat-label>Cancelado por *</mat-label>
+    <input matInput [(ngModel)]="canceladaPor" placeholder="Nombre del responsable" required>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="campo-full">
+    <mat-label>Motivo</mat-label>
+    <textarea matInput [(ngModel)]="motivo" rows="3" placeholder="Razón de la cancelación"></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+
+<div class="actions-spacer"></div>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button [mat-dialog-close]="null">Volver</button>
+  <button mat-raised-button color="warn" (click)="confirmar()" [disabled]="!canceladaPor.trim()">
+    <mat-icon>cancel</mat-icon>
+    Confirmar cancelación
+  </button>
+</mat-dialog-actions>

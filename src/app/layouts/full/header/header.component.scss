@@ -1,0 +1,19 @@
+.spacer {
+  flex: 1 1 auto;
+}
+
+.user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 16px;
+  
+  .username-text {
+    margin: 0 4px;
+    font-size: 14px;
+  }
+}
+
+.logout-button {
+  color: #f44336 !important;
+}

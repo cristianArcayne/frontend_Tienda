@@ -1,0 +1,102 @@
+<div class="database-management-container">
+  <mat-card class="main-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon class="title-icon">storage</mat-icon>
+        Gestión de Datos
+      </mat-card-title>
+      <mat-card-subtitle>Backup y restauración de la base de datos del tenant</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+
+      <!-- SECCIÓN BACKUP -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon backup-icon">
+            <mat-icon>cloud_download</mat-icon>
+          </div>
+          <div class="section-info">
+            <h3>Descargar Backup</h3>
+            <p>Genera y descarga una copia de seguridad completa de la base de datos en formato <code>.dump</code>.</p>
+          </div>
+        </div>
+
+        <div class="section-action">
+          <button
+            *ngIf="puedeDescargarBackup"
+            mat-raised-button
+            color="primary"
+            [disabled]="descargando"
+            (click)="descargarBackup()"
+            class="action-btn"
+          >
+            <mat-spinner *ngIf="descargando" diameter="20" class="btn-spinner"></mat-spinner>
+            <mat-icon *ngIf="!descargando">cloud_download</mat-icon>
+            {{ descargando ? 'Descargando...' : 'Descargar Backup' }}
+          </button>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- SECCIÓN RESTAURACIÓN -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon restore-icon">
+            <mat-icon>restore</mat-icon>
+          </div>
+          <div class="section-info">
+            <h3>Restaurar Base de Datos</h3>
+            <p>Reemplaza la base de datos actual con un archivo <code>.dump</code> previo. <strong>Esta acción es irreversible.</strong></p>
+          </div>
+        </div>
+
+        <div class="section-action">
+          <!-- Input de archivo oculto -->
+          <input
+            #fileInput
+            type="file"
+            accept=".dump"
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
+
+          <!-- Botón para abrir el selector -->
+          <button
+            *ngIf="puedeRestaurar"
+            mat-stroked-button
+            color="warn"
+            [disabled]="restaurando"
+            (click)="abrirSelectorArchivo()"
+            class="action-btn"
+          >
+            <mat-icon>attach_file</mat-icon>
+            Seleccionar archivo .dump
+          </button>
+
+          <!-- Archivo seleccionado + botón confirmar -->
+          <div *ngIf="archivoSeleccionado" class="file-selected-panel">
+            <div class="file-name">
+              <mat-icon class="file-icon">description</mat-icon>
+              <span>{{ archivoSeleccionado.name }}</span>
+            </div>
+
+            <button
+              mat-raised-button
+              color="warn"
+              [disabled]="restaurando"
+              (click)="confirmarYRestaurar()"
+              class="action-btn restore-confirm-btn"
+            >
+              <mat-spinner *ngIf="restaurando" diameter="20" class="btn-spinner"></mat-spinner>
+              <mat-icon *ngIf="!restaurando">warning</mat-icon>
+              {{ restaurando ? 'Restaurando...' : 'Subir y Sobrescribir Base de Datos' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+</div>

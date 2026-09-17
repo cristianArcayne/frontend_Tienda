@@ -1,0 +1,166 @@
+<div class="cambiar-plan-container">
+
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <mat-icon class="title-icon">swap_horiz</mat-icon>
+        Cambiar Plan
+      </h1>
+      <p class="subtitle">Selecciona el plan que mejor se adapte a tu empresa</p>
+    </div>
+    <button mat-stroked-button (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando planes...</p>
+    </div>
+  } @else {
+    <mat-stepper linear #stepper>
+
+      <!-- PASO 1: Seleccionar plan -->
+      <mat-step label="Seleccionar plan" [completed]="planSeleccionado() !== null">
+        <div class="step-content">
+          <div class="planes-grid">
+            @for (plan of planes(); track plan.id) {
+              <mat-card class="plan-card"
+                [class.plan-seleccionado]="planSeleccionado()?.id === plan.id"
+                [class.plan-actual]="suscripcionActual()?.plan === plan.id"
+                (click)="seleccionarPlan(plan)">
+
+                @if (suscripcionActual()?.plan === plan.id) {
+                  <div class="plan-actual-badge">Plan actual</div>
+                }
+
+                <mat-card-content>
+                  <div class="plan-nombre">{{ plan.nombre }}</div>
+                  <p class="plan-desc">{{ plan.descripcion }}</p>
+
+                  <div class="plan-precio">
+                    <span class="precio-valor">Bs. {{ plan.precio_mensual }}</span>
+                    <span class="precio-periodo">/mes</span>
+                  </div>
+                  @if (plan.precio_anual > 0) {
+                    <div class="precio-anual">o Bs. {{ plan.precio_anual }}/año</div>
+                  }
+
+                  <div class="plan-limites">
+                    <div class="limite-item">
+                      <mat-icon>people</mat-icon>
+                      <span>{{ plan.limite_usuarios }} usuarios</span>
+                    </div>
+                    <div class="limite-item">
+                      <mat-icon>inventory_2</mat-icon>
+                      <span>{{ plan.limite_productos }} productos</span>
+                    </div>
+                    <div class="limite-item">
+                      <mat-icon>people_alt</mat-icon>
+                      <span>{{ plan.limite_clientes }} clientes</span>
+                    </div>
+                    <div class="limite-item">
+                      <mat-icon>local_shipping</mat-icon>
+                      <span>{{ plan.limite_proveedores }} proveedores</span>
+                    </div>
+                  </div>
+
+                  <div class="plan-features">
+                    <div class="feature-item" [class.feature-on]="plan.feature_reportes_dinamicos">
+                      <mat-icon>{{ plan.feature_reportes_dinamicos ? 'check_circle' : 'cancel' }}</mat-icon>
+                      <span>Reportes dinámicos</span>
+                    </div>
+                    <div class="feature-item" [class.feature-on]="plan.feature_realidad_aumentada">
+                      <mat-icon>{{ plan.feature_realidad_aumentada ? 'check_circle' : 'cancel' }}</mat-icon>
+                      <span>Realidad aumentada</span>
+                    </div>
+                    <div class="feature-item" [class.feature-on]="plan.feature_fotos_3d">
+                      <mat-icon>{{ plan.feature_fotos_3d ? 'check_circle' : 'cancel' }}</mat-icon>
+                      <span>Fotos 3D</span>
+                    </div>
+                    <div class="feature-item" [class.feature-on]="plan.feature_backup_automatico">
+                      <mat-icon>{{ plan.feature_backup_automatico ? 'check_circle' : 'cancel' }}</mat-icon>
+                      <span>Backup automático</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+
+          <div class="step-actions">
+            <button mat-raised-button color="primary" matStepperNext
+                    [disabled]="!planSeleccionado()">
+              Siguiente
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- PASO 2: Confirmar -->
+      <mat-step label="Confirmar cambio">
+        <div class="step-content">
+          @if (planSeleccionado()) {
+            <div class="resumen-card">
+              <h3>Resumen del cambio</h3>
+
+              <div class="resumen-row">
+                <span class="resumen-label">Plan seleccionado:</span>
+                <strong>{{ planSeleccionado()!.nombre }}</strong>
+              </div>
+
+              <div class="ciclo-selector">
+                <span class="resumen-label">Ciclo de facturación:</span>
+                <mat-radio-group [(ngModel)]="cicloSeleccionado" name="ciclo" class="radio-group">
+                  <mat-radio-button value="mensual">
+                    Mensual — Bs. {{ planSeleccionado()!.precio_mensual }}/mes
+                  </mat-radio-button>
+                  <mat-radio-button value="anual">
+                    Anual — Bs. {{ planSeleccionado()!.precio_anual }}/año
+                    @if (planSeleccionado()!.precio_anual < planSeleccionado()!.precio_mensual * 12) {
+                      <span class="ahorro-badge">Ahorra {{ ((1 - planSeleccionado()!.precio_anual / (planSeleccionado()!.precio_mensual * 12)) * 100).toFixed(0) }}%</span>
+                    }
+                  </mat-radio-button>
+                </mat-radio-group>
+              </div>
+
+              <div class="precio-final">
+                <span>Total a pagar:</span>
+                <strong class="precio-total">
+                  Bs. {{ precioMostrar(planSeleccionado()!) }}
+                  {{ cicloSeleccionado === 'mensual' ? '/mes' : '/año' }}
+                </strong>
+              </div>
+            </div>
+          }
+
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Anterior
+            </button>
+            <button mat-raised-button color="primary"
+                    (click)="confirmarCambio()"
+                    [disabled]="guardando() || !planSeleccionado()">
+              @if (guardando()) {
+                <ng-container>
+                  <mat-spinner diameter="18" style="display:inline-block;margin-right:8px"></mat-spinner>
+                  Guardando...
+                </ng-container>
+              } @else {
+                <ng-container>
+                  <mat-icon>check</mat-icon>
+                  Confirmar cambio
+                </ng-container>
+              }
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+    </mat-stepper>
+  }
+</div>

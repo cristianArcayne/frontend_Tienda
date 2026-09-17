@@ -1,0 +1,169 @@
+<div class="ia-dashboard-container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <mat-icon class="title-icon">auto_graph</mat-icon>
+        Dashboard de Ventas IA
+      </h1>
+      <p class="subtitle">Proyección histórica y futura por categoría</p>
+    </div>
+    <div class="header-actions">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="meses-field">
+        <mat-label>Período</mat-label>
+        <mat-select [value]="mesesSeleccionado()" (selectionChange)="onMesesChange($event.value)">
+          @for (op of opcionesMeses; track op.value) {
+            <mat-option [value]="op.value">{{ op.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (mesesSeleccionado() === 0) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="meses-custom-field">
+          <mat-label>Nº meses</mat-label>
+          <input matInput type="number" min="1" max="120" placeholder="ej: 18" #mesesInput
+                 [value]="mesesPersonalizado()"
+                 (change)="onMesesPersonalizadoChange(+mesesInput.value)">
+        </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="date-field">
+        <mat-label>Proyectar hasta</mat-label>
+        <input matInput [matDatepicker]="picker" [min]="hoy"
+               (dateChange)="onFechaChange($event.value)"
+               placeholder="Seleccionar fecha">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      @if (isSuperuser) {
+        <button mat-raised-button color="accent" class="retrain-btn"
+                (click)="reentrenarModelos()" [disabled]="reentrenando()">
+          @if (!reentrenando()) {
+            <mat-icon>model_training</mat-icon>
+          }
+          @if (reentrenando()) {
+            <mat-spinner diameter="18" class="inline-spinner"></mat-spinner>
+            Reentrenando...
+          } @else {
+            Reentrenar Modelos
+          }
+        </button>
+      }
+
+      <button mat-icon-button (click)="cargarDashboard()" matTooltip="Actualizar datos" [disabled]="cargando()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  @if (cargando()) {
+    <div class="loading-container">
+      <mat-spinner diameter="52"></mat-spinner>
+      <p>Cargando datos de IA...</p>
+    </div>
+  } @else if (!dashboardData()) {
+    <div class="empty-state">
+      <mat-icon>analytics</mat-icon>
+      <p>No hay datos disponibles. Verifica que el backend tiene datos de ventas.</p>
+      <button mat-raised-button color="primary" (click)="cargarDashboard()">Reintentar</button>
+    </div>
+  } @else {
+
+    <!-- Summary cards -->
+    <div class="summary-grid">
+      <mat-card class="summary-card">
+        <mat-card-content>
+          <div class="card-icon" style="background: #1565c0;">
+            <mat-icon>inventory_2</mat-icon>
+          </div>
+          <div class="card-info">
+            <span class="card-value">{{ totalUnidades() | number }}</span>
+            <span class="card-label">Total vendido (histórico)</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card">
+        <mat-card-content>
+          <div class="card-icon" style="background: #2e7d32;">
+            <mat-icon>bar_chart</mat-icon>
+          </div>
+          <div class="card-info">
+            <span class="card-value">{{ promedioMensual() | number }}</span>
+            <span class="card-label">Promedio mensual</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card">
+        <mat-card-content>
+          <div class="card-icon" style="background: #e65100;">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <div class="card-info">
+            <span class="card-value">{{ proyeccionProximoMes() | number }}</span>
+            <span class="card-label">Proyección próximo mes</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Chart card -->
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Histórico y Proyección de Ventas</mat-card-title>
+        <div class="chart-header-controls">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="category-select">
+            <mat-label>Filtrar categoría</mat-label>
+            <mat-select [value]="categoriaSeleccionada()"
+                        (selectionChange)="onCategoriaChange($event.value)">
+              <mat-option value="">Todas las categorías</mat-option>
+              @for (cat of categorias(); track cat) {
+                <mat-option [value]="cat">{{ cat }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (series.length > 0) {
+          <apx-chart
+            [series]="series"
+            [chart]="chartConfig"
+            [xaxis]="xaxis"
+            [yaxis]="yaxis"
+            [stroke]="stroke"
+            [colors]="colors"
+            [legend]="legend"
+            [annotations]="annotations"
+            [dataLabels]="dataLabels"
+            [grid]="grid"
+            [tooltip]="tooltip">
+          </apx-chart>
+        } @else {
+          <div class="no-chart-data">
+            <mat-icon>ssid_chart</mat-icon>
+            <p>Sin datos para la categoría seleccionada</p>
+          </div>
+        }
+
+        <div class="chart-legend-info">
+          <span class="legend-item">
+            <span class="line-solid"></span> Histórico real
+          </span>
+          <span class="legend-item">
+            <span class="line-dashed"></span> Proyección
+          </span>
+          <span class="legend-item legend-sep">
+            <span class="line-vertical"></span> Divisor histórico/proyección
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  }
+</div>

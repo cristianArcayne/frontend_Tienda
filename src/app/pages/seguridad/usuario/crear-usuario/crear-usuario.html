@@ -1,0 +1,147 @@
+<h2 mat-dialog-title>
+  {{ isEditMode ? 'Editar Usuario: ' + data.usuario.username : 'Crear Nuevo Usuario' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+    <!-- Campo Username (deshabilitado en edición) -->
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Username</mat-label>
+      <input 
+        matInput 
+        formControlName="username"
+        [disabled]="isEditMode"
+        placeholder="Ej: admin, vendedor123"
+      />
+      <mat-error *ngIf="form.get('username')?.hasError('required')">
+        El username es requerido
+      </mat-error>
+      <mat-error *ngIf="form.get('username')?.hasError('minlength')">
+        Mínimo 3 caracteres
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Campo Email (opcional) -->
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Correo electrónico <span style="font-weight: 400; color: #999;">(opcional)</span></mat-label>
+      <input
+        matInput
+        type="email"
+        formControlName="email"
+        placeholder="Ej: usuario@correo.com"
+      />
+      <mat-icon matSuffix style="color: #999; font-size: 18px;">email</mat-icon>
+      <mat-error *ngIf="form.get('email')?.hasError('email')">
+        Ingresa un correo válido
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Campo Password -->
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Contraseña</mat-label>
+      <input 
+        matInput 
+        type="password"
+        formControlName="password"
+        [placeholder]="isEditMode ? 'Dejar en blanco para no cambiar' : 'Ingresa una contraseña segura'"
+      />
+      <mat-error *ngIf="form.get('password')?.hasError('required')">
+        La contraseña es requerida
+      </mat-error>
+    </mat-form-field>
+    <div class="pwd-req-list" *ngIf="form.get('password')?.value">
+      <div class="req-item" [class.req-ok]="passwordReqs.length">
+        <mat-icon>{{ passwordReqs.length ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <span>Mínimo 8 caracteres</span>
+      </div>
+      <div class="req-item" [class.req-ok]="passwordReqs.lowercase">
+        <mat-icon>{{ passwordReqs.lowercase ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <span>1 letra minúscula</span>
+      </div>
+      <div class="req-item" [class.req-ok]="passwordReqs.uppercase">
+        <mat-icon>{{ passwordReqs.uppercase ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <span>1 letra mayúscula</span>
+      </div>
+      <div class="req-item" [class.req-ok]="passwordReqs.number">
+        <mat-icon>{{ passwordReqs.number ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <span>1 número</span>
+      </div>
+      <div class="req-item" [class.req-ok]="passwordReqs.symbol">
+        <mat-icon>{{ passwordReqs.symbol ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <span>1 símbolo (@, #, !, etc.)</span>
+      </div>
+    </div>
+
+    <!-- Roles/Grupo Disponibles -->
+    <div style="margin-top: 16px;">
+      <label style="display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px;">
+        {{ isEditMode ? 'Rol Actual / Cambiar Rol:' : 'Selecciona un Grupo/Rol:' }}
+      </label>
+      
+      <div *ngIf="isLoading" style="display: flex; justify-content: center; padding: 16px;">
+        <mat-spinner diameter="30"></mat-spinner>
+      </div>
+
+      <mat-selection-list #rolesList
+        (selectionChange)="onRolSelected($event)"
+        style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px;">
+        <mat-list-option 
+          *ngFor="let rol of roles"
+          [value]="rol.id"
+          [selected]="rolesSeleccionadosPorDefecto.includes(rol.id)">
+          <strong>{{ rol.name }}</strong>
+          <div style="font-size: 12px; color: #999;">
+            Permisos: {{ rol.permisos.length || 0 }}
+            <span *ngIf="isEditMode && rolesSeleccionadosPorDefecto.includes(rol.id)" 
+              style="margin-left: 8px; color: #4caf50; font-weight: 600;">
+              ✓ Actual
+            </span>
+          </div>
+        </mat-list-option>
+      </mat-selection-list>
+
+      <!-- Controles de paginación -->
+      <div class="roles-pagination">
+        <button 
+          mat-stroked-button 
+          [disabled]="!previousRolesUrl || isLoading"
+          (click)="previousRolesPage()"
+          type="button">
+          <mat-icon>arrow_back</mat-icon>
+          Anterior
+        </button>
+        
+        <span style="font-size: 12px; color: #666;">
+          Página {{ rolesCurrentPage + 1 }} de {{ Math.ceil(rolesTotalItems / rolesPageSize) }}
+          ({{ rolesTotalItems }} total)
+        </span>
+
+        <button 
+          mat-stroked-button 
+          [disabled]="!nextRolesUrl || isLoading"
+          (click)="nextRolesPage()"
+          type="button">
+          Siguiente
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="guardar()"
+    [disabled]="isSaving || !form.valid">
+    <span *ngIf="!isSaving">
+      {{ isEditMode ? 'Actualizar Usuario' : 'Guardar Usuario' }}
+    </span>
+    <span *ngIf="isSaving" style="display: flex; align-items: center; gap: 8px;">
+      <mat-spinner diameter="16"></mat-spinner>
+      {{ isEditMode ? 'Actualizando...' : 'Guardando...' }}
+    </span>
+  </button>
+</mat-dialog-actions>

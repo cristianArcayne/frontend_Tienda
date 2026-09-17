@@ -1,0 +1,13 @@
+<h2 mat-dialog-title>Eliminar Venta</h2>
+
+<mat-dialog-content>
+  <p>¿Estás seguro de eliminar la <strong>Venta #{{ data.venta.id }}</strong>?</p>
+  <p class="text-muted">Esta acción devolverá el stock de todos los productos y no se puede deshacer.</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="isDeleting">Cancelar</button>
+  <button mat-raised-button color="warn" (click)="confirmar()" [disabled]="isDeleting">
+    {{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,182 @@
+.cambiar-plan-container {
+  padding: 24px;
+
+  @media (max-width: 600px) { padding: 12px; }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 600;
+      .title-icon { color: #1976d2; font-size: 26px; width: 26px; height: 26px; }
+    }
+    .subtitle { margin: 0; color: #666; font-size: 14px; }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 24px;
+    gap: 16px;
+    color: #666;
+  }
+
+  .step-content {
+    padding: 24px 0 8px;
+  }
+
+  .planes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .plan-card {
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px !important;
+    transition: border-color .2s, box-shadow .2s;
+    position: relative;
+
+    &:hover { border-color: #1976d2; box-shadow: 0 4px 16px rgba(25,118,210,.15); }
+
+    &.plan-seleccionado {
+      border-color: #1976d2;
+      box-shadow: 0 4px 16px rgba(25,118,210,.2);
+      background: #f3f8ff;
+    }
+
+    &.plan-actual { border-color: #43a047; }
+
+    .plan-actual-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #43a047;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    mat-card-content {
+      padding: 20px !important;
+
+      .plan-nombre { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
+      .plan-desc { font-size: 12px; color: #888; margin: 0 0 12px; line-height: 1.4; }
+
+      .plan-precio {
+        margin-bottom: 4px;
+        .precio-valor { font-size: 26px; font-weight: 700; color: #1976d2; }
+        .precio-periodo { font-size: 14px; color: #666; }
+      }
+      .precio-anual { font-size: 12px; color: #888; margin-bottom: 16px; }
+
+      .plan-limites {
+        border-top: 1px solid #eee;
+        padding-top: 12px;
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .limite-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #444;
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #666; }
+      }
+
+      .plan-features {
+        border-top: 1px solid #eee;
+        padding-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #999;
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #bdbdbd; }
+        &.feature-on {
+          color: #444;
+          mat-icon { color: #43a047; }
+        }
+      }
+    }
+  }
+
+  .step-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 8px;
+  }
+
+  .resumen-card {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 480px;
+    margin-bottom: 24px;
+
+    h3 { margin: 0 0 16px; font-size: 16px; font-weight: 600; }
+
+    .resumen-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .resumen-label { color: #666; min-width: 160px; }
+
+    .ciclo-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+      .radio-group { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; font-size: 14px; }
+    }
+
+    .ahorro-badge {
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+    }
+
+    .precio-final {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 16px;
+      font-size: 14px;
+      color: #666;
+      .precio-total { font-size: 22px; font-weight: 700; color: #1976d2; }
+    }
+  }
+}

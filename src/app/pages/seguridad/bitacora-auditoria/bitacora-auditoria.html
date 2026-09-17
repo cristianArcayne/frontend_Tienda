@@ -1,0 +1,137 @@
+<mat-card>
+  <mat-card-header>
+    <div class="page-header">
+      <div>
+        <mat-card-title>Bitacora de Auditoria</mat-card-title>
+        <mat-card-subtitle>Consulta de eventos registrados en seguridad</mat-card-subtitle>
+      </div>
+      <button mat-icon-button color="primary" matTooltip="Actualizar" (click)="actualizar()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form class="filtros-grid" [formGroup]="filtrosForm" (ngSubmit)="consultar()">
+      <mat-form-field appearance="outline">
+        <mat-label>Accion</mat-label>
+        <mat-select formControlName="accion">
+          <mat-option value="">Todas</mat-option>
+          <mat-option *ngFor="let accion of acciones" [value]="accion.value">
+            {{ accion.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Metodo</mat-label>
+        <mat-select formControlName="metodo">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let metodo of metodos" [value]="metodo">
+            {{ metodo }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="filter-actions">
+        <button mat-raised-button color="primary" type="submit">
+          <mat-icon class="m-r-8">manage_search</mat-icon>
+          Consultar
+        </button>
+        <button mat-button type="button" (click)="limpiarFiltros()">
+          Limpiar
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <div *ngIf="!isLoading && dataSource.length > 0" class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="w-full">
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let element">
+            <span *ngIf="getFecha(element)">{{ getFecha(element) | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="!getFecha(element)" class="muted">Sin fecha</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="hora">
+          <th mat-header-cell *matHeaderCellDef>Hora</th>
+          <td mat-cell *matCellDef="let element">
+            <span *ngIf="getHora(element)">{{ getHora(element) | date:'HH:mm:ss' }}</span>
+            <span *ngIf="!getHora(element)" class="muted">-</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="usuario_username">
+          <th mat-header-cell *matHeaderCellDef>Usuario</th>
+          <td mat-cell *matCellDef="let element">{{ getUsuario(element) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="accion">
+          <th mat-header-cell *matHeaderCellDef>Accion</th>
+          <td mat-cell *matCellDef="let element">
+            <mat-chip selected>{{ getAccion(element) }}</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="entidad">
+          <th mat-header-cell *matHeaderCellDef>Entidad</th>
+          <td mat-cell *matCellDef="let element">{{ getEntidad(element) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ruta">
+          <th mat-header-cell *matHeaderCellDef>Ruta</th>
+          <td mat-cell *matCellDef="let element" class="ruta-cell">{{ element.ruta || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="metodo">
+          <th mat-header-cell *matHeaderCellDef>Metodo</th>
+          <td mat-cell *matCellDef="let element">
+            <mat-chip selected>{{ element.metodo || '-' }}</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado_http">
+          <th mat-header-cell *matHeaderCellDef>Estado HTTP</th>
+          <td mat-cell *matCellDef="let element">
+            <mat-chip selected [color]="getEstadoHttpColor(element)">
+              {{ getEstadoHttp(element) }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ip_cliente">
+          <th mat-header-cell *matHeaderCellDef>IP</th>
+          <td mat-cell *matCellDef="let element">{{ getIp(element) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="detalles">
+          <th mat-header-cell *matHeaderCellDef>Detalles</th>
+          <td mat-cell *matCellDef="let element" class="detalles-cell">
+            {{ getDescripcion(element) }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">history</mat-icon>
+      <p class="empty-text">No hay registros de auditoria disponibles</p>
+    </div>
+
+    <mat-paginator
+      *ngIf="dataSource.length > 0"
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      hidePageSize="true"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

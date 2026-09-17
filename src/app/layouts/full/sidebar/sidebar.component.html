@@ -1,0 +1,10 @@
+<div class="d-flex align-items-center justify-content-between sidebar-header-row">
+  <div class="branding flex-1-auto" style="min-width: 0;"><app-branding></app-branding></div>
+
+  @if(showToggle) {
+  <a href="javascript:void(0)" (click)="toggleMobileNav.emit()"
+    class="sidebar-close-btn d-flex justify-content-center align-items-center">
+    <i-tabler name="x" class="icon-20 d-flex"></i-tabler>
+  </a>
+  }
+</div>

@@ -1,0 +1,122 @@
+<div class="sugerencias-container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <mat-icon class="title-icon">shopping_cart_checkout</mat-icon>
+        Sugerencias de Compra
+      </h1>
+      <p class="subtitle">Reabastecimiento sugerido automáticamente a partir de las alertas de IA. Requiere revisión manual antes de generar la compra.</p>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="cargarSugerencias()" [disabled]="cargando()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <div class="filters-row">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Estado</mat-label>
+          <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value); onFiltroChange()">
+            <mat-option value="">Todos los estados</mat-option>
+            <mat-option value="pendiente">Pendiente</mat-option>
+            <mat-option value="aprobada">Aprobada</mat-option>
+            <mat-option value="descartada">Descartada</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table card -->
+  <mat-card>
+    @if (cargando()) {
+      <div class="loading-container">
+        <mat-spinner diameter="44"></mat-spinner>
+        <p>Cargando sugerencias...</p>
+      </div>
+    } @else if (sugerencias().length === 0) {
+      <div class="empty-state">
+        <mat-icon>inventory_2</mat-icon>
+        <p>No hay sugerencias que mostrar</p>
+        @if (filtroEstado()) {
+          <button mat-stroked-button (click)="filtroEstado.set(''); onFiltroChange()">
+            Limpiar filtro
+          </button>
+        }
+      </div>
+    } @else {
+      <mat-card-content class="table-wrapper">
+        <table mat-table [dataSource]="sugerencias()">
+
+          <!-- Proveedor -->
+          <ng-container matColumnDef="proveedor">
+            <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+            <td mat-cell *matCellDef="let s">
+              {{ s.proveedor_nombre || 'Sin asignar' }}
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let s">
+              <span class="estado-chip" [ngClass]="estadoClass(s.estado)">
+                {{ estadoLabel(s.estado) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Líneas -->
+          <ng-container matColumnDef="lineas">
+            <th mat-header-cell *matHeaderCellDef>Líneas</th>
+            <td mat-cell *matCellDef="let s">{{ s.detalles.length }}</td>
+          </ng-container>
+
+          <!-- Total estimado -->
+          <ng-container matColumnDef="total_estimado">
+            <th mat-header-cell *matHeaderCellDef>Total estimado</th>
+            <td mat-cell *matCellDef="let s">{{ s.total_estimado | currency:'BOB' }}</td>
+          </ng-container>
+
+          <!-- Fecha -->
+          <ng-container matColumnDef="fecha_creacion">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let s">
+              {{ s.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acción</th>
+            <td mat-cell *matCellDef="let s">
+              <button mat-stroked-button color="primary" (click)="gestionar(s)">
+                <mat-icon>{{ puedeGestionar && s.estado === 'pendiente' ? 'fact_check' : 'visibility' }}</mat-icon>
+                {{ puedeGestionar && s.estado === 'pendiente' ? 'Gestionar' : 'Ver detalle' }}
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+        </table>
+      </mat-card-content>
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        hidePageSize
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    }
+  </mat-card>
+
+</div>

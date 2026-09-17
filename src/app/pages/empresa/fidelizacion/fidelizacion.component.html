@@ -1,0 +1,61 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Fidelización de Clientes</mat-card-title>
+    <mat-card-subtitle>Configure el monto mínimo mensual y el descuento del beneficio de fidelización</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content class="p-24">
+    <div *ngIf="cargando" class="p-24 text-center">
+      <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+    </div>
+
+    <form *ngIf="!cargando" #fidelizacionForm="ngForm" (ngSubmit)="guardar(fidelizacionForm)" class="m-t-16">
+      <div class="row m-b-16">
+        <div class="col-12 col-sm-6">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Monto mínimo acumulado (Bs)</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              required
+              name="monto_minimo_acumulado"
+              [(ngModel)]="config.monto_minimo_acumulado">
+            <mat-hint>Monto acumulado en compras completadas dentro del mes para activar el beneficio</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Monto del descuento (Bs)</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              required
+              name="monto_descuento"
+              [(ngModel)]="config.monto_descuento">
+            <mat-hint>Se descuenta automáticamente en la siguiente compra del cliente</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <mat-slide-toggle name="activo" [(ngModel)]="config.activo" class="m-b-24">
+        Programa de fidelización activo
+      </mat-slide-toggle>
+
+      <div class="d-flex justify-content-end m-t-24">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="fidelizacionForm.invalid || guardando"
+          class="d-flex align-items-center">
+          <mat-spinner *ngIf="guardando" diameter="18" class="m-r-8"></mat-spinner>
+          <mat-icon *ngIf="!guardando" class="m-r-8">save</mat-icon>
+          Guardar Configuración
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,10 @@
+/* Sin estilos SCSS - Todo con Material Design */
+
+/* Estilos para el diálogo de crear rol */
+::ng-deep .crear-rol-dialog {
+  .mat-mdc-dialog-container {
+    padding: 0 !important;
+  }
+}
+
+

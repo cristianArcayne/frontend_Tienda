@@ -1,0 +1,107 @@
+<div style="min-height: 100vh; background: #f5f5f5;">
+
+  <!-- Header -->
+  <div style="background: #1976d2; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <mat-icon>admin_panel_settings</mat-icon>
+      <span style="font-size: 18px; font-weight: 500;">Panel Superadmin</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span style="font-size: 14px; opacity: 0.9;">{{ username }}</span>
+      <button mat-stroked-button style="color: white; border-color: rgba(255,255,255,0.6);" (click)="logout()">
+        <mat-icon>logout</mat-icon> Salir
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <div style="padding: 24px; max-width: 1100px; margin: 0 auto;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 style="margin: 0; color: #333;">Empresas registradas</h2>
+      <span style="color: #666; font-size: 14px;">{{ totalEmpresas }} en total</span>
+    </div>
+
+    <!-- Spinner -->
+    <div *ngIf="isLoading" style="display: flex; justify-content: center; padding: 48px;">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+
+    <!-- Tabla -->
+    <mat-card *ngIf="!isLoading" style="padding: 0; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f0f4ff;">
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">#</th>
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Empresa</th>
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Subdominio</th>
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Correo</th>
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Estado</th>
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Plan</th>
+            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Creada</th>
+            <th style="padding: 12px 16px; border-bottom: 1px solid #e0e0e0;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="empresas.length === 0">
+            <td colspan="8" style="padding: 32px; text-align: center; color: #999;">No hay empresas registradas.</td>
+          </tr>
+          <tr *ngFor="let e of empresas; let i = index"
+              style="border-bottom: 1px solid #f0f0f0;"
+              [style.background]="i % 2 === 0 ? 'white' : '#fafafa'">
+            <td style="padding: 12px 16px; font-size: 13px; color: #888;">
+              {{ (paginaActual - 1) * pageSize + i + 1 }}
+            </td>
+            <td style="padding: 12px 16px;">
+              <strong style="font-size: 14px;">{{ e.nombre }}</strong>
+              <div *ngIf="!e.is_active" style="font-size: 11px; color: #e53935;">Inactiva</div>
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; color: #555; font-family: monospace;">
+              {{ e.subdominio ?? '—' }}
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; color: #555;">
+              {{ e.correo ?? '—' }}
+            </td>
+            <td style="padding: 12px 16px;">
+              <span *ngIf="e.suscripcion_actual"
+                    [style.color]="getEstadoColor(e.suscripcion_actual.estado)"
+                    style="font-size: 13px; font-weight: 600; text-transform: capitalize;">
+                {{ e.suscripcion_actual.estado }}
+              </span>
+              <span *ngIf="!e.suscripcion_actual" style="color: #999; font-size: 13px;">—</span>
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; color: #555;">
+              {{ e.suscripcion_actual?.plan_nombre ?? '—' }}
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; color: #888;">
+              {{ e.fecha_creacion | date:'dd/MM/yyyy' }}
+            </td>
+            <td style="padding: 12px 16px;">
+              <button mat-icon-button
+                      color="primary"
+                      matTooltip="Ver suscripción"
+                      (click)="verSuscripcion(e)">
+                <mat-icon>info_outline</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card>
+
+    <!-- Paginación -->
+    <div *ngIf="!isLoading && totalPaginas > 1"
+         style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px;">
+      <button mat-icon-button [disabled]="paginaActual === 1" (click)="irPagina(paginaActual - 1)">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span style="font-size: 14px; color: #555;">
+        Página {{ paginaActual }} de {{ totalPaginas }}
+      </span>
+      <button mat-icon-button [disabled]="paginaActual === totalPaginas" (click)="irPagina(paginaActual + 1)">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+  </div>
+</div>

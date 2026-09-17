@@ -1,0 +1,64 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Mis Favoritos ({{ totalFavoritos }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="b-t-1">
+    <!-- Filtros -->
+    <div *ngIf="favoritos.length > 0" class="filtros d-flex gap-16 m-b-16">
+      <mat-form-field appearance="outline" class="filtro-select">
+        <mat-label>Categoría</mat-label>
+        <mat-select [(ngModel)]="categoriaFiltro" (selectionChange)="aplicarFiltros()">
+          <mat-option [value]="null">Todas</mat-option>
+          <mat-option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filtro-select">
+        <mat-label>Marca</mat-label>
+        <mat-select [(ngModel)]="marcaFiltro" (selectionChange)="aplicarFiltros()">
+          <mat-option [value]="null">Todas</mat-option>
+          <mat-option *ngFor="let mar of marcas" [value]="mar.id">{{ mar.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div *ngIf="favoritos.length === 0" class="p-24 text-center">
+      <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #ccc;">favorite_border</mat-icon>
+      <p class="m-t-16 f-w-600">No tienes productos favoritos</p>
+      <button mat-raised-button color="primary" (click)="irACatalogo()">Ir al catálogo</button>
+    </div>
+
+    <div *ngIf="favoritos.length > 0" class="row">
+      <div *ngFor="let fav of favoritos" class="col-lg-3 col-md-4 col-sm-6 col-12 m-t-16">
+        <mat-card class="cardWithShadow favorito-card">
+          <div class="imagen-container">
+            <img *ngIf="fav.producto_imagen" [src]="fav.producto_imagen" [alt]="fav.producto_nombre">
+            <mat-icon *ngIf="!fav.producto_imagen" class="imagen-placeholder">image</mat-icon>
+          </div>
+          <mat-card-content>
+            <h6 class="f-w-600 m-b-4">{{ fav.producto_nombre }}</h6>
+            <p class="text-muted m-b-8">
+              {{ fav.producto_precio | currency:'BOB ':'symbol':'1.2-2' }}
+            </p>
+            <div class="acciones">
+              <button mat-raised-button color="primary" [routerLink]="['/inventario/productos', fav.producto_id]">
+                Ver detalle
+              </button>
+              <button mat-icon-button color="warn" (click)="quitarFavorito(fav)" matTooltip="Quitar de favoritos">
+                <mat-icon>favorite</mat-icon>
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <mat-paginator *ngIf="totalFavoritos > pageSize"
+      [length]="totalFavoritos"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[5, 10, 20]"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

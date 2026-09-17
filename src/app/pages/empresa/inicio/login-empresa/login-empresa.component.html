@@ -1,0 +1,21 @@
+<h2 mat-dialog-title>Iniciar sesion</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Nombre de la empresa</mat-label>
+      <input matInput formControlName="nombre" placeholder="Ej: Tienda Amiga" />
+      @if (form.get('nombre')?.hasError('required')) {
+        <mat-error>El nombre es requerido</mat-error>
+      }
+      @if (form.get('nombre')?.hasError('minlength')) {
+        <mat-error>Minimo 2 caracteres</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="continuar()">Continuar</button>
+</mat-dialog-actions>

@@ -1,0 +1,213 @@
+<mat-card>
+  <mat-card-header>
+    <div class="page-header">
+      <mat-card-title>Nueva Venta</mat-card-title>
+      <button mat-stroked-button color="default" routerLink="/ventas">
+        <mat-icon>arrow_back</mat-icon>
+        Volver
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <div *ngIf="!isLoading">
+
+      <mat-form-field appearance="outline" class="w-full m-b-16">
+        <mat-label>Cliente</mat-label>
+        <mat-icon matPrefix>person</mat-icon>
+        <input
+          matInput
+          placeholder="Buscar cliente por nombre o usuario..."
+          [matAutocomplete]="autoCliente"
+          [(ngModel)]="usuarioSearchTerm"
+          (input)="filtrarUsuarios()">
+        <mat-autocomplete #autoCliente="matAutocomplete"
+                          (optionSelected)="onUsuarioSelected($event)">
+          <mat-option *ngFor="let u of filteredUsuarios" [value]="u">
+            <div class="usuario-option">
+              <span class="usuario-option-username">{{ u.username }}</span>
+              <span class="usuario-option-nombre" *ngIf="u.nombre || u.apellido">
+                {{ u.nombre }} {{ u.apellido }}
+              </span>
+            </div>
+          </mat-option>
+          <mat-option *ngIf="isLoadingUsuarios" disabled>
+            Cargando clientes...
+          </mat-option>
+          <mat-option *ngIf="!isLoadingUsuarios && filteredUsuarios.length === 0 && usuarioSearchTerm.length > 0" disabled>
+            No se encontraron clientes
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <div *ngIf="selectedUsuarioObj" class="selected-user-info">
+        <mat-icon class="selected-user-icon">person</mat-icon>
+        <div class="selected-user-details">
+          <span class="selected-user-name">
+            {{ selectedUsuarioObj.nombre }} {{ selectedUsuarioObj.apellido }}
+          </span>
+          <span class="selected-user-username">{{ selectedUsuarioObj.username }}</span>
+        </div>
+        <button mat-icon-button color="warn" matTooltip="Cambiar cliente" (click)="limpiarUsuario()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full m-b-16">
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          placeholder="Buscar producto por nombre..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()">
+      </mat-form-field>
+
+      <div *ngIf="pagedProductGroups.length === 0" class="empty-state">
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
+        <p class="empty-text">No se encontraron productos con stock disponible</p>
+      </div>
+
+      <div *ngFor="let group of pagedProductGroups" class="product-card">
+        <div class="product-header">
+          <div class="product-img-container">
+            <img *ngIf="group.imagen_url" [src]="group.imagen_url" class="product-img">
+            <div *ngIf="!group.imagen_url" class="product-img-placeholder">
+              <mat-icon>inventory_2</mat-icon>
+              <span class="placeholder-text">Sin imagen</span>
+            </div>
+          </div>
+          <div class="product-info">
+            <span class="product-name">{{ group.producto_nombre }}</span>
+            <span class="product-meta" *ngIf="group.categoria_nombre || group.marca_nombre">
+              {{ group.categoria_nombre }}{{ group.categoria_nombre && group.marca_nombre ? ' · ' : '' }}{{ group.marca_nombre }}
+            </span>
+          </div>
+        </div>
+        <div class="variantes-list">
+          <div *ngFor="let v of group.variantes" class="variante-row" [class.variante-agotada]="v.cantidad === 0">
+            <span class="variante-sku">{{ v.sku }}</span>
+            <span class="variante-stock-badge"
+                  [class.stock-ok]="v.cantidad > 5"
+                  [class.stock-low]="v.cantidad > 0 && v.cantidad <= 5"
+                  [class.stock-none]="v.cantidad === 0">
+              {{ v.cantidad === 0 ? 'Agotado' : 'Stock: ' + v.cantidad }}
+            </span>
+            <span class="variante-precio">S/ {{ v.precio }}</span>
+            <div class="variante-actions">
+              <div *ngIf="v.cantidad > 0" class="qty-stepper">
+                <button mat-icon-button class="stepper-btn" type="button"
+                        (click)="decrementarCantidad(v.id)"
+                        [disabled]="(cantidadesSeleccionadas[v.id] || 1) <= 1">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <input type="number" class="qty-input"
+                       [(ngModel)]="cantidadesSeleccionadas[v.id]"
+                       min="1" [max]="v.cantidad"
+                       (input)="validarCantidad(v.id, v.cantidad)">
+                <button mat-icon-button class="stepper-btn" type="button"
+                        (click)="incrementarCantidad(v.id)"
+                        [disabled]="(cantidadesSeleccionadas[v.id] || 1) >= v.cantidad">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              <button *ngIf="v.cantidad > 0" mat-icon-button color="primary"
+                      matTooltip="Agregar al carrito" (click)="agregarAlCarrito(v.id)">
+                <mat-icon>add_shopping_cart</mat-icon>
+              </button>
+              <span *ngIf="v.cantidad === 0" class="agotado-label">Sin stock</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <mat-paginator
+        *ngIf="filteredProductGroups.length > pageSizeProductos"
+        [length]="filteredProductGroups.length"
+        [pageSize]="pageSizeProductos"
+        [pageIndex]="currentPageProductos"
+        hidePageSize="true"
+        (page)="onPageChangeProductos($event)">
+      </mat-paginator>
+
+      <mat-card class="carrito-card">
+        <mat-card-header>
+          <mat-card-title>Carrito de Venta</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div *ngIf="cartItems.length === 0" class="empty-state">
+            <mat-icon class="empty-icon">shopping_cart</mat-icon>
+            <p class="empty-text">Agrega productos al carrito</p>
+          </div>
+
+          <table *ngIf="cartItems.length > 0" mat-table [dataSource]="cartItems" class="w-full">
+            <ng-container matColumnDef="producto">
+              <th mat-header-cell *matHeaderCellDef>Producto</th>
+              <td mat-cell *matCellDef="let item">{{ item.producto_nombre }} ({{ item.sku }})</td>
+            </ng-container>
+
+            <ng-container matColumnDef="cantidad">
+              <th mat-header-cell *matHeaderCellDef>Cant</th>
+              <td mat-cell *matCellDef="let item">{{ item.cantidad }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="precio_unitario">
+              <th mat-header-cell *matHeaderCellDef>P.Unit</th>
+              <td mat-cell *matCellDef="let item">S/ {{ item.precio_unitario }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="subtotal">
+              <th mat-header-cell *matHeaderCellDef>Subtotal</th>
+              <td mat-cell *matCellDef="let item">S/ {{ (item.cantidad * item.precio_unitario).toFixed(2) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let item; let i = index">
+                <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="eliminarDelCarrito(i)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumnsCart"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnsCart;"></tr>
+          </table>
+
+          <div *ngIf="cartItems.length > 0" class="total-row m-t-16">
+            <strong>TOTAL: S/ {{ totalCarrito.toFixed(2) }}</strong>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="d-flex justify-content-end gap-8 m-t-16">
+        <button mat-stroked-button color="default" routerLink="/ventas">
+          Cancelar
+        </button>
+        
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="!carritoValido || isSubmitting"
+          (click)="finalizarVenta()">
+          <mat-icon *ngIf="isSubmitting" class="spinner">sync</mat-icon>
+          <mat-icon *ngIf="!isSubmitting">save</mat-icon>
+          Guardar Pendiente
+        </button>
+
+        <button
+          mat-raised-button
+          color="accent"
+          [disabled]="!carritoValido || isSubmitting"
+          (click)="pagarYFinalizarVenta()">
+          <mat-icon *ngIf="isSubmitting" class="spinner">sync</mat-icon>
+          <mat-icon *ngIf="!isSubmitting">payments</mat-icon>
+          Pagar y Completar
+        </button>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

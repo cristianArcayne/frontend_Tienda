@@ -1,0 +1,269 @@
+.comparador-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.toolbar,
+.toolbar-actions,
+.summary-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toolbar-actions {
+  flex-wrap: wrap;
+}
+
+.toolbar h1 {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.summary-card,
+.comparison-card,
+.product-card,
+.error-card {
+  border-radius: 8px;
+}
+
+.summary-content > div:first-child {
+  min-width: 0;
+}
+
+.selected-products {
+  max-width: 100%;
+}
+
+.selected-products mat-chip {
+  max-width: 100%;
+}
+
+.product-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 16px;
+}
+
+.product-card {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.product-card h3,
+.product-card p {
+  overflow-wrap: anywhere;
+}
+
+.image-wrapper {
+  position: relative;
+  height: 150px;
+  background: #f5f5f5;
+}
+
+.image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.price {
+  color: #1976d2;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.comparison-table th {
+  font-weight: 700;
+  background: #f8fafc;
+}
+
+.mobile-comparison {
+  display: none;
+}
+
+.feature-name {
+  font-weight: 700;
+  width: 220px;
+}
+
+.empty-state {
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.empty-state mat-icon {
+  width: 64px;
+  height: 64px;
+  font-size: 64px;
+  color: #bdbdbd;
+}
+
+.error-card mat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b00020;
+}
+
+@media (max-width: 700px) {
+  .comparador-container {
+    padding: 16px !important;
+  }
+
+  .toolbar,
+  .summary-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions button {
+    flex: 1 1 150px;
+  }
+
+  .summary-card mat-card-content,
+  .comparison-card mat-card-content {
+    padding: 16px;
+  }
+
+  .selected-products {
+    width: 100%;
+  }
+
+  .product-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .image-wrapper {
+    height: 180px;
+  }
+
+  .empty-state {
+    padding: 28px 16px !important;
+  }
+
+  .comparison-table {
+    min-width: 560px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 12px;
+  }
+
+  .feature-name {
+    width: 160px;
+  }
+
+  .desktop-comparison {
+    display: none;
+  }
+
+  .mobile-comparison {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-feature {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .mobile-feature-title {
+    padding: 12px 14px;
+    font-weight: 700;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-value {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  .mobile-value:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-product-name {
+    font-weight: 600;
+    color: #374151;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-product-value {
+    color: #111827;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .comparador-container {
+    padding: 12px !important;
+  }
+
+  .toolbar-actions {
+    flex-direction: column;
+  }
+
+  .toolbar-actions button {
+    width: 100%;
+  }
+
+  .comparison-table {
+    min-width: 500px;
+  }
+
+  .feature-name {
+    width: 140px;
+  }
+
+  .mobile-value {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .mobile-product-value {
+    text-align: left;
+  }
+}

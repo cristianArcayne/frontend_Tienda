@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Suscripción — {{ empresa.nombre }}</h2>
+
+<mat-dialog-content>
+  <div *ngIf="empresa.suscripcion_actual; else sinSuscripcion" style="display: flex; flex-direction: column; gap: 12px; padding: 8px 0;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #666; font-size: 14px;">Plan</span>
+      <strong>{{ empresa.suscripcion_actual.plan_nombre }}</strong>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #666; font-size: 14px;">Estado</span>
+      <span [style.color]="getEstadoColor(empresa.suscripcion_actual.estado)"
+            style="font-weight: 600; text-transform: capitalize;">
+        {{ empresa.suscripcion_actual.estado }}
+      </span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #666; font-size: 14px;">Ciclo</span>
+      <span style="text-transform: capitalize;">{{ empresa.suscripcion_actual.ciclo }}</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #666; font-size: 14px;">Precio</span>
+      <strong>Bs. {{ empresa.suscripcion_actual.plan_precio | number:'1.2-2' }}</strong>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #666; font-size: 14px;">Inicio</span>
+      <span>{{ empresa.suscripcion_actual.fecha_inicio | date:'dd/MM/yyyy' }}</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #666; font-size: 14px;">Vencimiento</span>
+      <span>{{ empresa.suscripcion_actual.fecha_fin ? (empresa.suscripcion_actual.fecha_fin | date:'dd/MM/yyyy') : '—' }}</span>
+    </div>
+
+  </div>
+
+  <ng-template #sinSuscripcion>
+    <p style="color: #999; text-align: center; padding: 16px 0;">Sin suscripción registrada.</p>
+  </ng-template>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

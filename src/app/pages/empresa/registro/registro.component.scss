@@ -1,0 +1,121 @@
+.empresa-registro {
+	padding: 48px 24px;
+	max-width: 1000px;
+	margin: 0 auto;
+}
+
+.registro-card {
+	padding: 24px;
+	margin-bottom: 24px;
+}
+
+.registro-card-spaced {
+	margin-top: 24px;
+}
+
+.registro-title {
+	margin: 0 0 8px 0;
+	font-size: 28px;
+	font-weight: 700;
+}
+
+.registro-subtitle {
+	margin: 0;
+	color: #555;
+}
+
+.registro-section-title {
+	margin: 0 0 12px 0;
+}
+
+.registro-plan-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.registro-plan-card {
+	padding: 12px;
+	border: 1px solid #eee;
+}
+
+.registro-plan-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.registro-plan-body {
+	flex: 1;
+}
+
+.registro-plan-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.registro-plan-text {
+	margin: 4px 0 0 0;
+	color: #666;
+}
+
+.registro-ciclo {
+	margin-top: 16px;
+}
+
+.registro-ciclo-field {
+	width: 220px;
+}
+
+.registro-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.registro-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 16px;
+	gap: 12px;
+}
+
+@media (max-width: 720px) {
+	.empresa-registro {
+		padding: 24px 16px;
+	}
+
+	.registro-card {
+		padding: 16px;
+		margin-bottom: 16px;
+	}
+
+	.registro-card-spaced {
+		margin-top: 16px;
+	}
+
+	.registro-title {
+		font-size: 22px;
+	}
+
+	.registro-subtitle {
+		font-size: 14px;
+	}
+
+	.registro-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.registro-actions {
+		flex-direction: column;
+		align-items: flex-end;
+	}
+
+	.registro-ciclo-field {
+		width: 100%;
+		max-width: 220px;
+	}
+}

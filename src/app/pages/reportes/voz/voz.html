@@ -1,0 +1,79 @@
+<div class="voz-container">
+  <!-- ==================== IDLE ==================== -->
+  <div *ngIf="state === 'idle'" class="voz-idle">
+    <p class="voz-hint">Graba un audio o sube un archivo para describir qué reporte necesitas.</p>
+    <div class="voz-actions">
+      <button
+        mat-fab
+        [class.disabled]="!soportado"
+        (click)="toggleMic()"
+        [disabled]="!soportado"
+        class="voz-btn">
+        <mat-icon>mic</mat-icon>
+      </button>
+
+      <span class="voz-divider">o</span>
+
+      <button mat-stroked-button class="voz-upload-btn">
+        <mat-icon>upload_file</mat-icon>
+        Subir audio
+        <input type="file" accept="audio/*" (change)="onFileSelected($event)" class="voz-file-input">
+      </button>
+    </div>
+    <p *ngIf="!soportado" class="voz-error">
+      Grabación de audio no soportada en este navegador. Puedes subir un archivo.
+    </p>
+  </div>
+
+  <!-- ==================== RECORDING ==================== -->
+  <div *ngIf="state === 'recording'" class="voz-recording">
+    <div class="voz-recording-info">
+      <span class="voz-recording-dot"></span>
+      <span class="voz-recording-text">Grabando... {{ duracion }}s</span>
+    </div>
+    <div class="voz-recording-buttons">
+      <button mat-mini-fab class="grabando" (click)="toggleMic()">
+        <mat-icon>stop</mat-icon>
+      </button>
+      <button mat-mini-fab color="warn" (click)="eliminarGrabacion()">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== TRANSCRIBING ==================== -->
+  <div *ngIf="state === 'transcribing'" class="voz-transcribing">
+    <mat-spinner diameter="28"></mat-spinner>
+    <span>Transcribiendo audio...</span>
+  </div>
+
+  <!-- ==================== TRANSCRIBED ==================== -->
+  <div *ngIf="state === 'transcribed'" class="voz-result">
+    <mat-form-field appearance="outline" class="voz-textarea">
+      <mat-label>Texto transcrito (puedes corregirlo)</mat-label>
+      <textarea matInput [(ngModel)]="textoCorregido" rows="4"></textarea>
+    </mat-form-field>
+
+    <div class="voz-result-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="enviarNLP()"
+        [disabled]="procesando || !textoCorregido.trim()">
+        <mat-spinner *ngIf="procesando" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
+        <mat-icon *ngIf="!procesando">auto_awesome</mat-icon>
+        {{ procesando ? 'Procesando...' : 'Enviar a NLP' }}
+      </button>
+
+      <button mat-stroked-button (click)="limpiar(); state='idle'" [disabled]="procesando">
+        <mat-icon>refresh</mat-icon>
+        Nuevo audio
+      </button>
+    </div>
+
+    <div *ngIf="queryInterpretada" class="query-json">
+      <h4>Query interpretada:</h4>
+      <pre>{{ queryInterpretada | json }}</pre>
+    </div>
+  </div>
+</div>

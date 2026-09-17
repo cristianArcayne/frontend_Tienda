@@ -1,0 +1,32 @@
+<mat-card *ngIf="resultados">
+  <mat-card-header>
+    <mat-card-title>Resultados</mat-card-title>
+    <mat-card-subtitle *ngIf="resultados.paginacion">
+      {{ resultados.paginacion.total_registros }} registros encontrados
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div *ngIf="!resultados.datos || !resultados.datos.length" class="empty-state">
+      <p class="empty-text">Sin resultados</p>
+    </div>
+
+    <div *ngIf="resultados.datos && resultados.datos.length" class="table-responsive">
+      <table mat-table [dataSource]="resultados.datos" class="w-full">
+        <ng-container *ngFor="let col of columnas" [matColumnDef]="col">
+          <th mat-header-cell *matHeaderCellDef>{{ col }}</th>
+          <td mat-cell *matCellDef="let element">{{ element[col] }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      *ngIf="resultados.paginacion"
+      [length]="resultados.paginacion.total_registros"
+      [pageSize]="resultados.paginacion.total_paginas > 1 ? 50 : resultados.datos.length"
+      [pageIndex]="resultados.paginacion.pagina_actual - 1"
+      hidePageSize="true">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

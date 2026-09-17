@@ -1,0 +1,227 @@
+.prediccion-container {
+  padding: 24px;
+
+  @media (max-width: 600px) {
+    padding: 12px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    @media (max-width: 960px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .header-left {
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 4px;
+        font-size: 22px;
+        font-weight: 600;
+
+        .title-icon {
+          color: #7b1fa2;
+          font-size: 26px;
+          width: 26px;
+          height: 26px;
+        }
+      }
+
+      .subtitle {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      @media (max-width: 960px) {
+        width: 100%;
+      }
+
+      @media (max-width: 600px) {
+        gap: 8px;
+      }
+
+      .date-field {
+        width: 185px;
+
+        @media (max-width: 600px) {
+          flex: 1 1 150px;
+        }
+
+        ::ng-deep {
+          .mat-datepicker-toggle .mat-mdc-icon-button {
+            width: 32px;
+            height: 32px;
+            padding: 4px;
+          }
+          .mat-datepicker-toggle mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+          }
+        }
+      }
+
+      mat-checkbox {
+        padding-bottom: 4px;
+
+        ::ng-deep .mdc-checkbox__background {
+          border-color: #555 !important;
+          border-width: 2px;
+        }
+      }
+    }
+  }
+
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+
+    .summary-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: #f5f5f5;
+      font-size: 13px;
+      color: #424242;
+      border: 1px solid #e0e0e0;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #616161;
+      }
+
+      strong { font-weight: 700; }
+
+      &.pill-danger {
+        background: #ffebee;
+        border-color: #ffcdd2;
+        color: #b71c1c;
+        mat-icon { color: #c62828; }
+      }
+
+      &.pill-ok {
+        background: #e8f5e9;
+        border-color: #c8e6c9;
+        color: #1b5e20;
+        mat-icon { color: #2e7d32; }
+      }
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 24px;
+    gap: 16px;
+    color: #666;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 24px;
+    gap: 12px;
+    color: #bdbdbd;
+
+    mat-icon { font-size: 52px; width: 52px; height: 52px; }
+    p { margin: 0; font-size: 15px; color: #757575; }
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    padding: 0 !important;
+
+    table { width: 100%; }
+  }
+
+  // Row highlighting
+  .row-alerta {
+    background: #fff8f8 !important;
+
+    &:hover { background: #ffebee !important; }
+  }
+
+  .sku-code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #37474f;
+  }
+
+  .stock-bajo {
+    color: #c62828;
+    font-weight: 700;
+  }
+
+  .demanda-val {
+    font-weight: 600;
+    color: #1565c0;
+  }
+
+  .deficit-negativo {
+    color: #c62828;
+    font-weight: 600;
+  }
+
+  .deficit-ok {
+    color: #2e7d32;
+    font-weight: 600;
+  }
+
+  // Alert chips
+  .alerta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px 3px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    mat-icon {
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+    }
+
+    &.chip-alerta {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ef9a9a;
+    }
+
+    &.chip-ok {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+  }
+}

@@ -1,0 +1,233 @@
+<div class="suscripcion-container">
+
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <mat-icon class="title-icon">card_membership</mat-icon>
+        Mi Suscripción
+      </h1>
+    </div>
+    <div class="header-actions">
+      <button *ngIf="puedeCambiar" mat-stroked-button (click)="irCambiarPlan()" [disabled]="!suscripcion()">
+        <mat-icon>swap_horiz</mat-icon>
+        Cambiar plan
+      </button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando información de suscripción...</p>
+    </div>
+  } @else if (!suscripcion()) {
+    <div class="empty-state">
+      <mat-icon>card_membership</mat-icon>
+      <h3>Sin suscripción activa</h3>
+      <p>No se encontró ninguna suscripción para esta empresa.</p>
+    </div>
+  } @else {
+    <div class="cards-grid">
+
+      <!-- ESTADO ACTUAL -->
+      <mat-card class="estado-card">
+        <mat-card-content>
+          <div class="card-section-title">Estado de la suscripción</div>
+
+          <div class="estado-header">
+            <div class="badge-estado"
+              [style.color]="estadoConfig().color"
+              [style.background]="estadoConfig().bg">
+              <mat-icon class="badge-icon">circle</mat-icon>
+              {{ estadoConfig().label }}
+            </div>
+
+            @if (diasRestantes() !== null) {
+              <div class="dias-restantes" [class.dias-criticos]="(diasRestantes() ?? 99) <= 7">
+                <span class="dias-numero">{{ diasRestantes() }}</span>
+                <span class="dias-label">días restantes</span>
+              </div>
+            }
+          </div>
+
+          <mat-divider class="divider"></mat-divider>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Plan</span>
+              <span class="info-value plan-nombre">{{ planActual()?.nombre ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Ciclo</span>
+              <span class="info-value">{{ suscripcion()!.ciclo === 'mensual' ? 'Mensual' : 'Anual' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Inicio</span>
+              <span class="info-value">{{ suscripcion()!.fecha_inicio | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Vencimiento</span>
+              <span class="info-value" [class.texto-critico]="(diasRestantes() ?? 99) <= 7">
+                {{ suscripcion()!.fecha_fin ? (suscripcion()!.fecha_fin | date:'dd/MM/yyyy') : 'Sin fecha' }}
+              </span>
+            </div>
+            @if (suscripcion()!.ultima_renovacion) {
+              <div class="info-item">
+                <span class="info-label">Última renovación</span>
+                <span class="info-value">{{ suscripcion()!.ultima_renovacion | date:'dd/MM/yyyy' }}</span>
+              </div>
+            }
+          </div>
+
+          <mat-divider class="divider"></mat-divider>
+
+          <div class="auto-renovar-row">
+            <div class="auto-renovar-info">
+              <span class="info-label">Auto-renovación</span>
+              <span class="info-value-small">
+                {{ suscripcion()!.auto_renovar ? 'Se renueva automáticamente al vencer' : 'Sin renovación automática' }}
+              </span>
+            </div>
+            <mat-checkbox
+              [checked]="suscripcion()!.auto_renovar"
+              (change)="toggleAutoRenovar($event.checked)"
+              [disabled]="!puedeCambiar"
+              color="primary">
+            </mat-checkbox>
+          </div>
+
+          <div class="acciones">
+            @if (puedeCambiar && (suscripcion()!.estado === 'activa' || suscripcion()!.estado === 'trial' || suscripcion()!.estado === 'expirada')) {
+              <button mat-raised-button color="primary" (click)="abrirRenovar()">
+                <mat-icon>autorenew</mat-icon>
+                Renovar ahora
+              </button>
+            }
+            @if (puedeCambiar && (suscripcion()!.estado === 'activa' || suscripcion()!.estado === 'trial')) {
+              <button mat-stroked-button color="warn" (click)="abrirCancelar()">
+                <mat-icon>cancel</mat-icon>
+                Cancelar
+              </button>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- DETALLES DEL PLAN -->
+      @if (planActual()) {
+        <mat-card class="plan-card">
+          <mat-card-content>
+            <div class="card-section-title">Detalle del plan</div>
+            <div class="plan-nombre-grande">{{ planActual()!.nombre }}</div>
+
+            <div class="precio-row">
+              <span class="precio-valor">Bs. {{ suscripcion()!.ciclo === 'mensual' ? planActual()!.precio_mensual : planActual()!.precio_anual }}</span>
+              <span class="precio-periodo">{{ suscripcion()!.ciclo === 'mensual' ? '/mes' : '/año' }}</span>
+            </div>
+
+            <mat-divider class="divider"></mat-divider>
+
+            <div class="limites-grid">
+              <div class="limite-item">
+                <mat-icon>people</mat-icon>
+                <div>
+                  <div class="limite-valor">{{ planActual()!.limite_usuarios }}</div>
+                  <div class="limite-label">Usuarios</div>
+                </div>
+              </div>
+              <div class="limite-item">
+                <mat-icon>inventory_2</mat-icon>
+                <div>
+                  <div class="limite-valor">{{ planActual()!.limite_productos }}</div>
+                  <div class="limite-label">Productos</div>
+                </div>
+              </div>
+              <div class="limite-item">
+                <mat-icon>people_alt</mat-icon>
+                <div>
+                  <div class="limite-valor">{{ planActual()!.limite_clientes }}</div>
+                  <div class="limite-label">Clientes</div>
+                </div>
+              </div>
+              <div class="limite-item">
+                <mat-icon>local_shipping</mat-icon>
+                <div>
+                  <div class="limite-valor">{{ planActual()!.limite_proveedores }}</div>
+                  <div class="limite-label">Proveedores</div>
+                </div>
+              </div>
+            </div>
+
+            <mat-divider class="divider"></mat-divider>
+
+            <div class="features-list">
+              <div class="feature-row" [class.feature-activa]="planActual()!.feature_reportes_dinamicos">
+                <mat-icon>{{ planActual()!.feature_reportes_dinamicos ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Reportes dinámicos</span>
+              </div>
+              <div class="feature-row" [class.feature-activa]="planActual()!.feature_realidad_aumentada">
+                <mat-icon>{{ planActual()!.feature_realidad_aumentada ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Realidad aumentada</span>
+              </div>
+              <div class="feature-row" [class.feature-activa]="planActual()!.feature_fotos_3d">
+                <mat-icon>{{ planActual()!.feature_fotos_3d ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Fotos 3D</span>
+              </div>
+              <div class="feature-row" [class.feature-activa]="planActual()!.feature_backup_automatico">
+                <mat-icon>{{ planActual()!.feature_backup_automatico ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>Backup automático</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+    </div>
+
+    <!-- HISTORIAL DE CAMBIOS -->
+    <mat-card class="historial-card">
+      <mat-card-content>
+        <div class="historial-header">
+          <div class="card-section-title" style="margin-bottom:0">Historial de cambios</div>
+        </div>
+
+        @if (cambios().length === 0) {
+          <p class="sin-cambios">Sin cambios de plan registrados.</p>
+        } @else {
+          <div class="table-container">
+            <table mat-table [dataSource]="cambios()">
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let c">{{ c.cambiado_en | date:'dd/MM/yyyy HH:mm' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="plan_anterior">
+                <th mat-header-cell *matHeaderCellDef>Plan anterior</th>
+                <td mat-cell *matCellDef="let c">{{ nombrePlan(c.plan_anterior) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="plan_nuevo">
+                <th mat-header-cell *matHeaderCellDef>Plan nuevo</th>
+                <td mat-cell *matCellDef="let c">{{ nombrePlan(c.plan_nuevo) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="motivo">
+                <th mat-header-cell *matHeaderCellDef>Motivo</th>
+                <td mat-cell *matCellDef="let c">{{ c.motivo || '—' }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnasCambios"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasCambios;"></tr>
+            </table>
+          </div>
+
+          @if (totalCambios > 5) {
+            <mat-paginator
+              [length]="totalCambios"
+              [pageSize]="5"
+              [pageIndex]="paginaCambios"
+              hidePageSize
+              (page)="onPageCambios($event)">
+            </mat-paginator>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
