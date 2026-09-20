@@ -41,17 +41,17 @@
 
   <!-- Menú Desplegable -->
   <mat-menu #userMenu="matMenu">
-    <button mat-menu-item>
+    <button mat-menu-item (click)="abrirPerfil()">
       <mat-icon>person</mat-icon>
       <span>Mi Perfil</span>
     </button>
-    <button mat-menu-item>
-      <mat-icon>settings</mat-icon>
-      <span>Configuración</span>
+    <button mat-menu-item routerLink="/favoritos">
+      <mat-icon>favorite</mat-icon>
+      <span>Mis Favoritos</span>
     </button>
-    <button mat-menu-item *ngIf="!esCliente()" (click)="abrirConfigAtajos()">
-      <mat-icon>keyboard</mat-icon>
-      <span>Atajos de Teclado</span>
+    <button mat-menu-item routerLink="/configuracion">
+      <mat-icon>settings</mat-icon>
+      <span>Configuraciones</span>
     </button>
     <mat-divider></mat-divider>
     <button mat-menu-item (click)="cerrarSesion()" class="logout-button">

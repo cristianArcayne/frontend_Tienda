@@ -1,5 +1,5 @@
 import { BreakpointObserver, MediaMatcher } from '@angular/cdk/layout';
-import { Component, OnInit, ViewChild, ViewEncapsulation, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { MatSidenav, MatSidenavContent } from '@angular/material/sidenav';
 import { CoreService } from 'src/app/services/core.service';
@@ -15,12 +15,9 @@ import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { navItems } from './sidebar/sidebar-data';
-import { AtajosService } from 'src/app/services/atajos.service';
-import { AuthService } from 'src/app/services/auth.service';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
-
 
 @Component({
   selector: 'app-full',
@@ -45,7 +42,6 @@ export class FullComponent implements OnInit {
   resView = false;
 
   @ViewChild('content', { static: true }) content!: MatSidenavContent;
-  //get options from service
   options = this.settings.getOptions();
   private layoutChangesSubscription = Subscription.EMPTY;
   private isMobileScreen = false;
@@ -61,14 +57,11 @@ export class FullComponent implements OnInit {
     private settings: CoreService,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private atajosService: AtajosService,
-    private authService: AuthService,
   ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
       .observe([MOBILE_VIEW, TABLET_VIEW])
       .subscribe((state) => {
-        // SidenavOpened must be reset true when layout changes
         this.options.sidenavOpened = true;
         this.isMobileScreen = state.breakpoints[MOBILE_VIEW];
         if (this.options.sidenavCollapsed == false) {
@@ -76,13 +69,9 @@ export class FullComponent implements OnInit {
         }
       });
 
-    // Initialize project theme with options
-
-
-    // This is for scroll to top
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe((e) => {
+      .subscribe(() => {
         this.content.scrollTo({ top: 0 });
       });
   }
@@ -111,29 +100,4 @@ export class FullComponent implements OnInit {
     this.isCollapsedWidthFixed = !this.isOver;
     this.options.sidenavOpened = isOpened;
   }
-
-  private esCliente(): boolean {
-    const roles = this.authService.getRoles();
-    return !this.authService.isSuperuser() && roles.length === 1 && roles[0]?.toLowerCase() === 'cliente';
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    if (!event.altKey || this.esCliente()) return;
-
-    const keyMap: Record<string, string> = {
-      '1': 'alt.1', '2': 'alt.2', '3': 'alt.3', '4': 'alt.4', '5': 'alt.5',
-      '6': 'alt.6', '7': 'alt.7', '8': 'alt.8', '9': 'alt.9', '0': 'alt.0',
-    };
-
-    const atajo = keyMap[event.key];
-    if (atajo) {
-      event.preventDefault();
-      const route = this.atajosService.getRouteForKey(atajo);
-      if (route) {
-        this.router.navigate([route]);
-      }
-    }
-  }
-
 }
