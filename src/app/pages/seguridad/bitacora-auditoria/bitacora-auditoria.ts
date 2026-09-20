@@ -53,10 +53,6 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
     'hora',
     'usuario_username',
     'accion',
-    'entidad',
-    'ruta',
-    'metodo',
-    'estado_http',
     'ip_cliente',
     'detalles',
   ];
@@ -71,18 +67,17 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
 
   filtrosForm = this.fb.group({
     accion: [''],
-    metodo: [''],
   });
 
   acciones = [
-    { value: 'CREATE', label: 'Creacion' },
-    { value: 'UPDATE', label: 'Actualizacion' },
-    { value: 'DELETE', label: 'Eliminacion' },
-    { value: 'LOGIN', label: 'Inicio de sesion' },
-    { value: 'LOGOUT', label: 'Cierre de sesion' },
+    { value: 'INSERT', label: 'Creación' },
+    { value: 'UPDATE', label: 'Actualización' },
+    { value: 'DELETE', label: 'Eliminación' },
+    { value: 'LOGIN', label: 'Inicio de sesión' },
+    { value: 'LOGOUT', label: 'Cierre de sesión' },
+    { value: 'VENTA', label: 'Venta Digital / POS' },
+    { value: 'RESERVA', label: 'Reserva' },
   ];
-
-  metodos = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
   private destroy$ = new Subject<void>();
 
@@ -113,12 +108,11 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.dataSource = this.getRegistros(data);
           this.totalItems = this.getTotalRegistros(data, this.dataSource.length);
-
           this.isLoading = false;
         },
         error: (error) => {
           console.error('Error al cargar bitacora de auditoria:', error);
-          this.snackBar.open('Error al cargar la bitacora de auditoria', 'Cerrar', { duration: 5000 });
+          this.snackBar.open('Error al cargar la bitácora de auditoría', 'Cerrar', { duration: 5000 });
           this.isLoading = false;
         }
       });
@@ -132,7 +126,6 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   limpiarFiltros(): void {
     this.filtrosForm.reset({
       accion: '',
-      metodo: '',
     });
     this.consultar();
   }
@@ -151,51 +144,127 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
     if (registro.usuario_username) {
       return registro.usuario_username;
     }
-
     if (registro.username) {
       return registro.username;
     }
-
     if (registro.usuarios_id) {
       return `Usuario #${registro.usuarios_id}`;
     }
-
     if (typeof registro.usuario === 'string') {
       return registro.usuario;
     }
-
     if (typeof registro.usuario === 'number') {
       return `Usuario #${registro.usuario}`;
     }
-
     if (registro.usuario) {
       return registro.usuario.nombre_completo || registro.usuario.username || registro.usuario.email || 'Usuario';
     }
-
     return 'Sistema';
   }
 
-  getAccion(registro: BitacoraAuditoria): string {
-    return registro.accion || registro.action || registro.metodo || 'Consulta';
+  getAccionFormatted(registro: BitacoraAuditoria): string {
+    const raw = (registro.accion || registro.action || registro.metodo || 'Consulta').toUpperCase().trim();
+    if (raw.includes('INSERT') || raw.includes('CREATE') || raw.includes('ADD') || raw.includes('CREAR')) {
+      return 'Creación';
+    }
+    if (raw.includes('UPDATE') || raw.includes('EDIT') || raw.includes('ACTUALIZAR')) {
+      return 'Actualización';
+    }
+    if (raw.includes('DELETE') || raw.includes('REMOVE') || raw.includes('ELIMINAR')) {
+      return 'Eliminación';
+    }
+    if (raw.includes('LOGIN') || raw.includes('ACCESO') || raw.includes('INICIO')) {
+      return 'Inicio de sesión';
+    }
+    if (raw.includes('LOGOUT') || raw.includes('CIERRE') || raw.includes('SALIDA')) {
+      return 'Cierre de sesión';
+    }
+    if (raw.includes('VENTA') || raw.includes('ECOMMERCE') || raw.includes('PAGO')) {
+      return 'Venta digital';
+    }
+    if (raw.includes('RESERVA')) {
+      return 'Reserva';
+    }
+    return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
   }
 
-  getEntidad(registro: BitacoraAuditoria): string {
-    const modulo = registro.modulo || registro.app_label || '';
-    const modelo = registro.modelo || registro.model_name || '';
-
-    if (registro.entidad) {
-      return registro.entidad;
+  getAccionClass(registro: BitacoraAuditoria): string {
+    const raw = (registro.accion || registro.action || registro.metodo || '').toUpperCase().trim();
+    if (raw.includes('INSERT') || raw.includes('CREATE') || raw.includes('ADD') || raw.includes('CREAR')) {
+      return 'badge-crear';
     }
-
-    if (modulo && modelo) {
-      return `${modulo} / ${modelo}`;
+    if (raw.includes('UPDATE') || raw.includes('EDIT') || raw.includes('ACTUALIZAR')) {
+      return 'badge-actualizar';
     }
+    if (raw.includes('DELETE') || raw.includes('REMOVE') || raw.includes('ELIMINAR')) {
+      return 'badge-eliminar';
+    }
+    if (raw.includes('LOGIN') || raw.includes('ACCESO') || raw.includes('INICIO')) {
+      return 'badge-login';
+    }
+    if (raw.includes('LOGOUT') || raw.includes('CIERRE') || raw.includes('SALIDA')) {
+      return 'badge-logout';
+    }
+    if (raw.includes('VENTA') || raw.includes('ECOMMERCE') || raw.includes('PAGO')) {
+      return 'badge-venta';
+    }
+    if (raw.includes('RESERVA')) {
+      return 'badge-reserva';
+    }
+    return 'badge-default';
+  }
 
-    return modulo || modelo || 'General';
+  getAccionIcon(registro: BitacoraAuditoria): string {
+    const raw = (registro.accion || registro.action || registro.metodo || '').toUpperCase().trim();
+    if (raw.includes('INSERT') || raw.includes('CREATE') || raw.includes('ADD') || raw.includes('CREAR')) {
+      return 'add_circle_outline';
+    }
+    if (raw.includes('UPDATE') || raw.includes('EDIT') || raw.includes('ACTUALIZAR')) {
+      return 'edit_note';
+    }
+    if (raw.includes('DELETE') || raw.includes('REMOVE') || raw.includes('ELIMINAR')) {
+      return 'delete_outline';
+    }
+    if (raw.includes('LOGIN') || raw.includes('ACCESO') || raw.includes('INICIO')) {
+      return 'login';
+    }
+    if (raw.includes('LOGOUT') || raw.includes('CIERRE') || raw.includes('SALIDA')) {
+      return 'logout';
+    }
+    if (raw.includes('VENTA') || raw.includes('ECOMMERCE') || raw.includes('PAGO')) {
+      return 'shopping_bag';
+    }
+    if (raw.includes('RESERVA')) {
+      return 'event_available';
+    }
+    return 'info';
   }
 
   getDescripcion(registro: BitacoraAuditoria): string {
-    return registro.detalles || registro.descripcion || registro.detalle || registro.mensaje || registro.objeto || registro.object_repr || 'Sin descripcion';
+    return (
+      registro.detalles ||
+      registro.descripcion ||
+      registro.detalle ||
+      registro.mensaje ||
+      registro.objeto ||
+      registro.object_repr ||
+      'Sin descripción'
+    );
+  }
+
+  getCuBadge(registro: BitacoraAuditoria): string | null {
+    const desc = this.getDescripcion(registro);
+    const match = desc.match(/\[?(CU\s*-?\s*\d+)\]?/i);
+    if (match) {
+      return match[1].toUpperCase().replace(/\s+/g, '');
+    }
+    return null;
+  }
+
+  getDescripcionLimpia(registro: BitacoraAuditoria): string {
+    const desc = this.getDescripcion(registro);
+    const cleaned = desc.replace(/\[?CU\s*-?\s*\d+\]?:?\s*/i, '').trim();
+    return cleaned || desc;
   }
 
   getIp(registro: BitacoraAuditoria): string {
@@ -212,32 +281,6 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
     if (registro.timestamp) return registro.timestamp;
     if (registro.fecha && registro.hora) return `${registro.fecha}T${registro.hora}Z`;
     return null;
-  }
-
-  getEstadoHttp(registro: BitacoraAuditoria): string {
-    if (registro.estado_http === 0 || registro.estado_http) {
-      return String(registro.estado_http);
-    }
-
-    if (typeof registro.exitoso === 'boolean') {
-      return registro.exitoso ? '200' : '500';
-    }
-
-    return registro.resultado || '-';
-  }
-
-  getEstadoHttpColor(registro: BitacoraAuditoria): 'primary' | 'warn' | 'accent' {
-    const estado = Number(this.getEstadoHttp(registro));
-
-    if (estado >= 400) {
-      return 'warn';
-    }
-
-    if (estado >= 300) {
-      return 'accent';
-    }
-
-    return 'primary';
   }
 
   private getParams(): HttpParams {
@@ -268,11 +311,9 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
       if (Array.isArray(results)) {
         return results as BitacoraAuditoria[];
       }
-
       if (Array.isArray(data)) {
         return data as BitacoraAuditoria[];
       }
-
       if (Array.isArray(registros)) {
         return registros as BitacoraAuditoria[];
       }
@@ -284,12 +325,10 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   private getTotalRegistros(response: unknown, fallback: number): number {
     if (this.isObjectResponse(response)) {
       const total = response['count'] ?? response['total'] ?? response['totalItems'];
-
       if (typeof total === 'number') {
         return total;
       }
     }
-
     return fallback;
   }
 
