@@ -7,6 +7,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ReporteRespuesta } from '../../../models/reportes/reporte-respuesta.model';
 
+export interface QueryInterpretada {
+  periodo?: string;
+  intencion?: string;
+  mensaje?: string;
+  [key: string]: any;
+}
+
 @Component({
   selector: 'app-reporte-resultados',
   standalone: true,
@@ -19,7 +26,7 @@ import { ReporteRespuesta } from '../../../models/reportes/reporte-respuesta.mod
 })
 export class ReporteResultadosComponent {
   @Input() resultados: ReporteRespuesta | null = null;
-  @Input() queryInterpretada: Record<string, any> | null = null;
+  @Input() queryInterpretada: QueryInterpretada | null = null;
 
   get columnas(): string[] {
     if (!this.resultados?.datos?.length) return [];

@@ -3,8 +3,8 @@
     <mat-card-title>Resultados de la Consulta</mat-card-title>
     <mat-card-subtitle *ngIf="resultados.paginacion">
       <strong>{{ resultados.paginacion.total_registros }}</strong> registros encontrados
-      <span *ngIf="queryInterpretada?.periodo"> &bull; <strong>Período:</strong> {{ queryInterpretada.periodo }}</span>
-      <span *ngIf="queryInterpretada?.intencion"> &bull; {{ queryInterpretada.intencion }}</span>
+      <span *ngIf="queryInterpretada?.periodo"> &bull; <strong>Período:</strong> {{ queryInterpretada?.periodo }}</span>
+      <span *ngIf="queryInterpretada?.intencion"> &bull; {{ queryInterpretada?.intencion }}</span>
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>

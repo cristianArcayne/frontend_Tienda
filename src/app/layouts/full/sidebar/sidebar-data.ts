@@ -18,7 +18,6 @@ export const navItems: NavItem[] = [
       PermisosService.SEGURIDAD_VIEW_USUARIO,
       PermisosService.AUTH_VIEW_GROUP,
       PermisosService.SEGURIDAD_VIEW_BITACORA_AUDITORIA,
-      PermisosService.SEGURIDAD_VIEW_BACKUP,
       PermisosService.SEGURIDAD_ADD_REPORTE,
     ],
   },
@@ -45,12 +44,6 @@ export const navItems: NavItem[] = [
     iconName: 'solar:microphone-line-duotone',
     route: '/reportes',
     permiso: PermisosService.SEGURIDAD_ADD_REPORTE,
-  },
-  {
-    displayName: 'Base de Datos (Backups)',
-    iconName: 'solar:database-line-duotone',
-    route: '/seguridad/base-de-datos',
-    permiso: PermisosService.SEGURIDAD_VIEW_BACKUP,
   },
   {
     displayName: 'Reportes (Tabulares)',
@@ -94,12 +87,6 @@ export const navItems: NavItem[] = [
     iconName: 'solar:hanger-2-line-duotone',
     route: '/inventario/productos',
     permiso: PermisosService.INVENTARIO_VIEW_PRODUCTO,
-  },
-  {
-    displayName: 'Suscripción de Empresa',
-    iconName: 'solar:card-recive-line-duotone',
-    route: '/suscripcion',
-    permiso: PermisosService.SEGURIDAD_VIEW_MI_SUSCRIPCION,
   },
 
   // ==========================================
@@ -170,12 +157,6 @@ export const navItems: NavItem[] = [
     permiso: PermisosService.INVENTARIO_VIEW_CATALOGO,
   },
   {
-    displayName: 'Mis Beneficios',
-    iconName: 'solar:gift-line-duotone',
-    route: '/mis-beneficios',
-    permiso: PermisosService.INVENTARIO_VIEW_CATALOGO,
-  },
-  {
     displayName: 'Mis Compras',
     iconName: 'solar:receipt-list-line-duotone',
     route: '/mis-compras',
@@ -203,7 +184,6 @@ export const navItems: NavItem[] = [
       PermisosService.INVENTARIO_VIEW_CATALOGO,
       PermisosService.VENTA_VIEW_VENTA,
       PermisosService.VENTA_ADD_VENTA,
-      PermisosService.VENTA_CHANGE_CONFIGURACIONFIDELIZACION,
     ],
   },
   {
@@ -229,11 +209,5 @@ export const navItems: NavItem[] = [
     iconName: 'solar:card-2-line-duotone',
     route: '/ventas',
     permiso: PermisosService.VENTA_VIEW_VENTA,
-  },
-  {
-    displayName: 'Configurar Fidelización',
-    iconName: 'solar:medal-ribbons-star-line-duotone',
-    route: '/empresa/fidelizacion',
-    permiso: PermisosService.VENTA_CHANGE_CONFIGURACIONFIDELIZACION,
   },
 ];
