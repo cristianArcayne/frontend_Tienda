@@ -33,8 +33,8 @@ export class ConfigService {
     const protocol = window.location.protocol;
     let port = window.location.port;
 
-    // Si está en localhost (puede ser con o sin subdominio)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Si está en localhost o desplegado en Vercel, usar la URL del backend configurada
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('vercel.app')) {
       return environment.apiBaseUrl;
     }
 
