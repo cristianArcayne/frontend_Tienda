@@ -40,13 +40,7 @@ export const navItems: NavItem[] = [
     permiso: PermisosService.SEGURIDAD_VIEW_BITACORA_AUDITORIA,
   },
   {
-    displayName: '[CU18] Reportes por Voz',
-    iconName: 'solar:microphone-line-duotone',
-    route: '/reportes',
-    permiso: PermisosService.SEGURIDAD_ADD_REPORTE,
-  },
-  {
-    displayName: 'Reportes (Tabulares)',
+    displayName: '[CU18] Reportes y Estadísticas',
     iconName: 'solar:chart-square-line-duotone',
     route: '/reportes',
     permiso: PermisosService.SEGURIDAD_ADD_REPORTE,
