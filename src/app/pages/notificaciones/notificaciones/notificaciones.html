@@ -31,14 +31,45 @@
         <button mat-button type="button" (click)="desactivarNotificaciones()" [disabled]="isPushBusy || !pushActiva">
           Desactivar
         </button>
-        <button mat-stroked-button color="primary" type="button" (click)="probarNotificacion()" [disabled]="isPushBusy || !pushActiva">
-          Probar
+        <button mat-stroked-button color="primary" type="button" (click)="probarNotificacion()" [disabled]="isPushBusy">
+          <mat-icon class="m-r-4">notifications</mat-icon>
+          Probar Notificación
         </button>
       </div>
     </section>
 
     <mat-tab-group>
-      <mat-tab label="Promociones">
+      <mat-tab label="Avisos & Difusión Móvil">
+        <div class="tab-content">
+          <div class="broadcast-box p-16 m-b-16" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <mat-icon style="color: #4f46e5;">campaign</mat-icon>
+              <strong style="font-size: 15px; color: #1e293b;">Difusión Inmediata a la App Móvil</strong>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+              Escribe un aviso o comunicado. Aparecerá de forma emergente (banner superior flotante) en los teléfonos móviles en tiempo real.
+            </p>
+            <form [formGroup]="broadcastForm" (ngSubmit)="enviarAvisoInmediato()" style="display: flex; flex-direction: column; gap: 12px;">
+              <mat-form-field appearance="outline">
+                <mat-label>Título del Aviso</mat-label>
+                <input matInput formControlName="titulo" placeholder="Ej: 🎉 ¡Gran Descuento 30% en Vestidos!">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Mensaje de la Notificación</mat-label>
+                <textarea matInput rows="3" formControlName="mensaje" placeholder="Ej: Aprovecha los descuentos exclusivos en tienda y app móvil hoy."></textarea>
+              </mat-form-field>
+              <div>
+                <button mat-flat-button color="primary" type="submit" [disabled]="isPushBusy" style="height: 44px;">
+                  <mat-icon class="m-r-8">send</mat-icon>
+                  Publicar y Enviar Notificación al Móvil
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Promociones del Catálogo">
         <div class="tab-content">
           <form class="promo-form" [formGroup]="promocionForm" (ngSubmit)="crearPromocion()">
             <mat-form-field appearance="outline">

@@ -91,6 +91,11 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     fecha_fin: ['', Validators.required],
   });
 
+  broadcastForm = this.fb.group({
+    titulo: ['🎉 ¡Gran Promoción en FashionStore!', [Validators.required, Validators.maxLength(120)]],
+    mensaje: ['Descuentos exclusivos en todas las prendas de temporada. ¡Aprovecha hoy!', [Validators.required, Validators.maxLength(500)]],
+  });
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -354,20 +359,47 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   probarNotificacion(): void {
     this.isPushBusy = true;
     this.notificacionesService.probar({
-      titulo: 'Prueba',
-      mensaje: 'Las notificaciones funcionan',
+      titulo: '🎉 Prueba de Notificación',
+      mensaje: '¡Las notificaciones emergentes entre Web y Móvil están activas y funcionando en tiempo real!',
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.isPushBusy = false;
-          this.snackBar.open('Notificacion de prueba enviada', 'OK', { duration: 3000 });
+          this.snackBar.open('¡Notificación de prueba enviada a la App Móvil y Web!', 'OK', { duration: 4000 });
           this.loadNotificaciones();
         },
         error: (error) => {
           console.error('Error al probar notificacion:', error);
           this.isPushBusy = false;
           this.snackBar.open('No se pudo enviar la notificacion de prueba', 'Cerrar', { duration: 5000 });
+        },
+      });
+  }
+
+  enviarAvisoInmediato(): void {
+    if (this.broadcastForm.invalid) {
+      this.broadcastForm.markAllAsTouched();
+      return;
+    }
+    const raw = this.broadcastForm.getRawValue();
+    this.isPushBusy = true;
+    this.notificacionesService.probar({
+      titulo: raw.titulo || 'Aviso FashionStore',
+      mensaje: raw.mensaje || '',
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isPushBusy = false;
+          this.snackBar.open('¡Aviso publicado y enviado al móvil exitosamente!', 'OK', { duration: 4000 });
+          this.loadNotificaciones();
+          this.loadPromociones();
+        },
+        error: (error) => {
+          console.error('Error al emitir aviso:', error);
+          this.isPushBusy = false;
+          this.snackBar.open('No se pudo enviar el aviso al móvil', 'Cerrar', { duration: 5000 });
         },
       });
   }
