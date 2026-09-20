@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 .login-container {
   width: 100%;
   min-height: 100vh;
@@ -5,9 +7,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%);
-  padding: 24px 16px;
+  background: radial-gradient(circle at 10% 20%, #1e1b4b 0%, #0f172a 40%, #090d16 100%);
+  padding: 32px 16px;
   box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 20% 20%, rgba(225, 29, 72, 0.08) 0%, transparent 40%);
+    pointer-events: none;
+  }
 }
 
 .login-wrapper {
@@ -15,143 +31,253 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
 }
 
 .login-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 460px;
 }
 
 .custom-login-card {
-  border-radius: 20px !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
-  background: #ffffff;
+  border-radius: 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  background: #ffffff !important;
   overflow: hidden;
+  border: none !important;
 }
 
-.p-32 {
-  padding: 32px 28px;
+.login-card-content {
+  padding: 36px 32px !important;
+}
+
+// Badge Superior de Marca
+.brand-badge-wrapper {
+  display: flex;
+  justify-content: center;
+
+  .brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fdf2f4;
+    color: #e11d48;
+    border: 1px solid #fecdd3;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+
+    .badge-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: #e11d48;
+    }
+  }
 }
 
 .login-title {
-  font-size: 26px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
 }
 
 .login-subtitle {
-  font-size: 14px;
+  font-size: 13.5px;
   color: #64748b;
   margin: 0;
+  font-weight: 400;
 }
 
-.field-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 6px;
-  display: block;
+// Micro Labels al estilo móvil
+.field-label-micro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  color: #4338ca;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+
+  .label-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #6366f1;
+  }
 }
 
 .label-with-link {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .forgot-link {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #4f46e5;
   text-decoration: none;
+  transition: color 0.15s ease;
+
   &:hover {
+    color: #3730a3;
     text-decoration: underline;
   }
 }
 
-.field-prefix-icon {
-  color: #94a3b8;
-  margin-right: 8px;
+.luxury-field {
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background-color: #f8fafc !important;
+    border-radius: 14px !important;
+  }
+
+  ::ng-deep .mdc-notched-outline__leading,
+  ::ng-deep .mdc-notched-outline__notch,
+  ::ng-deep .mdc-notched-outline__trailing {
+    border-color: #e2e8f0 !important;
+  }
+
+  &:hover ::ng-deep .mdc-notched-outline__leading,
+  &:hover ::ng-deep .mdc-notched-outline__notch,
+  &:hover ::ng-deep .mdc-notched-outline__trailing {
+    border-color: #cbd5e1 !important;
+  }
+
+  &.mat-focused ::ng-deep .mdc-notched-outline__leading,
+  &.mat-focused ::ng-deep .mdc-notched-outline__notch,
+  &.mat-focused ::ng-deep .mdc-notched-outline__trailing {
+    border-color: #4f46e5 !important;
+    border-width: 1.8px !important;
+  }
+
+  .field-prefix-icon {
+    color: #94a3b8;
+    margin-right: 8px;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .toggle-pass-icon {
+    color: #64748b;
+    font-size: 20px;
+  }
 }
 
+.remember-row {
+  ::ng-deep .mdc-checkbox__background {
+    border-radius: 6px !important;
+  }
+  ::ng-deep .mdc-label {
+    font-size: 13px !important;
+    color: #475569 !important;
+    font-weight: 500;
+  }
+}
+
+// Botón de Ingreso Principal
 .btn-ingresar {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%) !important;
   color: #ffffff !important;
-  border-radius: 12px !important;
-  height: 48px !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
+  border-radius: 14px !important;
+  height: 50px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35) !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  letter-spacing: 0.3px;
+  box-shadow: 0 8px 20px rgba(30, 27, 75, 0.3) !important;
+  transition: all 0.2s ease !important;
 
   &:hover:not([disabled]) {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.45) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(30, 27, 75, 0.45) !important;
+    background: linear-gradient(135deg, #2e1065 0%, #3730a3 60%, #4f46e5 100%) !important;
+  }
+
+  &:active:not([disabled]) {
+    transform: translateY(0);
   }
 
   .btn-icon {
     margin-right: 8px;
+    font-size: 20px;
   }
 }
 
+// Caja de Credenciales
 .info-credentials-box {
-  background-color: #eff6ff;
-  border: 1px solid #dbeafe;
-  border-radius: 12px;
-  padding: 14px 16px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 16px;
 
   .info-header {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #1e40af;
-    font-size: 14px;
-    margin-bottom: 8px;
+    color: #334155;
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-bottom: 6px;
 
     .info-icon {
-      color: #3b82f6;
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
+      color: #6366f1;
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
     }
   }
 
   .info-body {
-    padding-left: 24px;
-    font-size: 13px;
-    color: #1e3a8a;
+    padding-left: 22px;
+    font-size: 12px;
+    color: #475569;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    gap: 16px;
 
     .highlight-text {
-      color: #4338ca;
+      color: #1e1b4b;
       font-weight: 700;
+      background: #e2e8f0;
+      padding: 1px 6px;
+      border-radius: 4px;
     }
   }
 }
 
 .login-footer-links {
   .footer-link {
-    font-size: 14px;
-    color: #4f46e5;
+    font-size: 13.5px;
+    color: #64748b;
     text-decoration: none;
     font-weight: 500;
+    transition: color 0.15s ease;
+
     &:hover {
+      color: #4f46e5;
       text-decoration: underline;
     }
   }
 
   .footer-link-bold {
-    font-size: 14px;
+    font-size: 13.5px;
     color: #4f46e5;
     text-decoration: none;
     font-weight: 700;
+
     &:hover {
       text-decoration: underline;
     }
@@ -163,6 +289,7 @@
 .m-b-16 { margin-bottom: 16px; }
 .m-b-20 { margin-bottom: 20px; }
 .m-b-24 { margin-bottom: 24px; }
+.m-b-28 { margin-bottom: 28px; }
 .m-r-8  { margin-right: 8px; }
 .w-100  { width: 100%; }
 .text-center { text-align: center; }
