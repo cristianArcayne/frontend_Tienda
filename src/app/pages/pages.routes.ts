@@ -124,6 +124,18 @@ export const PagesRoutes: Routes = [
       import('./ia/ia.routes').then((m) => m.IaRoutes),
   },
   {
+    path: 'reservas',
+    loadComponent: () =>
+      import('./reservas/reservas.component').then((m) => m.ReservasComponent),
+    data: {
+      title: 'Reservas Web-to-Store',
+      urls: [
+        { title: 'Dashboard', url: '/' },
+        { title: 'Reservas Web-to-Store' }
+      ]
+    }
+  },
+  {
     path: 'suscripcion',
     loadComponent: () =>
       import('./empresa/suscripcion/suscripcion.component').then((m) => m.SuscripcionComponent),

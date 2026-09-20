@@ -1,4 +1,4 @@
-import { Component, OnDestroy, Inject } from '@angular/core';
+import { Component, OnDestroy, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,18 +28,21 @@ import { Categoria } from '../../../../models/inventario/categoria.model';
 })
 export class EliminarCategoriaComponent implements OnDestroy {
   isDeleting = false;
+  errorMessage: string | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
     private apiService: ApiService,
     private configService: ConfigService,
     private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<EliminarCategoriaComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { categoria: Categoria }
   ) {}
 
   confirmarEliminacion(): void {
     this.isDeleting = true;
+    this.errorMessage = null;
     const url = this.configService.getApiUrl('categorias');
 
     this.apiService.delete(url, this.data.categoria.id)
@@ -48,12 +51,15 @@ export class EliminarCategoriaComponent implements OnDestroy {
         next: () => {
           this.isDeleting = false;
           this.snackBar.open('Categoría eliminada exitosamente', 'OK', { duration: 3000 });
+          this.cdr.markForCheck();
           this.dialogRef.close(true);
         },
         error: (error) => {
           this.isDeleting = false;
-          console.error('Error al eliminar categoría:', error);
-          this.snackBar.open('Error al eliminar la categoría', 'Cerrar', { duration: 5000 });
+          const msg = error.error?.detail || error.message || 'Error al eliminar la categoría. Podría tener prendas asignadas.';
+          this.errorMessage = msg;
+          this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
+          this.cdr.markForCheck();
         }
       });
   }

@@ -1,13 +1,19 @@
 <mat-card *ngIf="resultados">
   <mat-card-header>
-    <mat-card-title>Resultados</mat-card-title>
+    <mat-card-title>Resultados de la Consulta</mat-card-title>
     <mat-card-subtitle *ngIf="resultados.paginacion">
-      {{ resultados.paginacion.total_registros }} registros encontrados
+      <strong>{{ resultados.paginacion.total_registros }}</strong> registros encontrados
+      <span *ngIf="queryInterpretada?.periodo"> &bull; <strong>Período:</strong> {{ queryInterpretada.periodo }}</span>
+      <span *ngIf="queryInterpretada?.intencion"> &bull; {{ queryInterpretada.intencion }}</span>
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div *ngIf="!resultados.datos || !resultados.datos.length" class="empty-state">
-      <p class="empty-text">Sin resultados</p>
+    <div *ngIf="!resultados.datos || !resultados.datos.length" class="empty-state p-24 text-center" style="padding: 32px 16px; text-align: center;">
+      <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #f59e0b; margin-bottom: 8px;">info_outline</mat-icon>
+      <h3 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 8px 0 4px;">Sin registros en la base de datos</h3>
+      <p class="empty-text" style="color: #64748b; max-width: 600px; margin: 0 auto; line-height: 1.5; font-size: 14px;">
+        {{ queryInterpretada?.mensaje || 'No se encontraron datos en la base de datos de FashionStore para la fecha o los criterios solicitados.' }}
+      </p>
     </div>
 
     <div *ngIf="resultados.datos && resultados.datos.length" class="table-responsive">

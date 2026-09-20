@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { CartService, Carrito } from '../../../services/cart.service';
@@ -31,6 +32,7 @@ import { ProcesarPagoDialogComponent } from '../../venta/detalle-venta/procesar-
     MatTableModule,
     MatInputModule,
     MatFormFieldModule,
+    MatSelectModule,
     FormsModule,
     MatDialogModule
   ],
@@ -39,6 +41,8 @@ import { ProcesarPagoDialogComponent } from '../../venta/detalle-venta/procesar-
 })
 export class CarritoComponent implements OnInit {
   carrito: Carrito | null = null;
+  sucursales: any[] = [];
+  sucursalSeleccionadaId: number = 1;
   displayedColumns: string[] = ['producto', 'precio', 'cantidad', 'subtotal', 'acciones'];
   productosRecomendados: Producto[] = [];
   variantesRecomendados: { [productoId: number]: any[] } = {};
@@ -55,9 +59,22 @@ export class CarritoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.cargarSucursales();
     this.cartService.carrito$.subscribe(carrito => {
       this.carrito = carrito;
       this.cargarRecomendados();
+    });
+  }
+
+  cargarSucursales(): void {
+    const url = this.configService.getApiUrl('sucursales');
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        this.sucursales = Array.isArray(res) ? res : (res.results || []);
+        if (this.sucursales.length > 0) {
+          this.sucursalSeleccionadaId = this.sucursales[0].id;
+        }
+      }
     });
   }
 
@@ -89,39 +106,7 @@ export class CarritoComponent implements OnInit {
           seen.add(p.id);
           return true;
         })
-        .slice(0, 10);
-
-      this.cargarVariantesRecomendados();
-    });
-  }
-
-  private cargarVariantesRecomendados(): void {
-    if (this.productosRecomendados.length === 0) return;
-
-    const baseUrl = this.configService.getApiUrl('variantes');
-    const requests = this.productosRecomendados.map(p =>
-      this.http.get<any[]>(`${baseUrl}?producto_id=${p.id}`).pipe(
-        catchError(() => of([]))
-      )
-    );
-
-    forkJoin(requests).subscribe(results => {
-      this.variantesRecomendados = {};
-      this.productosRecomendados.forEach((p, i) => {
-        this.variantesRecomendados[p.id] = results[i].slice(0, 5);
-      });
-    });
-  }
-
-  agregarRecomendado(productoId: number, varianteId: number): void {
-    const producto = this.productosRecomendados.find(p => p.id === productoId);
-    this.cartService.agregarProducto(varianteId).subscribe({
-      next: () => {
-        this.snackBar.open(`${producto?.nombre || 'Producto'} agregado al carrito`, 'Cerrar', { duration: 2000 });
-      },
-      error: (err) => {
-        this.snackBar.open(err.error?.error || 'Error al agregar', 'Cerrar', { duration: 3000 });
-      }
+        .slice(0, 8);
     });
   }
 
@@ -130,16 +115,28 @@ export class CarritoComponent implements OnInit {
     if (cantidad > 0) {
       this.cartService.actualizarCantidad(varianteId, cantidad).subscribe({
         error: (err) => {
-          this.snackBar.open(err.error?.error || 'Error al actualizar', 'Cerrar', { duration: 3000 });
+          this.snackBar.open(err.error?.detail || err.error?.error || 'Error al actualizar', 'Cerrar', { duration: 3000 });
           this.cartService.cargarCarrito();
         }
       });
     }
   }
 
+
+  agregarRecomendado(productoId: number, varianteId: number): void {
+    this.cartService.agregarProducto(varianteId).subscribe({
+      next: () => {
+        this.snackBar.open('Prenda agregada al carrito', 'Cerrar', { duration: 2000 });
+      },
+      error: () => {
+        this.snackBar.open('Error al agregar al carrito', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
   eliminarItem(varianteId: number): void {
     this.cartService.eliminarProducto(varianteId).subscribe(() => {
-      this.snackBar.open('Producto eliminado', 'Cerrar', { duration: 2000 });
+      this.snackBar.open('Producto eliminado del carrito', 'Cerrar', { duration: 2000 });
     });
   }
 
@@ -170,12 +167,12 @@ export class CarritoComponent implements OnInit {
         document.body.appendChild(a);
         a.style.display = 'none';
         a.href = url;
-        a.download = `Cotizacion_${new Date().getTime()}.pdf`;
+        a.download = `Cotizacion_FashionStore_${new Date().getTime()}.pdf`;
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       },
-      error: (err) => {
+      error: () => {
         this.snackBar.open('Error al generar el PDF', 'Cerrar', { duration: 3000 });
       }
     });
@@ -185,21 +182,26 @@ export class CarritoComponent implements OnInit {
     if (!this.carrito || !this.carrito.detalles || this.carrito.detalles.length === 0) return;
 
     const dialogRef = this.dialog.open(ProcesarPagoDialogComponent, {
-      width: '450px',
+      width: '480px',
       disableClose: true,
-      data: { total: this.carrito.total }
+      data: { 
+        total: this.totalConDescuento(),
+        sucursal_id: this.sucursalSeleccionadaId
+      }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result && result.success) {
-        this.snackBar.open('Procesando pago del carrito...', 'Cerrar', { duration: 2000 });
+        this.snackBar.open('Procesando pago y descontando stock...', 'Cerrar', { duration: 2000 });
         
         const baseUrlVentas = this.configService.getApiUrl('ventas');
         const body = {
           tipo: 'digital',
           estado: 'completado',
-          precio_total: this.carrito!.total,
+          precio_total: this.totalConDescuento(),
           usuario_id: this.carrito!.usuario,
+          sucursal_id: this.sucursalSeleccionadaId,
+          metodo_pago: result.metodo || 'tarjeta',
           detalles: this.carrito!.detalles.map(item => ({
             variante_producto_id: item.variante_producto,
             cantidad: item.cantidad,
@@ -209,16 +211,15 @@ export class CarritoComponent implements OnInit {
 
         this.http.post<any>(baseUrlVentas, body).subscribe({
           next: (venta) => {
-            const metodoFormateado = result.metodo.toUpperCase();
-            this.snackBar.open(`¡Pago exitoso vía ${metodoFormateado}! Pedido #${venta.id} registrado con éxito.`, 'OK', { duration: 5000 });
+            const metodoFormateado = (result.metodo || 'DIGITAL').toUpperCase();
+            this.snackBar.open(`Â¡Pago exitoso vÃ­a ${metodoFormateado}! Factura y Venta #${venta.id || ''} registradas.`, 'OK', { duration: 5000 });
             
-            // Vaciar carrito e ir a los detalles de la venta
             this.cartService.vaciarCarrito().subscribe(() => {
-              this.router.navigate(['/ventas', venta.id]);
+              this.router.navigate(['/ventas']);
             });
           },
           error: (err) => {
-            const msg = err.error?.detail || err.error?.[0] || 'Error al procesar el pedido';
+            const msg = err.error?.detail || err.error?.[0] || 'Error al procesar el pedido y descontar stock';
             this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
           }
         });

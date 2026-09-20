@@ -16,12 +16,41 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   -ms-overflow-style: none !important; /* IE y Edge antiguo */
 }
 
+/* SnackBar centrado con diseño flotante y visible */
+.cdk-global-overlay-wrapper {
+  justify-content: center !important;
+}
+
+.mat-mdc-snack-bar-container {
+  margin: 16px auto !important;
+  max-width: 580px !important;
+  min-width: 320px !important;
+  .mdc-snackbar__surface {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+    padding: 12px 20px !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.2px !important;
+  }
+  .mat-mdc-snack-bar-label {
+    color: #ffffff !important;
+  }
+  .mat-mdc-snack-bar-action {
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+  }
+}
+
 .snack-alerta .mdc-snackbar__surface {
-  background-color: #e65100 !important;
+  background-color: #dc2626 !important;
   color: #fff !important;
 }
 .snack-alerta .mat-mdc-snack-bar-action {
-  color: #ffe0b2 !important;
+  color: #fee2e2 !important;
   font-weight: 600;
 }
 

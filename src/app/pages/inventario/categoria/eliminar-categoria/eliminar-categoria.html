@@ -1,36 +1,47 @@
-<h2 mat-dialog-title>
-  <mat-icon style="vertical-align: middle; margin-right: 8px; color: #f44336;">warning</mat-icon>
-  Eliminar Categoría
-</h2>
+<div mat-dialog-container style="padding: 16px;">
+  <div style="text-align: center; margin-bottom: 16px;">
+    <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+      <mat-icon style="font-size: 32px; width: 32px; height: 32px;">category</mat-icon>
+    </div>
+    <h2 mat-dialog-title style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">
+      Eliminar Categoría
+    </h2>
+  </div>
 
-<mat-dialog-content>
-  <p style="margin: 0; font-size: 16px;">
-    ¿Estás seguro de que deseas eliminar la categoría <strong>{{ data.categoria.nombre }}</strong>?
-  </p>
-  <p style="margin: 8px 0 0 0; font-size: 14px; color: #999;">
-    Esta acción no se puede deshacer.
-  </p>
-</mat-dialog-content>
+  <mat-dialog-content>
+    <div style="text-align: center;">
+      <p style="margin: 0 0 8px 0; font-size: 15px; color: #334155; font-weight: 500;">
+        ¿Está seguro de que desea eliminar esta categoría?
+      </p>
+      <p style="margin: 0; color: #1e293b; font-size: 16px; font-weight: 700;">
+        {{ data.categoria.nombre }}
+      </p>
+      <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 13px;">
+        Esta acción no se puede deshacer.
+      </p>
+    </div>
 
-<mat-dialog-actions align="end">
-  <button 
-    mat-button 
-    (click)="cancelar()"
-    [disabled]="isDeleting">
-    Cancelar
-  </button>
-  <button 
-    mat-raised-button 
-    color="warn" 
-    (click)="confirmarEliminacion()"
-    [disabled]="isDeleting">
-    <span *ngIf="!isDeleting">
-      <mat-icon style="vertical-align: middle; margin-right: 4px;">delete</mat-icon>
-      Eliminar
-    </span>
-    <span *ngIf="isDeleting" style="display: flex; align-items: center; gap: 8px;">
-      <mat-spinner diameter="16"></mat-spinner>
-      Eliminando...
-    </span>
-  </button>
-</mat-dialog-actions>
+    <!-- Mensaje de Error Centrado -->
+    <div *ngIf="errorMessage" style="margin-top: 16px; padding: 12px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 13px; display: flex; align-items: flex-start; gap: 8px;">
+      <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #dc2626;">error_outline</mat-icon>
+      <div style="flex: 1;">{{ errorMessage }}</div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" style="margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+    <button mat-button (click)="cancelar()" [disabled]="isDeleting">
+      Cancelar
+    </button>
+    <button
+      mat-flat-button
+      color="warn"
+      (click)="confirmarEliminacion()"
+      [disabled]="isDeleting">
+      <span *ngIf="!isDeleting">Eliminar</span>
+      <span *ngIf="isDeleting" style="display: flex; align-items: center; gap: 8px;">
+        <mat-spinner diameter="16"></mat-spinner>
+        Eliminando...
+      </span>
+    </button>
+  </mat-dialog-actions>
+</div>

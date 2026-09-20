@@ -1,67 +1,92 @@
 <div class="login-container">
   <div class="login-wrapper">
     <div class="login-card">
-      <mat-card class="cardWithShadow">
+      <mat-card class="cardWithShadow custom-login-card">
         <mat-card-content class="p-32">
 
-          <div class="text-center m-t-24">
-            <span class="mat-subtitle-1 f-w-500 text-muted">Bienvenido a</span>
-            <h2 class="m-0 m-t-8 text-primary f-w-600">{{ tenantName }}</h2>
+          <div class="text-center m-b-24">
+            <h1 class="login-title">¡Bienvenido!</h1>
+            <p class="login-subtitle">Ingresa a tu sistema {{ tenantName }}</p>
           </div>
 
-          <h3 class="text-center m-t-30 m-b-24">Iniciar Sesión</h3>
+          <form [formGroup]="form" class="login-form">
 
-          <form [formGroup]="form" class="m-t-30">
+            <div class="form-group m-b-20">
+              <mat-label class="field-label">Usuario o Correo</mat-label>
+              <mat-form-field appearance="outline" class="w-100" color="primary">
+                <mat-icon matPrefix class="field-prefix-icon">person</mat-icon>
+                <input matInput formControlName="username" placeholder="Ingresa tu usuario" />
+                <mat-error *ngIf="f['username']?.hasError('required')">El usuario es requerido</mat-error>
+                <mat-error *ngIf="f['username']?.hasError('minlength')">Mínimo 3 caracteres</mat-error>
+              </mat-form-field>
+            </div>
 
-            <mat-label class="mat-subtitle-2 f-s-14 f-w-600 m-b-12 d-block">Usuario</mat-label>
-            <mat-form-field appearance="outline" class="w-100" color="primary">
-              <input matInput formControlName="username" placeholder="Ingresa tu usuario" />
-              <mat-error *ngIf="f['username']?.hasError('required')">El usuario es requerido</mat-error>
-              <mat-error *ngIf="f['username']?.hasError('minlength')">Mínimo 3 caracteres</mat-error>
-            </mat-form-field>
+            <div class="form-group m-b-16">
+              <div class="label-with-link">
+                <mat-label class="field-label">Contraseña</mat-label>
+                <a routerLink="/recuperar-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+              </div>
+              <mat-form-field appearance="outline" class="w-100" color="primary">
+                <mat-icon matPrefix class="field-prefix-icon">lock</mat-icon>
+                <input
+                  matInput
+                  [type]="hidePassword ? 'password' : 'text'"
+                  formControlName="password"
+                  placeholder="Ingresa tu contraseña"
+                />
+                <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
+                  <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <mat-error *ngIf="f['password']?.hasError('required')">La contraseña es requerida</mat-error>
+                <mat-error *ngIf="f['password']?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
+              </mat-form-field>
+            </div>
 
-            <mat-label class="mat-subtitle-2 f-s-14 f-w-600 m-b-12 d-block m-t-24">Contraseña</mat-label>
-            <mat-form-field appearance="outline" class="w-100" color="primary">
-              <input
-                matInput
-                [type]="hidePassword ? 'password' : 'text'"
-                formControlName="password"
-                placeholder="Ingresa tu contraseña"
-              />
-              <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
-                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              <mat-error *ngIf="f['password']?.hasError('required')">La contraseña es requerida</mat-error>
-              <mat-error *ngIf="f['password']?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
-            </mat-form-field>
-
-            <div class="text-center m-b-12 m-t-24">
-              <a routerLink="/recuperar-password" class="text-primary f-w-600 text-decoration-none f-s-14">
-                ¿Olvidaste tu contraseña?
-              </a>
+            <div class="remember-row m-b-24">
+              <mat-checkbox color="primary">Recordarme</mat-checkbox>
             </div>
 
             <button
               mat-flat-button
-              color="primary"
-              class="w-100 m-t-24"
+              class="w-100 btn-ingresar"
               (click)="submit()"
               [disabled]="form.invalid || isLoading"
             >
-              <span *ngIf="!isLoading">Iniciar Sesión</span>
-              <span *ngIf="isLoading" class="d-flex align-items-center justify-content-center">
+              <ng-container *ngIf="!isLoading">
+                <mat-icon class="btn-icon">login</mat-icon>
+                <span>Ingresar al Sistema</span>
+              </ng-container>
+              <ng-container *ngIf="isLoading">
                 <mat-spinner diameter="20" class="m-r-8"></mat-spinner>
-                Iniciando...
-              </span>
+                <span>Iniciando...</span>
+              </ng-container>
             </button>
           </form>
 
-          <span class="d-block f-w-500 text-center m-t-24">
-            ¿No tienes cuenta?
-            <a routerLink="/registrar" class="text-decoration-none text-primary f-w-500 f-s-14">
-              Crear una cuenta
-            </a>
-          </span>
+          <!-- Caja Azul de Credenciales por Defecto -->
+          <div class="info-credentials-box m-t-24">
+            <div class="info-header">
+              <mat-icon class="info-icon">info</mat-icon>
+              <strong>Credenciales por defecto:</strong>
+            </div>
+            <div class="info-body">
+              <div>Usuario: <strong class="highlight-text">admin</strong></div>
+              <div>Contraseña: <strong class="highlight-text">admin123</strong></div>
+            </div>
+          </div>
+
+          <div class="login-footer-links m-t-24 text-center">
+            <div class="m-b-8">
+              <a routerLink="/" class="footer-link">← Ir a Inicio y Planes</a>
+            </div>
+            <div class="m-b-8">
+              <a routerLink="/empresa/registro" class="footer-link">Registrar Nueva Empresa</a>
+            </div>
+            <div>
+              <span class="text-muted">¿No tienes cuenta? </span>
+              <a routerLink="/registrar" class="footer-link-bold">Crear una cuenta</a>
+            </div>
+          </div>
 
         </mat-card-content>
       </mat-card>

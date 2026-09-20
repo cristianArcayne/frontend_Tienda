@@ -1,0 +1,226 @@
+<div class="recomendador-container p-24">
+  <div class="header-section m-b-24">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; color: white;">
+        <mat-icon>auto_awesome</mat-icon>
+      </div>
+      <div>
+        <h2 style="margin: 0; font-weight: 700; color: #1e293b;">[CU17] Recomendador Inteligente (IA) & Personal Shopper</h2>
+        <p style="margin: 2px 0 0; color: #64748b; font-size: 13px;">
+          Sugerencias de estilo, venta cruzada (Cross-Selling con 10% OFF) y asesoría de imagen asistida por Inteligencia Artificial.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <mat-tab-group animationDuration="200ms">
+    <!-- TAB 1: GENERADOR DE OUTFITS -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="m-r-8">style</mat-icon>
+        Generador de Outfits (Cross-Selling)
+      </ng-template>
+
+      <div class="m-t-20">
+        <!-- Barra de filtros / generación -->
+        <mat-card class="filter-card m-b-20" style="padding: 16px; border-radius: 12px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+            <mat-form-field appearance="outline" style="min-width: 200px; flex: 1;">
+              <mat-label>Ocasión / Contexto</mat-label>
+              <mat-select [(ngModel)]="ocasionSeleccionada" (selectionChange)="generarOutfit()">
+                <mat-option *ngFor="let o of ocasiones" [value]="o">{{ o }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="min-width: 240px; flex: 1.5;">
+              <mat-label>Prenda eje (opcional)</mat-label>
+              <mat-select [(ngModel)]="ropaPrincipalId" (selectionChange)="generarOutfit()">
+                <mat-option [value]="null">Inferir automáticamente por IA</mat-option>
+                <mat-option *ngFor="let p of prendasDisponibles" [value]="p.id">{{ p.nombre }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <button mat-raised-button color="primary" (click)="generarOutfit()" [disabled]="cargandoOutfit"
+                    style="height: 52px; margin-bottom: 22px; padding: 0 24px; font-weight: 600; border-radius: 8px;">
+              <mat-spinner *ngIf="cargandoOutfit" diameter="18" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+              <mat-icon *ngIf="!cargandoOutfit">auto_awesome</mat-icon>
+              {{ cargandoOutfit ? 'Combinando prendas...' : 'Generar Outfit' }}
+            </button>
+          </div>
+        </mat-card>
+
+        <!-- Loading spinner -->
+        <div *ngIf="cargandoOutfit" style="text-align: center; padding: 48px;">
+          <mat-spinner diameter="48" style="margin: 0 auto 16px;"></mat-spinner>
+          <p style="color: #64748b; font-weight: 500;">Analizando círculo cromático, catálogo y afinidad de prendas...</p>
+        </div>
+
+        <!-- Tarjeta del Outfit Recomendado -->
+        <div *ngIf="!cargandoOutfit && outfitActual" class="outfit-card m-b-24">
+          <mat-card style="border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+            <!-- Cabecera del outfit -->
+            <div style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px;">
+                    {{ outfitActual.ocasion.toUpperCase() }}
+                  </span>
+                  <span style="background: #10b981; color: white; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;">
+                    ★ {{ outfitActual.score_afinidad }}% Afinidad Armónica
+                  </span>
+                </div>
+                <h2 style="margin: 8px 0 4px; font-size: 22px; font-weight: 700; color: white;">{{ outfitActual.outfit_nombre }}</h2>
+                <p style="margin: 0; opacity: 0.9; font-size: 13px;">{{ outfitActual.descripcion_estilo }}</p>
+              </div>
+
+              <!-- Feedback thumbs -->
+              <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.15); padding: 6px 12px; border-radius: 10px;">
+                <span style="font-size: 12px; opacity: 0.9;">¿Te gusta la combinación?</span>
+                <button mat-icon-button (click)="enviarFeedback(true)" [disabled]="feedbackEnviado" matTooltip="Me encanta" style="color: #34d399;">
+                  <mat-icon>thumb_up</mat-icon>
+                </button>
+                <button mat-icon-button (click)="enviarFeedback(false)" [disabled]="feedbackEnviado" matTooltip="No es mi estilo" style="color: #f87171;">
+                  <mat-icon>thumb_down</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Prendas del combo -->
+            <mat-card-content style="padding: 24px;">
+              <h3 style="margin: 0 0 16px; font-size: 15px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.5px;">
+                Prendas Seleccionadas para este Look
+              </h3>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <!-- Prenda Principal -->
+                <div *ngIf="outfitActual.prenda_principal" style="border: 2px solid #6366f1; border-radius: 12px; overflow: hidden; background: white; position: relative;">
+                  <span style="position: absolute; top: 10px; left: 10px; background: #6366f1; color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; z-index: 2;">
+                    PRENDA EJE
+                  </span>
+                  <div style="height: 180px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <img [src]="getImagenUrl(outfitActual.prenda_principal.imagen_uri)" [alt]="outfitActual.prenda_principal.nombre" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                  </div>
+                  <div style="padding: 12px;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;">{{ outfitActual.prenda_principal.categoria_nombre }}</div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 14px; margin: 2px 0;">{{ outfitActual.prenda_principal.nombre }}</div>
+                    <div style="font-size: 12px; color: #0284c7; margin-bottom: 6px;">{{ outfitActual.prenda_principal.razon_recomendacion }}</div>
+                    <div style="font-weight: 700; font-size: 16px; color: #0f172a;">BOB {{ outfitActual.prenda_principal.precio | number:'1.2-2' }}</div>
+                  </div>
+                </div>
+
+                <!-- Prendas Complementarias -->
+                <div *ngFor="let comp of outfitActual.prendas_complementarias" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: white; position: relative;">
+                  <span style="position: absolute; top: 10px; left: 10px; background: #10b981; color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; z-index: 2;">
+                    COMPLEMENTO
+                  </span>
+                  <div style="height: 180px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <img [src]="getImagenUrl(comp.imagen_uri)" [alt]="comp.nombre" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                  </div>
+                  <div style="padding: 12px;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;">{{ comp.categoria_nombre }}</div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 14px; margin: 2px 0;">{{ comp.nombre }}</div>
+                    <div style="font-size: 12px; color: #10b981; margin-bottom: 6px;">{{ comp.razon_recomendacion }}</div>
+                    <div style="font-weight: 700; font-size: 16px; color: #0f172a;">BOB {{ comp.precio | number:'1.2-2' }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Banner de compra conjunta con descuento -->
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 14px; color: #64748b;">Precio Total Individual:</span>
+                    <span style="text-decoration: line-line-through; font-size: 16px; color: #94a3b8; font-weight: 600;">
+                      BOB {{ outfitActual.precio_total_outfit | number:'1.2-2' }}
+                    </span>
+                    <span style="background: #dc2626; color: white; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
+                      -{{ outfitActual.descuento_combo_aplicable }}% OFF COMBO
+                    </span>
+                  </div>
+                  <div style="font-size: 24px; font-weight: 800; color: #15803d; margin-top: 4px;">
+                    Precio Outfit Completo: BOB {{ outfitActual.precio_final_con_descuento | number:'1.2-2' }}
+                  </div>
+                </div>
+
+                <button mat-raised-button color="primary" (click)="agregarOutfitAlCarrito(outfitActual)" [disabled]="agregandoAlCarrito"
+                        style="height: 48px; padding: 0 28px; font-size: 15px; font-weight: 700; border-radius: 10px; background: #16a34a; color: white;">
+                  <mat-spinner *ngIf="agregandoAlCarrito" diameter="18" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+                  <mat-icon *ngIf="!agregandoAlCarrito">shopping_bag</mat-icon>
+                  Añadir Outfit Completo al Carrito
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: CHATBOT PERSONAL SHOPPER -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="m-r-8">smart_toy</mat-icon>
+        Personal Shopper (Chatbot IA)
+      </ng-template>
+
+      <div class="m-t-20 chat-wrapper" style="max-width: 900px; margin-left: auto; margin-right: auto;">
+        <mat-card style="border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column; height: 600px;">
+          <!-- Header chat -->
+          <div style="padding: 16px 20px; background: #1e1b4b; color: white; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: #6366f1; display: flex; align-items: center; justify-content: center;">
+              <mat-icon>support_agent</mat-icon>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 15px;">FashionStore AI Assistant</div>
+              <div style="font-size: 12px; color: #a5b4fc; display: flex; align-items: center; gap: 4px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+                En línea • Respuestas inteligentes sobre catálogo, ocasiones y precios
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensajes de conversación -->
+          <div style="flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; display: flex; flex-direction: column; gap: 16px;">
+            <div *ngFor="let m of mensajesChat" [style.align-self]="m.emisor === 'usuario' ? 'flex-end' : 'flex-start'" style="max-width: 80%;">
+              <div [style.background]="m.emisor === 'usuario' ? '#4f46e5' : 'white'"
+                   [style.color]="m.emisor === 'usuario' ? 'white' : '#1e293b'"
+                   [style.border]="m.emisor === 'usuario' ? 'none' : '1px solid #e2e8f0'"
+                   style="padding: 12px 16px; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); white-space: pre-line;">
+                {{ m.texto }}
+              </div>
+
+              <div [style.text-align]="m.emisor === 'usuario' ? 'right' : 'left'" style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                {{ m.hora }}
+              </div>
+            </div>
+
+            <div *ngIf="enviandoMensaje" style="align-self: flex-start; background: white; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 14px; display: flex; align-items: center; gap: 8px;">
+              <mat-spinner diameter="16"></mat-spinner>
+              <span style="font-size: 13px; color: #64748b;">El asistente está respondiendo...</span>
+            </div>
+          </div>
+
+          <!-- Sugerencias rápidas (Chips limpios y desplazables sin saturación) -->
+          <div class="chat-chips-container">
+            <span class="chat-chips-label">Sugerencias:</span>
+            <div class="chat-chips-scroll">
+              <button *ngFor="let s of sugerenciasChat" type="button" class="chat-chip-btn" (click)="usarSugerenciaChat(s)">
+                <mat-icon class="chip-icon">help_outline</mat-icon>
+                <span>{{ s }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Input bar -->
+          <div style="padding: 12px 16px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+            <input type="text" [(ngModel)]="mensajeInput" (keyup.enter)="enviarMensajeChat()" placeholder="Escribe tu consulta sobre prendas, tiendas, ocasiones o precios..."
+                   style="flex: 1; padding: 10px 16px; border: 1px solid #cbd5e1; border-radius: 24px; outline: none; font-size: 14px;">
+            <button mat-mini-fab color="primary" (click)="enviarMensajeChat()" [disabled]="!mensajeInput.trim() || enviandoMensaje"
+                    style="background: #4f46e5; color: white; flex-shrink: 0;">
+              <mat-icon>send</mat-icon>
+            </button>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

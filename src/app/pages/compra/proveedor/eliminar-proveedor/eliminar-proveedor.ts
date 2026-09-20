@@ -1,10 +1,10 @@
 import { Component, OnDestroy, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -19,14 +19,16 @@ import { Proveedor } from '../../../../models/inventario/proveedor.model';
     CommonModule,
     MatDialogModule,
     MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatIconModule
   ],
   templateUrl: './eliminar-proveedor.html',
   styleUrls: ['./eliminar-proveedor.scss']
 })
 export class EliminarProveedorComponent implements OnDestroy {
   isDeleting = false;
+  errorMessage: string | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -40,6 +42,7 @@ export class EliminarProveedorComponent implements OnDestroy {
 
   confirmarEliminacion(): void {
     this.isDeleting = true;
+    this.errorMessage = null;
     const url = this.configService.getApiUrl('proveedores');
 
     this.apiService.delete(url, this.data.proveedor.id)
@@ -53,7 +56,9 @@ export class EliminarProveedorComponent implements OnDestroy {
         },
         error: (error) => {
           this.isDeleting = false;
-          this.snackBar.open('Error al eliminar el proveedor', 'Cerrar', { duration: 5000 });
+          const msg = error.error?.detail || error.message || 'Error al eliminar el proveedor. Podría tener compras asociadas.';
+          this.errorMessage = msg;
+          this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
           this.cdr.markForCheck();
         }
       });

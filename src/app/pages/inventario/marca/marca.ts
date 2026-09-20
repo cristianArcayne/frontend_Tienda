@@ -91,9 +91,14 @@ export class MarcaComponent implements OnInit, OnDestroy {
     )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data: Pagination<Marca>) => {
-          this.dataSource = data.results;
-          this.totalItems = data.count;
+        next: (data: any) => {
+          if (Array.isArray(data)) {
+            this.dataSource = data;
+            this.totalItems = data.length;
+          } else {
+            this.dataSource = data?.results || [];
+            this.totalItems = data?.count || 0;
+          }
           this.isLoading = false;
         },
         error: (error) => {

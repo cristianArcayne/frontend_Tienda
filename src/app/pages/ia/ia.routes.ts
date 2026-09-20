@@ -27,5 +27,14 @@ export const IaRoutes: Routes = [
       title: 'Sugerencias de Compra',
       urls: [{ title: 'Dashboard', url: '/' }, { title: 'Sugerencias de Compra' }]
     }
+  },
+  {
+    path: 'recomendador',
+    loadComponent: () =>
+      import('./recomendador/recomendador-ia.component').then(m => m.RecomendadorIaComponent),
+    data: {
+      title: 'Recomendador Inteligente IA',
+      urls: [{ title: 'Dashboard', url: '/' }, { title: 'Recomendador IA' }]
+    }
   }
 ];

@@ -1,30 +1,50 @@
 <div class="catalogo-container p-24">
-  <!-- Cabecera y Búsqueda -->
-  <div class="header-section m-b-32">
-    <h1 class="f-w-600 m-b-8">Explorar Catálogo</h1>
-    <p class="text-muted m-b-24">Encuentra los prductos que tanto buscas</p>
+  <!-- Cabecera y Búsqueda Omnicanal -->
+  <div class="header-section m-b-24">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-12 m-b-8">
+      <div>
+        <h1 class="f-w-700 m-b-4" style="color: #1e293b; font-size: 26px;">Explorar Catálogo Omnicanal</h1>
+        <p class="text-muted m-0">Consulta modelos, existencias en tiempo real por sucursal y promociones vigentes</p>
+      </div>
 
-    <div class="search-bar">
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Buscar prodcutos...</mat-label>
-        <mat-icon matPrefix>search</mat-icon>
-        <input matInput (input)="onSearch($event)" placeholder="Ej: Mesa de madera, Silla ergonómica...">
-      </mat-form-field>
+      <div class="catalog-actions d-flex align-items-center gap-12">
+        <button mat-stroked-button color="primary" [disabled]="cantidadComparador === 0" (click)="irComparador()">
+          <mat-icon>compare_arrows</mat-icon>
+          Comparador ({{ cantidadComparador }})
+        </button>
+      </div>
     </div>
 
-    <div class="catalog-actions m-t-16">
-      <button mat-stroked-button color="primary" [disabled]="cantidadComparador === 0" (click)="irComparador()">
-        <mat-icon>compare_arrows</mat-icon>
-        Comparador ({{ cantidadComparador }})
-      </button>
+    <!-- Barra de búsqueda y Filtro por Tienda / Sucursal -->
+    <div class="d-flex flex-wrap gap-16 align-items-center m-t-16">
+      <div style="flex: 2; min-width: 280px;">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Buscar prendas, vestidos, calzados...</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput (input)="onSearch($event)" placeholder="Ej: Chaqueta, Polera, Vestido Gala...">
+        </mat-form-field>
+      </div>
+
+      <div style="flex: 1; min-width: 240px;">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Disponibilidad por Sucursal</mat-label>
+          <mat-icon matPrefix color="primary">storefront</mat-icon>
+          <mat-select [(ngModel)]="sucursalSeleccionadaId" (selectionChange)="cambiarSucursal()">
+            <mat-option [value]="null">Todas las Tiendas (Red Completa)</mat-option>
+            <mat-option *ngFor="let s of sucursales" [value]="s.id">
+              {{ s.nombre }} ({{ s.ciudad }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
     </div>
   </div>
 
   <!-- Filtros de Categoría -->
-  <div class="filters-section m-b-32">
+  <div class="filters-section m-b-24">
     <mat-chip-listbox aria-label="Selección de Categoría">
       <mat-chip-option [selected]="categoriaSeleccionada === null" (click)="seleccionarCategoria(null)" color="primary">
-        Todos
+        Todas las Categorías
       </mat-chip-option>
       <mat-chip-option *ngFor="let cat of categorias" [selected]="categoriaSeleccionada === cat.id"
         (click)="seleccionarCategoria(cat.id)" color="primary">
@@ -36,10 +56,20 @@
   <!-- Grid de Productos -->
   <div class="products-grid" *ngIf="!cargando && productos.length > 0">
     <mat-card class="product-card" *ngFor="let prod of productos" (click)="verDetalles(prod.id)" [style.cursor]="puedeVerDetalle ? 'pointer' : 'default'">
-      <div class="image-wrapper">
-        <img [src]="prod.imagen_principal || 'assets/images/products/placeholder.jpg'" [alt]="prod.nombre"
-          class="product-image">
+      <div class="image-wrapper" style="position: relative;">
+        <img [src]="getImagenUrl(prod.imagen_principal)"
+             [alt]="prod.nombre"
+             (error)="onImgError($event)"
+             class="product-image">
+
+        <!-- Badge de Descuento / Oferta -->
+        <div *ngIf="prod.en_oferta"
+             style="position: absolute; top: 10px; left: 10px; background: #dc2626; color: white; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; box-shadow: 0 2px 6px rgba(220,38,38,0.4); z-index: 2;">
+          -{{ prod.porcentaje_descuento }}% OFF
+        </div>
+
         <div class="category-badge">{{ prod.categoria_nombre }}</div>
+
         <button class="fav-btn" mat-icon-button (click)="$event.stopPropagation(); toggleFavorito(prod)"
           [matTooltip]="esFavorito(prod.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'">
           <mat-icon [class.favorito-activo]="esFavorito(prod.id)">
@@ -49,33 +79,86 @@
       </div>
 
       <mat-card-content class="p-16">
-        <h3 class="f-w-600 m-b-4 text-truncate">{{ prod.nombre }}</h3>
-        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+        <h3 class="f-w-600 m-b-4 text-truncate" [matTooltip]="prod.nombre">{{ prod.nombre }}</h3>
+
+        <!-- Calificación -->
+        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
           <span *ngFor="let e of getEstrellas(prod.calificacion_promedio ?? 0)" style="color: #f59e0b; line-height: 1;">
             <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">{{ e }}</mat-icon>
           </span>
-          <span style="font-size: 12px; color: #666;">
+          <span style="font-size: 12px; color: #64748b;">
             {{ prod.total_resenas ? '(' + prod.total_resenas + ')' : 'Sin reseñas' }}
           </span>
         </div>
-        <p class="text-muted f-s-14 m-b-16 text-truncate-2">{{ prod.descripcion }}</p>
 
-        <div class="d-flex justify-content-between align-items-center">
+        <!-- Indicador de Stock por Sucursal -->
+        <div class="m-b-8">
+          <span *ngIf="sucursalSeleccionadaId && (prod.disponible_en_sucursal || (prod.stock_total || 0) > 0)"
+                style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: 4px;">
+            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">check_circle</mat-icon>
+            Stock disponible ({{ prod.stock_total }} uds)
+          </span>
+
+          <span *ngIf="sucursalSeleccionadaId && !prod.disponible_en_sucursal && (prod.stock_total || 0) <= 0"
+                style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #dc2626; background: #fee2e2; padding: 2px 8px; border-radius: 4px;">
+            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">cancel</mat-icon>
+            Agotado en esta tienda
+          </span>
+
+          <span *ngIf="!sucursalSeleccionadaId"
+                style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #475569; background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">
+            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">inventory_2</mat-icon>
+            {{ (prod.stock_total || 0) > 0 ? (prod.stock_total + ' uds en stock') : 'Disponibilidad según tienda' }}
+          </span>
+        </div>
+
+        <p class="text-muted f-s-14 m-b-12 text-truncate-2">{{ prod.descripcion || 'Prenda de alta calidad FashionStore' }}</p>
+
+        <!-- Precios -->
+        <div class="d-flex justify-content-between align-items-center m-b-12">
           <div class="price-tag">
-            <span class="f-s-12 text-muted">Desde</span>
-            <div class="f-w-700 f-s-18">{{ prod.precio_minimo | currency:'BOB ':'symbol':'1.0-0' }}</div>
+            <div *ngIf="prod.en_oferta" style="font-size: 12px; color: #94a3b8; text-decoration: line-through;">
+              BOB {{ prod.precio_base | number:'1.2-2' }}
+            </div>
+            <div class="f-w-700 f-s-18" [style.color]="prod.en_oferta ? '#dc2626' : '#1e293b'">
+              BOB {{ (prod.precio_promocional || prod.precio_minimo || prod.precio_base) | number:'1.2-2' }}
+            </div>
           </div>
-          <button *ngIf="puedeVerDetalle" mat-mini-fab color="primary" matTooltip="Ver detalles">
+
+          <button *ngIf="puedeVerDetalle"
+                  mat-icon-button
+                  color="primary"
+                  matTooltip="Ver detalles completos"
+                  (click)="$event.stopPropagation(); verDetalles(prod.id)">
             <mat-icon>visibility</mat-icon>
           </button>
         </div>
 
-        <button
-          mat-stroked-button
-          color="primary"
-          class="compare-btn w-100 m-t-16"
-          [class.compare-active]="esComparado(prod.id)"
-          (click)="$event.stopPropagation(); toggleComparador(prod)">
+        <!-- Botones de Acción: Al Carrito y Reservar -->
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button mat-raised-button
+                  color="primary"
+                  style="flex: 1; font-weight: 600; height: 38px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 8px;"
+                  (click)="agregarAlCarrito(prod, $event)">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">shopping_cart</mat-icon>
+            Al Carrito
+          </button>
+
+          <button mat-stroked-button
+                  color="primary"
+                  style="flex: 1; font-weight: 600; height: 38px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 8px;"
+                  (click)="iniciarReserva(prod, $event)">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">storefront</mat-icon>
+            Reservar
+          </button>
+        </div>
+
+        <!-- Botón Comparador -->
+        <button mat-stroked-button
+                color="primary"
+                class="compare-btn w-100"
+                [class.compare-active]="esComparado(prod.id)"
+                (click)="$event.stopPropagation(); toggleComparador(prod)">
           <mat-icon>{{ esComparado(prod.id) ? 'done' : 'compare_arrows' }}</mat-icon>
           {{ esComparado(prod.id) ? 'En comparador' : 'Comparar' }}
         </button>
@@ -86,23 +169,19 @@
   <!-- Estado de Carga inicial -->
   <div *ngIf="cargando" class="p-48 text-center">
     <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
-    <p class="m-t-16">Buscando los mejores muebles...</p>
+    <p class="m-t-16 text-muted font-weight-bold">Consultando catálogo y existencias en tiempo real...</p>
   </div>
 
   <!-- No se encontraron resultados -->
   <div *ngIf="!cargando && productos.length === 0" class="p-48 text-center empty-state">
-    <mat-icon style="font-size: 64px; height: 64px; width: 64px; color: #ddd;">search_off</mat-icon>
-    <h3 class="m-t-24">No encontramos lo que buscas</h3>
-    <p class="text-muted">Prueba con otros términos o categorías</p>
-    <button mat-stroked-button color="primary" class="m-t-16" (click)="seleccionarCategoria(null)">Ver todo el
-      catálogo</button>
+    <mat-icon style="font-size: 64px; height: 64px; width: 64px; color: #cbd5e1;">search_off</mat-icon>
+    <h3 class="m-t-24">No se encontraron prendas</h3>
+    <p class="text-muted">Prueba cambiando la sucursal seleccionada, el término de búsqueda o la categoría</p>
+    <button mat-stroked-button color="primary" class="m-t-16" (click)="seleccionarCategoria(null); sucursalSeleccionadaId = null; cambiarSucursal()">
+      Ver todo el catálogo
+    </button>
   </div>
 
-  <!-- Spinner cargando más productos -->
-  <div *ngIf="cargandoMas" class="p-24 text-center">
-    <mat-spinner diameter="32" style="margin: 0 auto;"></mat-spinner>
-  </div>
-
-  <!-- Sentinel para infinite scroll -->
-  <div #sentinel style="height: 1px;"></div>
+  <!-- Sentinel para scroll infinito -->
+  <div #sentinel style="height: 20px;"></div>
 </div>

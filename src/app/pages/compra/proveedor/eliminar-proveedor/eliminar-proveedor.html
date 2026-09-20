@@ -1,31 +1,39 @@
-<div mat-dialog-container>
-  <h2 mat-dialog-title>Eliminar Proveedor</h2>
+<div mat-dialog-container style="padding: 16px;">
+  <div style="text-align: center; margin-bottom: 16px;">
+    <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+      <mat-icon style="font-size: 32px; width: 32px; height: 32px;">warning</mat-icon>
+    </div>
+    <h2 mat-dialog-title style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">
+      Eliminar Proveedor
+    </h2>
+  </div>
 
   <mat-dialog-content>
-    <div style="display: flex; align-items: center; gap: 16px; margin: 16px 0;">
-      <mat-icon style="color: #f44336; font-size: 48px; width: 48px; height: 48px;">
-        warning
-      </mat-icon>
-      <div>
-        <p style="margin: 0 0 8px 0; font-weight: 500;">
-          ¿Está seguro de que desea eliminar este proveedor?
-        </p>
-        <p style="margin: 0; color: #666; font-size: 14px;">
-          <strong>{{ data.proveedor.nombre }}</strong>
-        </p>
-        <p style="margin: 8px 0 0 0; color: #d32f2f; font-size: 12px;">
-          Esta acción no se puede deshacer.
-        </p>
-      </div>
+    <div style="text-align: center;">
+      <p style="margin: 0 0 8px 0; font-size: 15px; color: #334155; font-weight: 500;">
+        ¿Está seguro de que desea eliminar este proveedor?
+      </p>
+      <p style="margin: 0; color: #1e293b; font-size: 16px; font-weight: 700;">
+        {{ data.proveedor.nombre }}
+      </p>
+      <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 13px;">
+        Esta acción no se puede deshacer.
+      </p>
+    </div>
+
+    <!-- Mensaje de Error Centrado en el Diálogo -->
+    <div *ngIf="errorMessage" style="margin-top: 16px; padding: 12px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 13px; display: flex; align-items: flex-start; gap: 8px;">
+      <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #dc2626;">error_outline</mat-icon>
+      <div style="flex: 1;">{{ errorMessage }}</div>
     </div>
   </mat-dialog-content>
 
-  <mat-dialog-actions align="end">
+  <mat-dialog-actions align="end" style="margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
     <button mat-button (click)="cancelar()" [disabled]="isDeleting">
       Cancelar
     </button>
     <button
-      mat-raised-button
+      mat-flat-button
       color="warn"
       (click)="confirmarEliminacion()"
       [disabled]="isDeleting">

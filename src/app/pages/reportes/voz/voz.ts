@@ -60,15 +60,30 @@ export class VozComponent implements OnInit, OnDestroy {
         this.duracion = seg;
       });
 
+    this.vozService.textoEnVivo$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(txt => {
+        if (txt) {
+          this.textoTranscrito = txt;
+          this.textoCorregido = txt;
+        }
+      });
+
     this.vozService.audioBlob$
       .pipe(takeUntil(this.destroy$))
       .subscribe(blob => {
-        this.transcribir(blob);
+        if (!blob) return;
+        if (this.textoCorregido && this.textoCorregido.trim().length > 0) {
+          this.state = 'transcribed';
+        } else {
+          this.transcribir(blob);
+        }
       });
 
     this.vozService.error$
       .pipe(takeUntil(this.destroy$))
       .subscribe(err => {
+        if (!err) return;
         this.state = 'idle';
         this.snackBar.open(err, 'Cerrar', { duration: 5000 });
       });
@@ -76,8 +91,12 @@ export class VozComponent implements OnInit, OnDestroy {
 
   toggleMic(): void {
     if (this.state === 'recording') {
-      this.state = 'transcribing';
       this.vozService.detener();
+      if (this.textoCorregido && this.textoCorregido.trim().length > 0) {
+        this.state = 'transcribed';
+      } else {
+        this.state = 'transcribing';
+      }
     } else {
       this.limpiar();
       this.state = 'recording';

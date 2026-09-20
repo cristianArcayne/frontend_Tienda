@@ -179,6 +179,20 @@ export class AuthService {
   }
 
   /**
+   * Obtener Username del usuario autenticado
+   */
+  getUsername(): string | null {
+    return this.authState.value.username || localStorage.getItem(this.USERNAME_KEY);
+  }
+
+  /**
+   * Obtener Nombre Completo del usuario autenticado
+   */
+  getNombreCompleto(): string | null {
+    return this.authState.value.nombre_completo || localStorage.getItem(this.NOMBRE_COMPLETO_KEY);
+  }
+
+  /**
    * Verificar si está autenticado
    */
   isAuthenticated(): boolean {

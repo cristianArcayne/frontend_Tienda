@@ -1,0 +1,319 @@
+<div class="reservas-container p-24">
+  <!-- Cabecera Principal -->
+  <div class="page-header m-b-24" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 class="f-w-700 m-b-4" style="display: flex; align-items: center; gap: 8px; font-size: 24px;">
+        <mat-icon style="color: #4f46e5; font-size: 30px; width: 30px; height: 30px;">storefront</mat-icon>
+        [CU12] Reservas Web-to-Store (48h)
+      </h1>
+      <p class="text-muted" style="margin: 0; font-size: 14px;">
+        Aparta tus prendas en línea con stock congelado y retíralas presencialmente en sucursal en un plazo máximo de 48 horas.
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button *ngIf="esPersonal" mat-stroked-button color="warn" (click)="expirarVencidas()" [disabled]="isProcessing" matTooltip="Expirar reservas > 48h y devolver stock">
+        <mat-icon>auto_delete</mat-icon>
+        Expirar Vencidas (48h)
+      </button>
+
+      <button mat-raised-button color="primary" (click)="abrirDialogoNuevaReserva()" [disabled]="isProcessing">
+        <mat-icon>add</mat-icon>
+        Nueva Reserva
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner informativo de 48 horas -->
+  <div style="background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%); border: 1px solid #c7d2fe; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+      <div style="background: #4f46e5; color: white; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+        48h
+      </div>
+      <div style="flex: 1; min-width: 250px;">
+        <div style="font-weight: 700; color: #1e1b4b; font-size: 15px;">¿Cómo funciona el flujo Web-to-Store?</div>
+        <div style="font-size: 13px; color: #3730a3; margin-top: 2px;">
+          1. Apartas la prenda sin pagar por adelantado ➔ 2. El sistema <strong>congela el stock en la sucursal</strong> seleccionada ➔ 3. Tienes <strong>48 horas exactas</strong> para recoger y pagar en mostrador (efectivo, QR o tarjeta).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor con Tabs -->
+  <mat-card>
+    <mat-tab-group animationDuration="200ms">
+      <!-- PESTAÑA 1: Mis Reservas -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon style="margin-right: 6px;">person_pin_circle</mat-icon>
+          Mis Reservas ({{ misReservas.length }})
+        </ng-template>
+
+        <div class="p-20">
+          <div *ngIf="isLoadingMis" class="p-40 text-center">
+            <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+            <p class="m-t-12 text-muted">Cargando tus reservas apartadas...</p>
+          </div>
+
+          <div *ngIf="!isLoadingMis && misReservas.length === 0" class="p-40 text-center">
+            <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #cbd5e1;">calendar_today</mat-icon>
+            <h3 class="m-t-16 f-w-600">No tienes reservas activas</h3>
+            <p class="text-muted">Explora el catálogo y aparta tus prendas favoritas para retirar en tu sucursal más cercana.</p>
+            <button mat-stroked-button color="primary" class="m-t-8" (click)="abrirDialogoNuevaReserva()">
+              <mat-icon>add</mat-icon> Apartar Prenda Ahora
+            </button>
+          </div>
+
+          <!-- Listado de Reservas -->
+          <div *ngIf="!isLoadingMis && misReservas.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="misReservas" class="w-100">
+              <!-- ID -->
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef>Código</th>
+                <td mat-cell *matCellDef="let r">
+                  <strong style="color: #4f46e5;">#RES-{{ r.id }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- Prenda / Detalles -->
+              <ng-container matColumnDef="prenda">
+                <th mat-header-cell *matHeaderCellDef>Prenda / Talla / Color</th>
+                <td mat-cell *matCellDef="let r">
+                  <div *ngFor="let det of r.detalles">
+                    <div style="font-weight: 600; color: #1e293b;">{{ det.prenda_nombre }} (x{{ det.cantidad }})</div>
+                    <div style="font-size: 12px; color: #64748b;">Talla: {{ det.talla }} | Color: {{ det.color }}</div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Sucursal -->
+              <ng-container matColumnDef="sucursal">
+                <th mat-header-cell *matHeaderCellDef>Sucursal de Retiro</th>
+                <td mat-cell *matCellDef="let r">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #64748b;">place</mat-icon>
+                    <div>
+                      <div style="font-weight: 500;">{{ r.sucursal_nombre || 'Sucursal ' + r.sucursal_id }}</div>
+                      <div style="font-size: 11px; color: #94a3b8;">{{ r.hora_estimada }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Fecha -->
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Fecha Apartado</th>
+                <td mat-cell *matCellDef="let r">
+                  {{ r.fecha | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+              </ng-container>
+
+              <!-- Límite 48h -->
+              <ng-container matColumnDef="limite">
+                <th mat-header-cell *matHeaderCellDef>Vencimiento (48h)</th>
+                <td mat-cell *matCellDef="let r">
+                  <div *ngIf="r.estado === 'PENDIENTE'">
+                    <span style="background: #fef3c7; color: #b45309; font-weight: 600; font-size: 11px; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                      <mat-icon style="font-size: 14px; width: 14px; height: 14px;">hourglass_top</mat-icon>
+                      {{ getHorasRestantes(r.fecha_limite) }}
+                    </span>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">{{ r.fecha_limite | date:'dd/MM HH:mm' }}</div>
+                  </div>
+                  <div *ngIf="r.estado !== 'PENDIENTE'" style="font-size: 12px; color: #94a3b8;">
+                    Finalizado
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Total -->
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef>Total Estimado</th>
+                <td mat-cell *matCellDef="let r">
+                  <strong style="color: #0f172a;">{{ r.total_estimado | currency:'BOB ' }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- Estado -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let r">
+                  <span *ngIf="r.estado === 'PENDIENTE'" style="background: #e0e7ff; color: #4338ca; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px;">
+                    PENDIENTE
+                  </span>
+                  <span *ngIf="r.estado === 'COMPLETADA'" style="background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px;">
+                    COMPLETADA
+                  </span>
+                  <span *ngIf="r.estado === 'CANCELADA'" style="background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px;">
+                    CANCELADA
+                  </span>
+                  <span *ngIf="r.estado === 'EXPIRADA'" style="background: #ffedd5; color: #c2410c; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px;">
+                    EXPIRADA
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let r">
+                  <button *ngIf="r.estado === 'PENDIENTE'" mat-stroked-button color="warn" style="font-size: 12px;" (click)="cancelarReserva(r)" [disabled]="isProcessing">
+                    <mat-icon style="font-size: 16px; width: 16px; height: 16px;">close</mat-icon>
+                    Cancelar
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- PESTAÑA 2: Gestión de Tienda (Personal / Admin / Cajero) -->
+      <mat-tab *ngIf="esPersonal">
+        <ng-template mat-tab-label>
+          <mat-icon style="margin-right: 6px;">point_of_sale</mat-icon>
+          Gestión de Tienda / Retiro Presencial ({{ todasReservas.length }})
+        </ng-template>
+
+        <div class="p-20">
+          <!-- Filtros de Tienda -->
+          <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+            <mat-form-field appearance="outline" style="max-width: 220px;">
+              <mat-label>Filtrar por Estado</mat-label>
+              <mat-select [(ngModel)]="filtroEstado" (selectionChange)="aplicarFiltros()">
+                <mat-option value="TODOS">Todos los estados</mat-option>
+                <mat-option value="PENDIENTE">Solo Pendientes</mat-option>
+                <mat-option value="COMPLETADA">Solo Completadas</mat-option>
+                <mat-option value="EXPIRADA">Solo Expiradas</mat-option>
+                <mat-option value="CANCELADA">Solo Canceladas</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="max-width: 260px;">
+              <mat-label>Filtrar por Sucursal</mat-label>
+              <mat-select [(ngModel)]="filtroSucursal" (selectionChange)="aplicarFiltros()">
+                <mat-option value="TODAS">Todas las sucursales</mat-option>
+                <mat-option *ngFor="let s of sucursales" [value]="s.id.toString()">
+                  {{ s.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <span style="font-size: 13px; color: #64748b;">
+              Mostrando <strong>{{ reservasFiltradas.length }}</strong> reservas
+            </span>
+          </div>
+
+          <div *ngIf="isLoadingTodas" class="p-40 text-center">
+            <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+          </div>
+
+          <!-- Tabla de Gestión de Tienda -->
+          <div *ngIf="!isLoadingTodas && reservasFiltradas.length > 0" class="table-responsive">
+            <table mat-table [dataSource]="reservasFiltradas" class="w-100">
+              <!-- ID -->
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef>Reserva / Cliente</th>
+                <td mat-cell *matCellDef="let r">
+                  <strong style="color: #4f46e5;">#RES-{{ r.id }}</strong>
+                  <div style="font-size: 12px; font-weight: 500; color: #1e293b;">{{ r.cliente_nombre || 'Cliente ' + r.cliente_id }}</div>
+                </td>
+              </ng-container>
+
+              <!-- Prenda -->
+              <ng-container matColumnDef="prenda">
+                <th mat-header-cell *matHeaderCellDef>Prenda / Talla / Color</th>
+                <td mat-cell *matCellDef="let r">
+                  <div *ngFor="let det of r.detalles">
+                    <div style="font-weight: 600;">{{ det.prenda_nombre }} (x{{ det.cantidad }})</div>
+                    <div style="font-size: 12px; color: #64748b;">Talla: {{ det.talla }} | Color: {{ det.color }} | SKU: {{ det.cod_barra }}</div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Sucursal -->
+              <ng-container matColumnDef="sucursal">
+                <th mat-header-cell *matHeaderCellDef>Sucursal</th>
+                <td mat-cell *matCellDef="let r">
+                  <div style="font-weight: 500;">{{ r.sucursal_nombre }}</div>
+                  <div style="font-size: 11px; color: #94a3b8;">{{ r.hora_estimada }}</div>
+                </td>
+              </ng-container>
+
+              <!-- Fecha -->
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Apartado</th>
+                <td mat-cell *matCellDef="let r">{{ r.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+              </ng-container>
+
+              <!-- Límite -->
+              <ng-container matColumnDef="limite">
+                <th mat-header-cell *matHeaderCellDef>Plazo (48h)</th>
+                <td mat-cell *matCellDef="let r">
+                  <span *ngIf="r.estado === 'PENDIENTE'" style="background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 8px;">
+                    {{ getHorasRestantes(r.fecha_limite) }}
+                  </span>
+                  <span *ngIf="r.estado !== 'PENDIENTE'" style="font-size: 12px; color: #94a3b8;">
+                    {{ r.estado }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Total -->
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef>Total</th>
+                <td mat-cell *matCellDef="let r">
+                  <strong>{{ r.total_estimado | currency:'BOB ' }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- Estado -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let r">
+                  <span *ngIf="r.estado === 'PENDIENTE'" style="background: #e0e7ff; color: #4338ca; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px;">
+                    PENDIENTE
+                  </span>
+                  <span *ngIf="r.estado === 'COMPLETADA'" style="background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px;">
+                    COMPLETADA
+                  </span>
+                  <span *ngIf="r.estado === 'CANCELADA'" style="background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px;">
+                    CANCELADA
+                  </span>
+                  <span *ngIf="r.estado === 'EXPIRADA'" style="background: #ffedd5; color: #c2410c; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px;">
+                    EXPIRADA
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef>Operaciones en Mostrador</th>
+                <td mat-cell *matCellDef="let r">
+                  <div *ngIf="r.estado === 'PENDIENTE' || r.estado === 'EXPIRADA'" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button *ngIf="r.estado === 'PENDIENTE'" mat-raised-button color="primary" style="font-size: 12px; height: 32px;" (click)="confirmarRetiro(r)" [disabled]="isProcessing" matTooltip="Entregar prenda, cobrar en caja y descargar stock físico">
+                      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">check</mat-icon>
+                      Confirmar Retiro
+                    </button>
+                    <button mat-stroked-button color="warn" style="font-size: 12px; height: 32px;" (click)="cancelarReserva(r)" [disabled]="isProcessing" matTooltip="Anular apartado y liberar stock">
+                      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">close</mat-icon>
+                      Cancelar
+                    </button>
+                  </div>
+                  <div *ngIf="r.estado !== 'PENDIENTE' && r.estado !== 'EXPIRADA'" style="font-size: 12px; color: #94a3b8;">
+                    Sin acciones pendientes
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>

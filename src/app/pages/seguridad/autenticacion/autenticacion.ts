@@ -15,6 +15,8 @@ import { takeUntil } from 'rxjs/operators';
 import { ConfigService } from '../../../services/config.service';
 import { AuthService } from '../../../services/auth.service';
 
+import { MatCheckboxModule } from '@angular/material/checkbox';
+
 @Component({
   selector: 'app-autenticacion',
   standalone: true,
@@ -28,6 +30,7 @@ import { AuthService } from '../../../services/auth.service';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatCheckboxModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
   ],

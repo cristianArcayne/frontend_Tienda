@@ -1,3 +1,4 @@
+export { Producto } from 'src/app/models/inventario/producto.model';
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
