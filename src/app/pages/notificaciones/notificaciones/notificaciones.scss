@@ -1,3 +1,8 @@
+.notifications-main-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
 .page-header {
   align-items: center;
   display: flex;
@@ -7,19 +12,20 @@
 
 .push-panel {
   align-items: center;
-  background: #fff;
-  border: 1px solid #edf0f5;
-  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
-  padding: 16px;
+  padding: 16px 20px;
 }
 
 .push-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 6px;
 }
 
 .push-meta,
@@ -27,27 +33,285 @@
   align-items: center;
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .tab-content {
   padding-top: 20px;
 }
 
-.promo-form {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  margin-bottom: 20px;
+.broadcast-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
 }
 
-.description-field {
-  grid-column: span 3;
-}
-
-.form-actions {
-  align-items: center;
+.icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
-  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
+}
+
+.btn-submit,
+.btn-create-promo {
+  height: 44px;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+/* Presets Rápidos */
+.presets-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.preset-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.preset-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  min-width: 130px;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-btn {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 20px !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  transition: all 0.2s ease;
+
+  &:hover,
+  &.active-preset {
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+    border-color: #4f46e5 !important;
+  }
+}
+
+.duration-btn {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  color: #64748b;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+}
+
+/* 2 Columnas Creator Grid */
+.promo-creator-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.grid-col-full {
+  grid-column: 1 / -1;
+}
+
+/* Live Preview Card */
+.live-preview-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.preview-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Mobile Notif Preview */
+.mobile-notification-preview {
+  background: #1e293b;
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+}
+
+.mobile-notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.app-icon-mini {
+  width: 20px;
+  height: 20px;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.app-name-mini {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.time-mini {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.mobile-notif-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.mobile-notif-body {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* Prenda Info & Price Calculator */
+.product-price-calculator {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.product-info-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.prenda-icon {
+  width: 38px;
+  height: 38px;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #4f46e5;
+}
+
+.product-name-preview {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.product-meta-preview {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.price-breakdown {
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 12px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 6px;
+
+  &.highlight {
+    font-weight: 700;
+  }
+}
+
+.price-original {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.price-discounted {
+  font-size: 16px;
+  color: #059669;
+  font-weight: 800;
+}
+
+.saving-chip {
+  margin-top: 10px;
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Tabla Custom */
+.custom-table-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.discount-badge {
+  background: #fee2e2;
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
 .loading-box {
@@ -57,8 +321,9 @@
 }
 
 .title-cell {
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
 }
 
 .endpoint-cell,
@@ -70,7 +335,7 @@
 
 .muted {
   color: #8a8f98;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .empty-state {
@@ -88,14 +353,13 @@
   width: 42px;
 }
 
-@media (max-width: 1200px) {
-  .promo-form {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
+@media (max-width: 1024px) {
+  .promo-creator-grid {
+    grid-template-columns: 1fr;
   }
 
-  .description-field,
-  .form-actions {
-    grid-column: 1 / -1;
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -110,8 +374,5 @@
   .push-actions {
     flex-direction: column;
   }
-
-  .promo-form {
-    grid-template-columns: 1fr;
-  }
 }
+

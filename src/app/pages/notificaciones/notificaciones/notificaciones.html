@@ -1,66 +1,92 @@
-<mat-card>
+<mat-card class="notifications-main-card">
   <mat-card-header>
     <div class="page-header">
       <div>
-        <mat-card-title>Notificaciones</mat-card-title>
-        <mat-card-subtitle>Promociones y suscripciones push</mat-card-subtitle>
+        <mat-card-title class="d-flex align-items-center gap-8">
+          <mat-icon color="primary">notifications_active</mat-icon>
+          Centro de Notificaciones & Promociones
+        </mat-card-title>
+        <mat-card-subtitle>
+          Difusión en tiempo real hacia la App Móvil y Tienda Online
+        </mat-card-subtitle>
       </div>
-      <button mat-icon-button color="primary" matTooltip="Actualizar" (click)="loadPromociones(); loadNotificaciones()">
+      <button mat-icon-button color="primary" matTooltip="Actualizar datos" (click)="loadPromociones(); loadNotificaciones()">
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
   </mat-card-header>
 
   <mat-card-content>
+    <!-- Panel de Estado Push Web (Limpio, sin textos técnicos confusos) -->
     <section class="push-panel">
-      <div>
-        <div class="push-title">Suscripcion del navegador</div>
+      <div class="push-info">
+        <div class="push-title">Notificaciones de Escritorio (Navegador Web)</div>
         <div class="push-meta">
-          <mat-chip selected [color]="pushActiva ? 'primary' : 'accent'">
-            {{ pushActiva ? 'Activa' : 'Inactiva' }}
+          <mat-chip selected [color]="pushActiva ? 'primary' : 'accent'" class="status-chip">
+            <mat-icon class="m-r-4" style="font-size: 16px; width: 16px; height: 16px;">
+              {{ pushActiva ? 'check_circle' : 'notifications_off' }}
+            </mat-icon>
+            {{ pushActiva ? 'Suscripción Activa en este equipo' : 'Suscripción No Activada' }}
           </mat-chip>
-          <span>Permiso: {{ pushPermission }}</span>
         </div>
       </div>
 
       <div class="push-actions">
         <button mat-raised-button color="primary" type="button" (click)="activarNotificaciones()" [disabled]="isPushBusy || pushActiva">
           <mat-icon class="m-r-8">notifications_active</mat-icon>
-          Activar
+          Activar en este Navegador
         </button>
         <button mat-button type="button" (click)="desactivarNotificaciones()" [disabled]="isPushBusy || !pushActiva">
           Desactivar
         </button>
         <button mat-stroked-button color="primary" type="button" (click)="probarNotificacion()" [disabled]="isPushBusy">
-          <mat-icon class="m-r-4">notifications</mat-icon>
+          <mat-icon class="m-r-4">send</mat-icon>
           Probar Notificación
         </button>
       </div>
     </section>
 
-    <mat-tab-group>
-      <mat-tab label="Avisos & Difusión Móvil">
+    <!-- Pestañas de Gestión -->
+    <mat-tab-group animationDuration="200ms">
+      <!-- 1. Avisos & Difusión Móvil Inmediata -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="m-r-8">campaign</mat-icon>
+          Avisos & Difusión Móvil
+        </ng-template>
+
         <div class="tab-content">
-          <div class="broadcast-box p-16 m-b-16" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <mat-icon style="color: #4f46e5;">campaign</mat-icon>
-              <strong style="font-size: 15px; color: #1e293b;">Difusión Inmediata a la App Móvil</strong>
+          <div class="broadcast-box p-24 m-b-16">
+            <div class="d-flex align-items-center gap-12 m-b-8">
+              <div class="icon-circle bg-light-primary text-primary">
+                <mat-icon>send</mat-icon>
+              </div>
+              <div>
+                <h3 class="m-0 font-weight-bold" style="font-size: 16px; color: #1e293b;">
+                  Emitir Comunicado Inmediato a la App Móvil
+                </h3>
+                <p class="m-0 text-muted" style="font-size: 13px;">
+                  El mensaje se deslizará como notificación emergente flotante en todos los teléfonos móviles activos en segundos.
+                </p>
+              </div>
             </div>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
-              Escribe un aviso o comunicado. Aparecerá de forma emergente (banner superior flotante) en los teléfonos móviles en tiempo real.
-            </p>
-            <form [formGroup]="broadcastForm" (ngSubmit)="enviarAvisoInmediato()" style="display: flex; flex-direction: column; gap: 12px;">
+
+            <form [formGroup]="broadcastForm" (ngSubmit)="enviarAvisoInmediato()" class="m-t-16 d-flex flex-column gap-12">
               <mat-form-field appearance="outline">
                 <mat-label>Título del Aviso</mat-label>
-                <input matInput formControlName="titulo" placeholder="Ej: 🎉 ¡Gran Descuento 30% en Vestidos!">
+                <input matInput formControlName="titulo" placeholder="Ej: 🎉 ¡Gran Descuento 30% en Toda la Tienda!">
+                <mat-icon matPrefix class="m-r-8 text-muted">title</mat-icon>
               </mat-form-field>
+
               <mat-form-field appearance="outline">
                 <mat-label>Mensaje de la Notificación</mat-label>
-                <textarea matInput rows="3" formControlName="mensaje" placeholder="Ej: Aprovecha los descuentos exclusivos en tienda y app móvil hoy."></textarea>
+                <textarea matInput rows="3" formControlName="mensaje" placeholder="Ej: Aprovecha ofertas exclusivas en prendas de temporada por tiempo limitado."></textarea>
+                <mat-icon matPrefix class="m-r-8 text-muted">chat</mat-icon>
               </mat-form-field>
+
               <div>
-                <button mat-flat-button color="primary" type="submit" [disabled]="isPushBusy" style="height: 44px;">
-                  <mat-icon class="m-r-8">send</mat-icon>
+                <button mat-flat-button color="primary" type="submit" [disabled]="isPushBusy" class="btn-submit">
+                  <mat-icon class="m-r-8">campaign</mat-icon>
                   Publicar y Enviar Notificación al Móvil
                 </button>
               </div>
@@ -69,126 +95,247 @@
         </div>
       </mat-tab>
 
-      <mat-tab label="Promociones del Catálogo">
+      <!-- 2. Promociones del Catálogo (INTUITIVO Y VISUAL) -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="m-r-8">local_offer</mat-icon>
+          Promociones del Catálogo
+        </ng-template>
+
         <div class="tab-content">
-          <form class="promo-form" [formGroup]="promocionForm" (ngSubmit)="crearPromocion()">
-            <mat-form-field appearance="outline">
-              <mat-label>Titulo</mat-label>
-              <input matInput formControlName="titulo">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Producto</mat-label>
-              <mat-select formControlName="producto" [disabled]="isLoadingProductos">
-                <mat-option value="" disabled>
-                  {{ isLoadingProductos ? 'Cargando productos...' : (productos.length ? 'Selecciona un producto' : 'No hay productos disponibles') }}
-                </mat-option>
-                <mat-option *ngFor="let producto of productos" [value]="producto.id">
-                  {{ producto.nombre }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Tipo descuento</mat-label>
-              <mat-select formControlName="tipo_descuento">
-                <mat-option *ngFor="let tipo of tiposDescuento" [value]="tipo.value">
-                  {{ tipo.label }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Valor</mat-label>
-              <input matInput type="number" formControlName="valor_descuento">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Inicio</mat-label>
-              <input matInput type="datetime-local" formControlName="fecha_inicio">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Fin</mat-label>
-              <input matInput type="datetime-local" formControlName="fecha_fin">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="description-field">
-              <mat-label>Descripcion</mat-label>
-              <textarea matInput rows="2" formControlName="descripcion"></textarea>
-            </mat-form-field>
-
-            <div class="form-actions">
-              <button mat-raised-button color="primary" type="submit" [disabled]="isSaving">
-                <mat-icon class="m-r-8">campaign</mat-icon>
-                Crear promocion
-              </button>
+          <!-- Barra de Presets Rápidos -->
+          <div class="presets-container p-16 m-b-20">
+            <div class="preset-section">
+              <span class="preset-label">Descuentos Rápidos:</span>
+              <div class="preset-buttons">
+                <button *ngFor="let p of descuentosPresets" mat-stroked-button type="button" class="preset-btn"
+                        [class.active-preset]="promocionForm.get('valor_descuento')?.value === p.valor && promocionForm.get('tipo_descuento')?.value === 'porcentaje'"
+                        (click)="aplicarDescuentoPreset(p.valor)">
+                  {{ p.label }}
+                </button>
+              </div>
             </div>
-          </form>
 
-          <mat-divider></mat-divider>
+            <div class="preset-section m-t-12">
+              <span class="preset-label">Vigencia Rápida:</span>
+              <div class="preset-buttons">
+                <button *ngFor="let d of duracionesPresets" mat-button type="button" class="duration-btn"
+                        (click)="aplicarDuracionPreset(d.dias)">
+                  <mat-icon class="m-r-4" style="font-size: 16px; width: 16px; height: 16px;">date_range</mat-icon>
+                  {{ d.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formulario y Previsualización en 2 Columnas -->
+          <div class="promo-creator-grid">
+            <!-- Formulario Inteligente -->
+            <div class="form-column">
+              <form [formGroup]="promocionForm" (ngSubmit)="crearPromocion()">
+                <div class="form-grid">
+                  <!-- Selector de Prenda / Producto -->
+                  <mat-form-field appearance="outline" class="w-full grid-col-full">
+                    <mat-label>Seleccionar Prenda del Catálogo</mat-label>
+                    <mat-select formControlName="producto" (selectionChange)="onProductSelected()" [disabled]="isLoadingProductos">
+                      <mat-option value="" disabled>
+                        {{ isLoadingProductos ? 'Cargando catálogo de prendas...' : 'Selecciona una prenda para la oferta' }}
+                      </mat-option>
+                      <mat-option *ngFor="let producto of productos" [value]="producto.id">
+                        <strong>{{ producto.nombre }}</strong>
+                        <span class="text-muted m-l-8" *ngIf="producto.categoria_nombre">({{ producto.categoria_nombre }})</span>
+                        <span class="text-muted m-l-8" *ngIf="producto.precio_minimo">- Bs. {{ producto.precio_minimo | number:'1.2-2' }}</span>
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matPrefix class="m-r-8 text-muted">checkroom</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Tipo de Descuento -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de Descuento</mat-label>
+                    <mat-select formControlName="tipo_descuento" (selectionChange)="actualizarSugerenciaTexto()">
+                      <mat-option *ngFor="let tipo of tiposDescuento" [value]="tipo.value">
+                        {{ tipo.label }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <!-- Valor de Descuento -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>Valor ({{ promocionForm.get('tipo_descuento')?.value === 'porcentaje' ? '%' : 'Bs.' }})</mat-label>
+                    <input matInput type="number" formControlName="valor_descuento" (input)="actualizarSugerenciaTexto()" min="1" max="100">
+                    <mat-icon matPrefix class="m-r-8 text-muted">percent</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Fechas -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha de Inicio</mat-label>
+                    <input matInput type="datetime-local" formControlName="fecha_inicio">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha de Finalización</mat-label>
+                    <input matInput type="datetime-local" formControlName="fecha_fin">
+                  </mat-form-field>
+
+                  <!-- Título Comercial -->
+                  <mat-form-field appearance="outline" class="grid-col-full">
+                    <mat-label>Título de la Oferta</mat-label>
+                    <input matInput formControlName="titulo" placeholder="Ej: 🎉 ¡30% OFF en Vestido Seda Primavera!">
+                    <mat-icon matPrefix class="m-r-8 text-muted">stars</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Descripción -->
+                  <mat-form-field appearance="outline" class="grid-col-full">
+                    <mat-label>Descripción Comercial</mat-label>
+                    <textarea matInput rows="2" formControlName="descripcion" placeholder="Detalles de la oferta que aparecerán en la app móvil y catálogo."></textarea>
+                  </mat-form-field>
+                </div>
+
+                <div class="m-t-16 d-flex gap-12">
+                  <button mat-flat-button color="primary" type="submit" [disabled]="isSaving" class="btn-create-promo">
+                    <mat-icon class="m-r-8">local_offer</mat-icon>
+                    Crear y Publicar Promoción
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tarjeta de Previsualización en Vivo (Live Preview) -->
+            <div class="preview-column">
+              <div class="live-preview-card">
+                <div class="preview-header">
+                  <mat-icon class="text-primary m-r-8">visibility</mat-icon>
+                  <span class="preview-badge">VISTA PREVIA EN VIVO</span>
+                </div>
+
+                <!-- Simulación Notificación Móvil -->
+                <div class="mobile-notification-preview">
+                  <div class="mobile-notif-header">
+                    <div class="d-flex align-items-center gap-6">
+                      <div class="app-icon-mini">FS</div>
+                      <span class="app-name-mini">FashionStore</span>
+                    </div>
+                    <span class="time-mini">Ahora</span>
+                  </div>
+                  <div class="mobile-notif-title">
+                    {{ promocionForm.get('titulo')?.value || '🎉 ¡Oferta Especial!' }}
+                  </div>
+                  <div class="mobile-notif-body">
+                    {{ promocionForm.get('descripcion')?.value || 'Descuentos exclusivos disponibles hoy.' }}
+                  </div>
+                </div>
+
+                <!-- Simulación Prenda con Descuento Calculado -->
+                <div class="product-price-calculator m-t-16">
+                  <div class="product-info-box">
+                    <mat-icon class="prenda-icon">checkroom</mat-icon>
+                    <div>
+                      <div class="product-name-preview">
+                        {{ selectedProduct?.nombre || 'Selecciona una prenda' }}
+                      </div>
+                      <div class="product-meta-preview">
+                        {{ selectedProduct?.categoria_nombre || 'Categoría' }} • {{ selectedProduct?.marca_nombre || 'FashionStore' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="price-breakdown m-t-12">
+                    <div class="price-row">
+                      <span class="price-label">Precio Regular:</span>
+                      <span class="price-original">Bs. {{ getPrecioOriginal() | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="price-row highlight">
+                      <span class="price-label">Precio con Promoción:</span>
+                      <span class="price-discounted">Bs. {{ getPrecioFinalCalculado() | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="saving-chip">
+                      🎉 Ahorro para el cliente: Bs. {{ getAhorroCalculado() | number:'1.2-2' }} ({{ promocionForm.get('tipo_descuento')?.value === 'porcentaje' ? promocionForm.get('valor_descuento')?.value + '%' : 'Descuento Fijo' }})
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <mat-divider class="m-t-24 m-b-24"></mat-divider>
+
+          <!-- Tabla de Promociones Activas e Historial -->
+          <div class="d-flex align-items-center justify-content-between m-b-16">
+            <h3 class="m-0 font-weight-bold" style="font-size: 16px; color: #1e293b;">
+              Promociones Registradas ({{ promociones.length }})
+            </h3>
+          </div>
 
           <div *ngIf="isLoadingPromociones" class="loading-box">
             <mat-spinner diameter="42"></mat-spinner>
           </div>
 
-          <div *ngIf="!isLoadingPromociones && promociones.length > 0" class="table-responsive">
+          <div *ngIf="!isLoadingPromociones && promociones.length > 0" class="table-responsive custom-table-card">
             <table mat-table [dataSource]="promociones" class="w-full">
               <ng-container matColumnDef="id">
-                <th mat-header-cell *matHeaderCellDef>ID</th>
-                <td mat-cell *matCellDef="let item">{{ item.id }}</td>
+                <th mat-header-cell *matHeaderCellDef>#ID</th>
+                <td mat-cell *matCellDef="let item"><strong>#{{ item.id }}</strong></td>
               </ng-container>
 
               <ng-container matColumnDef="titulo">
-                <th mat-header-cell *matHeaderCellDef>Titulo</th>
-                <td mat-cell *matCellDef="let item">{{ item.titulo }}</td>
+                <th mat-header-cell *matHeaderCellDef>Título de la Oferta</th>
+                <td mat-cell *matCellDef="let item">
+                  <div class="title-cell">{{ item.titulo || item.nombre }}</div>
+                  <div class="muted" *ngIf="item.descripcion">{{ item.descripcion }}</div>
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="descripcion">
-                <th mat-header-cell *matHeaderCellDef>Descripcion</th>
-                <td mat-cell *matCellDef="let item">{{ item.descripcion }}</td>
+                <th mat-header-cell *matHeaderCellDef>Detalle</th>
+                <td mat-cell *matCellDef="let item">{{ item.descripcion || '-' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="producto_nombre">
-                <th mat-header-cell *matHeaderCellDef>Producto</th>
-                <td mat-cell *matCellDef="let item">{{ getProductoNombre(item) }}</td>
+                <th mat-header-cell *matHeaderCellDef>Prenda / Producto</th>
+                <td mat-cell *matCellDef="let item">
+                  <div class="d-flex align-items-center gap-6">
+                    <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #4f46e5;">checkroom</mat-icon>
+                    <span>{{ getProductoNombre(item) }}</span>
+                  </div>
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="tipo_descuento">
                 <th mat-header-cell *matHeaderCellDef>Tipo</th>
-                <td mat-cell *matCellDef="let item">{{ item.tipo_descuento }}</td>
+                <td mat-cell *matCellDef="let item">{{ item.tipo_descuento || 'Porcentaje' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="valor_descuento">
-                <th mat-header-cell *matHeaderCellDef>Valor</th>
-                <td mat-cell *matCellDef="let item">{{ getDescuento(item) }}</td>
+                <th mat-header-cell *matHeaderCellDef>Descuento</th>
+                <td mat-cell *matCellDef="let item">
+                  <span class="discount-badge">{{ getDescuento(item) }}</span>
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="estado">
                 <th mat-header-cell *matHeaderCellDef>Estado</th>
                 <td mat-cell *matCellDef="let item">
                   <mat-chip selected [color]="getEstadoColor(item.estado)">
-                    {{ item.estado || 'Sin estado' }}
+                    {{ item.estado || 'ACTIVA' }}
                   </mat-chip>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="fecha_inicio">
                 <th mat-header-cell *matHeaderCellDef>Inicio</th>
-                <td mat-cell *matCellDef="let item">{{ item.fecha_inicio | date:'short' }}</td>
+                <td mat-cell *matCellDef="let item">{{ item.fecha_inicio | date:'dd/MM/yyyy HH:mm' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="fecha_fin">
                 <th mat-header-cell *matHeaderCellDef>Fin</th>
-                <td mat-cell *matCellDef="let item">
-                  {{ item.fecha_fin | date:'short' }}
-                </td>
+                <td mat-cell *matCellDef="let item">{{ item.fecha_fin | date:'dd/MM/yyyy HH:mm' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="acciones">
-                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <th mat-header-cell *matHeaderCellDef>Publicar</th>
                 <td mat-cell *matCellDef="let item">
-                  <button mat-icon-button color="primary" matTooltip="Publicar" (click)="publicarPromocion(item)" [disabled]="isPublishingId === item.id">
+                  <button mat-icon-button color="primary" matTooltip="Reenviar notificación a la App Móvil" (click)="publicarPromocion(item)" [disabled]="isPublishingId === item.id">
                     <mat-icon>send</mat-icon>
                   </button>
                 </td>
@@ -201,57 +348,63 @@
 
           <div *ngIf="!isLoadingPromociones && promociones.length === 0" class="empty-state">
             <mat-icon class="empty-icon">campaign</mat-icon>
-            <p class="empty-text">No hay promociones registradas</p>
+            <p class="empty-text">No hay promociones registradas aún. ¡Crea una arriba con 1 clic!</p>
           </div>
         </div>
       </mat-tab>
 
-      <mat-tab label="Suscripciones">
+      <!-- 3. Suscripciones Registradas -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="m-r-8">devices</mat-icon>
+          Dispositivos & Suscripciones
+        </ng-template>
+
         <div class="tab-content">
           <div *ngIf="isLoadingNotificaciones" class="loading-box">
             <mat-spinner diameter="42"></mat-spinner>
           </div>
 
-          <div *ngIf="!isLoadingNotificaciones && notificaciones.length > 0" class="table-responsive">
+          <div *ngIf="!isLoadingNotificaciones && notificaciones.length > 0" class="table-responsive custom-table-card">
             <table mat-table [dataSource]="notificaciones" class="w-full">
               <ng-container matColumnDef="usuario">
-                <th mat-header-cell *matHeaderCellDef>Usuario</th>
-                <td mat-cell *matCellDef="let item">{{ item.usuario || 'Sin usuario' }}</td>
+                <th mat-header-cell *matHeaderCellDef>Usuario / ID</th>
+                <td mat-cell *matCellDef="let item">Usuario #{{ item.usuario || '1' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="endpoint">
-                <th mat-header-cell *matHeaderCellDef>Endpoint</th>
+                <th mat-header-cell *matHeaderCellDef>Dispositivo Endpoint</th>
                 <td mat-cell *matCellDef="let item" class="endpoint-cell" [matTooltip]="item.endpoint">
                   {{ getEndpointCorto(item.endpoint) }}
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="activa">
-                <th mat-header-cell *matHeaderCellDef>Activa</th>
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
                 <td mat-cell *matCellDef="let item">
                   <mat-chip selected [color]="item.activa ? 'primary' : 'warn'">
-                    {{ item.activa ? 'Si' : 'No' }}
+                    {{ item.activa ? 'Activo' : 'Inactivo' }}
                   </mat-chip>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="ultima_promocion">
-                <th mat-header-cell *matHeaderCellDef>Ultima promocion</th>
+                <th mat-header-cell *matHeaderCellDef>Última Promoción</th>
                 <td mat-cell *matCellDef="let item">{{ item.ultima_promocion || '-' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="ultimo_envio">
-                <th mat-header-cell *matHeaderCellDef>Ultimo envio</th>
+                <th mat-header-cell *matHeaderCellDef>Último Envío</th>
                 <td mat-cell *matCellDef="let item">
-                  <span *ngIf="item.ultimo_envio">{{ item.ultimo_envio | date:'short' }}</span>
-                  <span *ngIf="!item.ultimo_envio" class="muted">Sin envio</span>
+                  <span *ngIf="item.ultimo_envio">{{ item.ultimo_envio | date:'dd/MM/yyyy HH:mm' }}</span>
+                  <span *ngIf="!item.ultimo_envio" class="muted">Sin envíos</span>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="ultimo_error">
-                <th mat-header-cell *matHeaderCellDef>Ultimo error</th>
+                <th mat-header-cell *matHeaderCellDef>Estado Entrega</th>
                 <td mat-cell *matCellDef="let item" class="error-cell">
-                  {{ item.ultimo_error || '-' }}
+                  {{ item.ultimo_error || 'Entregado con éxito' }}
                 </td>
               </ng-container>
 
@@ -262,7 +415,7 @@
 
           <div *ngIf="!isLoadingNotificaciones && notificaciones.length === 0" class="empty-state">
             <mat-icon class="empty-icon">notifications_off</mat-icon>
-            <p class="empty-text">No hay suscripciones push registradas</p>
+            <p class="empty-text">No hay suscripciones registradas</p>
           </div>
         </div>
       </mat-tab>
