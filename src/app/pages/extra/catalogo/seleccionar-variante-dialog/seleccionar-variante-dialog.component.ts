@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { ConfigService } from '../../../../services/config.service';
 
 export interface SeleccionarVarianteData {
   producto: any;
@@ -150,7 +151,8 @@ export class SeleccionarVarianteDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<SeleccionarVarianteDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: SeleccionarVarianteData
+    @Inject(MAT_DIALOG_DATA) public data: SeleccionarVarianteData,
+    private configService: ConfigService
   ) {}
 
   ngOnInit(): void {
@@ -228,13 +230,13 @@ export class SeleccionarVarianteDialogComponent implements OnInit {
 
   getImagenUrl(url: string | null): string {
     if (!url) return 'assets/images/products/product-1.png';
-    if (url.startsWith('/static')) {
-      return `http://localhost:8000${url}`;
-    }
-    return url;
+    const formatted = this.configService.formatImageUrl(url);
+    return formatted || 'assets/images/products/product-1.png';
   }
 
   onImgError(event: any): void {
-    event.target.src = 'assets/images/products/product-1.png';
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = 'assets/images/products/product-1.png';
+    }
   }
 }

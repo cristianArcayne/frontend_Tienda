@@ -177,10 +177,29 @@ export class ProductoComponent implements OnInit, OnDestroy {
   }
 
   getImagenPrincipal(producto: Producto): string | null {
+    let url: string | null | undefined = null;
+    const prodAny = producto as any;
     if (producto.imagenes && producto.imagenes.length > 0) {
       const principal = producto.imagenes.find(img => img.es_principal);
-      return principal ? principal.archivo_url : producto.imagenes[0].archivo_url;
+      url = principal ? principal.archivo_url : producto.imagenes[0].archivo_url;
+    } else if (prodAny.imagen_principal) {
+      url = prodAny.imagen_principal;
+    } else if (prodAny.imagen_uri) {
+      url = prodAny.imagen_uri;
+    }
+
+    if (url) {
+      return this.configService.formatImageUrl(url);
     }
     return null;
+  }
+
+  onImgError(event: any): void {
+    if (event?.target) {
+      event.target.style.display = 'none';
+      if (event.target.nextElementSibling) {
+        event.target.nextElementSibling.style.display = 'inline-block';
+      }
+    }
   }
 }

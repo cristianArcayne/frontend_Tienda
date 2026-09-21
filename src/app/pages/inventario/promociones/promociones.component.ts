@@ -94,17 +94,20 @@ export interface PromocionItem {
 export class VerPrendasPromoDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<VerPrendasPromoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { promo: PromocionItem }
+    @Inject(MAT_DIALOG_DATA) public data: { promo: PromocionItem },
+    private configService: ConfigService
   ) {}
 
   getImg(uri?: string): string {
     if (!uri) return 'assets/images/products/product-1.png';
-    if (uri.startsWith('/static')) return `http://localhost:8000${uri}`;
-    return uri;
+    const formatted = this.configService.formatImageUrl(uri);
+    return formatted || 'assets/images/products/product-1.png';
   }
 
   onImgError(event: any): void {
-    event.target.src = 'assets/images/products/product-1.png';
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = 'assets/images/products/product-1.png';
+    }
   }
 }
 
