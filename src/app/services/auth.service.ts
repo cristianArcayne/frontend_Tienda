@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { BehaviorSubject, Observable, of, Subscription, fromEvent, merge, timer } from 'rxjs';
+import { tap, throttleTime } from 'rxjs/operators';
 import { ConfigService } from './config.service';
 
 export interface LoginRequest {
@@ -36,8 +37,7 @@ export interface AuthState {
 
 /**
  * Servicio de Autenticación
- * Maneja login, logout, tokens y estado de la sesión
- * Guarda: access_token, refresh_token y usuario_id
+ * Maneja login, logout, tokens, expiración y timeout de inactividad
  */
 @Injectable({
   providedIn: 'root'
@@ -52,6 +52,13 @@ export class AuthService {
   private readonly IS_SUPERUSER_KEY = `${this.STORAGE_PREFIX}is_superuser`;
   private readonly ROLES_KEY = `${this.STORAGE_PREFIX}roles`;
   private readonly PERMISOS_KEY = `${this.STORAGE_PREFIX}permisos`;
+  private readonly REMEMBER_ME_KEY = `${this.STORAGE_PREFIX}remember_me`;
+
+  /** Tiempo de inactividad antes de cerrar sesión (10 minutos) */
+  private readonly INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+
+  private inactivityTimerSubscription?: Subscription;
+  private userActivitySubscription?: Subscription;
 
   private authState = new BehaviorSubject<AuthState>(this.getInitialState());
   public authState$ = this.authState.asObservable();
@@ -59,28 +66,47 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private configService: ConfigService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar,
+    private ngZone: NgZone
   ) {
     this.restoreAuthState();
   }
 
   /**
+   * Obtiene el storage activo (sessionStorage o localStorage)
+   */
+  private getActiveStorage(): Storage {
+    if (sessionStorage.getItem(this.ACCESS_TOKEN_KEY)) {
+      return sessionStorage;
+    }
+    return localStorage;
+  }
+
+  /**
+   * Obtiene un valor buscando primero en sessionStorage y luego en localStorage
+   */
+  private getItem(key: string): string | null {
+    return sessionStorage.getItem(key) || localStorage.getItem(key);
+  }
+
+  /**
    * Login con usuario y contraseña
    */
-  login(credentials: LoginRequest): Observable<LoginResponse> {
+  login(credentials: LoginRequest, rememberMe: boolean = false): Observable<LoginResponse> {
     const url = this.configService.getApiUrl('login');
 
     return this.http.post<LoginResponse>(url, credentials).pipe(
       tap(response => {
         if (response.success) {
-          this.saveAuthData(response);
+          this.saveAuthData(response, rememberMe);
         }
       })
     );
   }
 
   /**
-   * Logout - limpia los tokens y estado
+   * Logout - limpia los tokens, estado y temporizadores de inactividad
    */
   logout(): Observable<void> {
     this.clearAuthData();
@@ -89,17 +115,23 @@ export class AuthService {
   }
 
   /**
-   * Guardar datos de autenticación en localStorage
+   * Guardar datos de autenticación en localStorage o sessionStorage según rememberMe
    */
-  private saveAuthData(response: LoginResponse): void {
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, response.access);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refresh);
-    localStorage.setItem(this.USUARIO_ID_KEY, response.usuario_id.toString());
-    localStorage.setItem(this.USERNAME_KEY, response.username);
-    localStorage.setItem(this.NOMBRE_COMPLETO_KEY, response.nombre_completo);
-    localStorage.setItem(this.IS_SUPERUSER_KEY, JSON.stringify(response.is_superuser));
-    localStorage.setItem(this.ROLES_KEY, JSON.stringify(response.roles));
-    localStorage.setItem(this.PERMISOS_KEY, JSON.stringify(response.permisos));
+  private saveAuthData(response: LoginResponse, rememberMe: boolean): void {
+    // Limpiar ambos almacenamientos previamente
+    this.clearAuthData();
+
+    const storage = rememberMe ? localStorage : sessionStorage;
+
+    storage.setItem(this.ACCESS_TOKEN_KEY, response.access);
+    storage.setItem(this.REFRESH_TOKEN_KEY, response.refresh);
+    storage.setItem(this.USUARIO_ID_KEY, response.usuario_id.toString());
+    storage.setItem(this.USERNAME_KEY, response.username);
+    storage.setItem(this.NOMBRE_COMPLETO_KEY, response.nombre_completo);
+    storage.setItem(this.IS_SUPERUSER_KEY, JSON.stringify(response.is_superuser));
+    storage.setItem(this.ROLES_KEY, JSON.stringify(response.roles));
+    storage.setItem(this.PERMISOS_KEY, JSON.stringify(response.permisos));
+    storage.setItem(this.REMEMBER_ME_KEY, JSON.stringify(rememberMe));
 
     this.authState.next({
       isAuthenticated: true,
@@ -112,20 +144,47 @@ export class AuthService {
       roles: response.roles,
       permisos: response.permisos
     });
+
+    if (!rememberMe) {
+      this.startInactivityTimer();
+    } else {
+      this.stopInactivityTimer();
+    }
   }
 
   /**
-   * Restaurar estado de autenticación desde localStorage
+   * Restaurar estado de autenticación
+   * Solo restaura de localStorage si rememberMe es explícitamente true
    */
   private restoreAuthState(): void {
-    const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
-    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    const usuarioId = localStorage.getItem(this.USUARIO_ID_KEY);
-    const username = localStorage.getItem(this.USERNAME_KEY);
-    const nombreCompleto = localStorage.getItem(this.NOMBRE_COMPLETO_KEY);
-    const isSuperuser = localStorage.getItem(this.IS_SUPERUSER_KEY);
-    const roles = localStorage.getItem(this.ROLES_KEY);
-    const permisos = localStorage.getItem(this.PERMISOS_KEY);
+    let storage: Storage | null = null;
+
+    if (sessionStorage.getItem(this.ACCESS_TOKEN_KEY)) {
+      storage = sessionStorage;
+    } else if (localStorage.getItem(this.ACCESS_TOKEN_KEY)) {
+      const rememberVal = localStorage.getItem(this.REMEMBER_ME_KEY);
+      if (rememberVal === 'true' || rememberVal === JSON.stringify(true)) {
+        storage = localStorage;
+      } else {
+        // Limpiar tokens residuales no recordados
+        this.clearStorage(localStorage);
+      }
+    }
+
+    if (!storage) {
+      this.clearAuthData();
+      return;
+    }
+
+    const accessToken = storage.getItem(this.ACCESS_TOKEN_KEY);
+    const refreshToken = storage.getItem(this.REFRESH_TOKEN_KEY);
+    const usuarioId = storage.getItem(this.USUARIO_ID_KEY);
+    const username = storage.getItem(this.USERNAME_KEY);
+    const nombreCompleto = storage.getItem(this.NOMBRE_COMPLETO_KEY);
+    const isSuperuser = storage.getItem(this.IS_SUPERUSER_KEY);
+    const roles = storage.getItem(this.ROLES_KEY);
+    const permisos = storage.getItem(this.PERMISOS_KEY);
+    const rememberMe = storage.getItem(this.REMEMBER_ME_KEY) === 'true';
 
     if (accessToken && usuarioId) {
       this.authState.next({
@@ -139,42 +198,129 @@ export class AuthService {
         roles: roles ? JSON.parse(roles) : [],
         permisos: permisos ? JSON.parse(permisos) : []
       });
+
+      if (!rememberMe) {
+        this.startInactivityTimer();
+      }
+    } else {
+      this.clearAuthData();
     }
   }
 
   /**
-   * Limpiar datos de autenticación
+   * Inicia el temporizador y detector de inactividad del usuario
+   */
+  private startInactivityTimer(): void {
+    this.stopInactivityTimer();
+
+    if (typeof window === 'undefined') return;
+
+    this.ngZone.runOutsideAngular(() => {
+      const activityEvents$ = merge(
+        fromEvent(window, 'mousemove'),
+        fromEvent(window, 'mousedown'),
+        fromEvent(window, 'keydown'),
+        fromEvent(window, 'scroll'),
+        fromEvent(window, 'touchstart')
+      );
+
+      // Throttling de eventos de actividad a cada 2 segundos para evitar sobrecarga
+      this.userActivitySubscription = activityEvents$.pipe(
+        throttleTime(2000)
+      ).subscribe(() => {
+        this.resetInactivityCountdown();
+      });
+    });
+
+    this.resetInactivityCountdown();
+  }
+
+  /**
+   * Reinicia la cuenta regresiva de inactividad
+   */
+  private resetInactivityCountdown(): void {
+    if (this.inactivityTimerSubscription) {
+      this.inactivityTimerSubscription.unsubscribe();
+    }
+
+    if (typeof window === 'undefined') return;
+
+    this.ngZone.runOutsideAngular(() => {
+      this.inactivityTimerSubscription = timer(this.INACTIVITY_TIMEOUT_MS).subscribe(() => {
+        this.ngZone.run(() => {
+          if (this.isAuthenticated()) {
+            this.logout().subscribe(() => {
+              this.router.navigate(['/login']);
+              this.snackBar.open(
+                'Su sesión ha sido cerrada automáticamente por inactividad.',
+                'Cerrar',
+                { duration: 6000, panelClass: ['info-snackbar'] }
+              );
+            });
+          }
+        });
+      });
+    });
+  }
+
+  /**
+   * Detiene el detector y temporizador de inactividad
+   */
+  private stopInactivityTimer(): void {
+    if (this.inactivityTimerSubscription) {
+      this.inactivityTimerSubscription.unsubscribe();
+      this.inactivityTimerSubscription = undefined;
+    }
+    if (this.userActivitySubscription) {
+      this.userActivitySubscription.unsubscribe();
+      this.userActivitySubscription = undefined;
+    }
+  }
+
+  /**
+   * Limpiar datos de autenticación en ambos almacenamientos
    */
   private clearAuthData(): void {
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.USUARIO_ID_KEY);
-    localStorage.removeItem(this.USERNAME_KEY);
-    localStorage.removeItem(this.NOMBRE_COMPLETO_KEY);
-    localStorage.removeItem(this.IS_SUPERUSER_KEY);
-    localStorage.removeItem(this.ROLES_KEY);
-    localStorage.removeItem(this.PERMISOS_KEY);
+    if (typeof localStorage !== 'undefined') {
+      this.clearStorage(localStorage);
+    }
+    if (typeof sessionStorage !== 'undefined') {
+      this.clearStorage(sessionStorage);
+    }
+    this.stopInactivityTimer();
+  }
+
+  private clearStorage(storage: Storage): void {
+    storage.removeItem(this.ACCESS_TOKEN_KEY);
+    storage.removeItem(this.REFRESH_TOKEN_KEY);
+    storage.removeItem(this.USUARIO_ID_KEY);
+    storage.removeItem(this.USERNAME_KEY);
+    storage.removeItem(this.NOMBRE_COMPLETO_KEY);
+    storage.removeItem(this.IS_SUPERUSER_KEY);
+    storage.removeItem(this.ROLES_KEY);
+    storage.removeItem(this.PERMISOS_KEY);
+    storage.removeItem(this.REMEMBER_ME_KEY);
   }
 
   /**
    * Obtener token de acceso
    */
   getAccessToken(): string | null {
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    return this.getItem(this.ACCESS_TOKEN_KEY);
   }
 
   /**
    * Obtener token de refresco
    */
   getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    return this.getItem(this.REFRESH_TOKEN_KEY);
   }
 
   /**
    * Obtener ID del usuario
    */
   getUsuarioId(): number | null {
-    const id = localStorage.getItem(this.USUARIO_ID_KEY);
+    const id = this.getItem(this.USUARIO_ID_KEY);
     return id ? parseInt(id) : null;
   }
 
@@ -182,14 +328,14 @@ export class AuthService {
    * Obtener Username del usuario autenticado
    */
   getUsername(): string | null {
-    return this.authState.value.username || localStorage.getItem(this.USERNAME_KEY);
+    return this.authState.value.username || this.getItem(this.USERNAME_KEY);
   }
 
   /**
    * Obtener Nombre Completo del usuario autenticado
    */
   getNombreCompleto(): string | null {
-    return this.authState.value.nombre_completo || localStorage.getItem(this.NOMBRE_COMPLETO_KEY);
+    return this.authState.value.nombre_completo || this.getItem(this.NOMBRE_COMPLETO_KEY);
   }
 
   /**
@@ -232,8 +378,9 @@ export class AuthService {
     return this.http.post<LoginResponse>(url, { refresh: refreshToken }).pipe(
       tap(response => {
         if (response.success) {
-          localStorage.setItem(this.ACCESS_TOKEN_KEY, response.access);
-          localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refresh);
+          const storage = this.getActiveStorage();
+          storage.setItem(this.ACCESS_TOKEN_KEY, response.access);
+          storage.setItem(this.REFRESH_TOKEN_KEY, response.refresh);
         }
       })
     );
