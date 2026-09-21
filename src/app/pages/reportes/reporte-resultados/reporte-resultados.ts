@@ -7,6 +7,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ReporteRespuesta } from '../../../models/reportes/reporte-respuesta.model';
 
+export interface QueryInterpretada {
+  periodo?: string;
+  intencion?: string;
+  mensaje?: string;
+  [key: string]: any;
+}
+
 @Component({
   selector: 'app-reporte-resultados',
   standalone: true,
@@ -19,10 +26,27 @@ import { ReporteRespuesta } from '../../../models/reportes/reporte-respuesta.mod
 })
 export class ReporteResultadosComponent {
   @Input() resultados: ReporteRespuesta | null = null;
-  @Input() queryInterpretada: Record<string, any> | null = null;
+  @Input() queryInterpretada: QueryInterpretada | null = null;
 
   get columnas(): string[] {
     if (!this.resultados?.datos?.length) return [];
     return Object.keys(this.resultados.datos[0]);
+  }
+
+  get periodo(): string | undefined {
+    if (!this.queryInterpretada) return undefined;
+    return this.queryInterpretada['periodo'];
+  }
+
+  get intencion(): string | undefined {
+    if (!this.queryInterpretada) return undefined;
+    return this.queryInterpretada['intencion'];
+  }
+
+  get mensaje(): string {
+    if (!this.queryInterpretada) {
+      return 'No se encontraron datos en la base de datos de FashionStore para la fecha o los criterios solicitados.';
+    }
+    return this.queryInterpretada['mensaje'] || 'No se encontraron datos en la base de datos de FashionStore para la fecha o los criterios solicitados.';
   }
 }
