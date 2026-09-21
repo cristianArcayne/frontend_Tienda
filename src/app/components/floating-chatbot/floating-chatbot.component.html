@@ -1,0 +1,84 @@
+<div class="floating-chatbot-container">
+  <!-- Ventana desplegable de Chat (Popup) -->
+  <div class="chat-popup" *ngIf="isOpen">
+    <!-- Header del Chat -->
+    <div class="chat-header">
+      <div class="header-info">
+        <div class="avatar-icon">
+          <mat-icon>auto_awesome</mat-icon>
+        </div>
+        <div>
+          <div class="title">FashionStore AI Assistant</div>
+          <div class="status">
+            <span class="status-dot"></span> Personal Shopper en línea
+          </div>
+        </div>
+      </div>
+      <button mat-icon-button class="close-btn" (click)="toggleChat()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Área de Mensajes -->
+    <div class="chat-body" #chatScroll>
+      <div *ngFor="let m of mensajesChat"
+           class="chat-bubble-row"
+           [class.user-row]="m.emisor === 'usuario'"
+           [class.ia-row]="m.emisor === 'ia'">
+        <div class="chat-bubble">
+          {{ m.texto }}
+        </div>
+        <div class="chat-time">{{ m.hora }}</div>
+      </div>
+
+      <!-- Spinner de respuesta -->
+      <div *ngIf="enviandoMensaje" class="chat-bubble-row ia-row">
+        <div class="chat-bubble loading-bubble">
+          <mat-spinner diameter="16"></mat-spinner>
+          <span>Escribiendo respuesta...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sugerencias Rápidas -->
+    <div class="chat-chips-area">
+      <div class="chips-scroll">
+        <button *ngFor="let sug of sugerenciasChat"
+                type="button"
+                class="chip-btn"
+                (click)="usarSugerenciaChat(sug)">
+          <span>{{ sug }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Input -->
+    <div class="chat-input-area">
+      <input type="text"
+             [(ngModel)]="mensajeInput"
+             (keyup.enter)="enviarMensajeChat()"
+             placeholder="Pregunta sobre ropa, catálogo o precios..."
+             class="chat-input" />
+      <button mat-mini-fab
+              color="primary"
+              class="send-btn"
+              [disabled]="!mensajeInput.trim() || enviandoMensaje"
+              (click)="enviarMensajeChat()">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Botón Flotante (Burbuja en la esquina inferior derecha) -->
+  <button type="button"
+          class="floating-bubble-btn"
+          (click)="toggleChat()"
+          matTooltip="Asistente de Estilo IA"
+          matTooltipPosition="left">
+    <div class="bubble-icon-wrapper">
+      <mat-icon *ngIf="!isOpen">smart_toy</mat-icon>
+      <mat-icon *ngIf="isOpen">close</mat-icon>
+    </div>
+    <span *ngIf="unreadCount > 0 && !isOpen" class="badge-unread">{{ unreadCount }}</span>
+  </button>
+</div>

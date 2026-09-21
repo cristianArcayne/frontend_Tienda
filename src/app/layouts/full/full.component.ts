@@ -16,6 +16,8 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { navItems } from './sidebar/sidebar-data';
 
+import { FloatingChatbotComponent } from 'src/app/components/floating-chatbot/floating-chatbot.component';
+
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
 
@@ -28,7 +30,8 @@ const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
     SidebarComponent,
     NgScrollbarModule,
     TablerIconsModule,
-    HeaderComponent
+    HeaderComponent,
+    FloatingChatbotComponent
 ],
   templateUrl: './full.component.html',
   styleUrls: [],

@@ -1,10 +1,10 @@
-<div class="p-24" style="min-width: 320px; max-width: 520px;">
+<div class="p-24" style="min-width: 320px; max-width: 540px;">
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
     <div style="display: flex; align-items: center; gap: 8px;">
       <mat-icon style="color: #6366f1; font-size: 28px; width: 28px; height: 28px;">bookmark_added</mat-icon>
       <div>
         <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">[CU12] Reservar Web-to-Store</h2>
-        <span style="font-size: 12px; color: #64748b;">Apartado presencial con vigencia de 48 horas</span>
+        <span style="font-size: 12px; color: #64748b;">Apartado presencial con vigencia de 48 horas por sucursal</span>
       </div>
     </div>
     <button mat-icon-button (click)="cancelar()">
@@ -14,9 +14,9 @@
 
   <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
     <div style="display: flex; align-items: flex-start; gap: 8px;">
-      <mat-icon style="color: #16a34a; font-size: 20px; width: 20px; height: 20px; margin-top: 2px;">timer</mat-icon>
+      <mat-icon style="color: #16a34a; font-size: 20px; width: 20px; height: 20px; margin-top: 2px;">storefront</mat-icon>
       <div style="font-size: 13px; color: #15803d; line-height: 1.4;">
-        <strong>Garantía de apartado:</strong> Congelamos las existencias en la sucursal por <strong>48 horas</strong>. Podrás pagar en mostrador (efectivo, QR o tarjeta) al momento de retirar.
+        <strong>Apartado por Sucursal:</strong> El stock se congelará exactamente en la sucursal que elijas por <strong>48 horas</strong>. Podrás pagar en mostrador al retirar.
       </div>
     </div>
   </div>
@@ -27,7 +27,7 @@
       <mat-label>Prenda / Producto</mat-label>
       <mat-select formControlName="producto_id" (selectionChange)="onProductoChange($event.value)">
         <mat-option *ngFor="let p of productos" [value]="p.id">
-          {{ p.nombre }} - {{ p.precio_minimo | currency:'BOB ' }}
+          {{ p.nombre }} - {{ (p.precio_minimo || p.precio) | currency:'BOB ' }}
         </mat-option>
       </mat-select>
     </mat-form-field>
@@ -35,7 +35,7 @@
     <div *ngIf="data.producto" style="padding: 10px 14px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 4px;">
       <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;">Prenda seleccionada</div>
       <div style="font-size: 14px; font-weight: 600; color: #1e293b;">{{ data.producto.nombre }}</div>
-      <div style="font-size: 13px; color: #4338ca; font-weight: 600;">{{ data.producto.precio_minimo || data.producto.precio | currency:'BOB ' }}</div>
+      <div style="font-size: 13px; color: #4338ca; font-weight: 600;">{{ (data.producto.precio_minimo || data.producto.precio) | currency:'BOB ' }}</div>
     </div>
 
     <!-- Selector de Variante (Talla / Color) -->
@@ -49,15 +49,26 @@
       </mat-select>
     </mat-form-field>
 
-    <!-- Sucursal física de retiro -->
+    <!-- Sucursal física de retiro con indicación de stock -->
     <mat-form-field appearance="outline" class="w-100">
-      <mat-label>Sucursal de retiro presencial</mat-label>
+      <mat-label>Sucursal específica de retiro presencial</mat-label>
       <mat-select formControlName="sucursal_id">
-        <mat-option *ngFor="let s of sucursales" [value]="s.id">
+        <mat-option *ngFor="let s of sucursales"
+                    [value]="s.id"
+                    [disabled]="s.stock_disponible !== undefined && s.stock_disponible < form.value.cantidad">
           <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;">storefront</mat-icon>
-          {{ s.nombre }} {{ s.direccion ? '(' + s.direccion + ')' : '' }}
+          <span>{{ s.nombre }} {{ s.direccion ? '(' + s.direccion + ')' : '' }}</span>
+          <span *ngIf="s.stock_disponible !== undefined"
+                [style.color]="s.stock_disponible >= form.value.cantidad ? '#16a34a' : '#dc2626'"
+                style="font-weight: 700; margin-left: 8px; font-size: 12px;">
+            - {{ s.stock_disponible > 0 ? s.stock_disponible + ' dispon.' : 'Agotado en esta tienda' }}
+          </span>
         </mat-option>
       </mat-select>
+      <mat-hint *ngIf="cargandoDisponibilidad" style="color: #6366f1;">Verificando stock por tienda en tiempo real...</mat-hint>
+      <mat-hint *ngIf="!cargandoDisponibilidad && sucursalSeleccionada && sucursalSeleccionada.stock_disponible !== undefined" style="color: #15803d; font-weight: 600;">
+        Stock en {{ sucursalSeleccionada.nombre }}: {{ sucursalSeleccionada.stock_disponible }} unidades.
+      </mat-hint>
     </mat-form-field>
 
     <!-- Cantidad y Turno -->
@@ -74,8 +85,8 @@
             {{ t }}
           </mat-option>
         </mat-select>
-      </mat-form-field>
-    </div>
+    </mat-form-field>
+  </div>
 
     <!-- Botones de Acción -->
     <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
@@ -85,7 +96,7 @@
       <button mat-raised-button color="primary" type="button" (click)="guardar()" [disabled]="form.invalid || isSaving">
         <span *ngIf="!isSaving" style="display: flex; align-items: center; gap: 6px;">
           <mat-icon>check_circle</mat-icon>
-          Confirmar Apartado (48h)
+          Confirmar Apartado en Sucursal (48h)
         </span>
         <span *ngIf="isSaving" style="display: flex; align-items: center; gap: 6px;">
           <mat-spinner diameter="18"></mat-spinner>
