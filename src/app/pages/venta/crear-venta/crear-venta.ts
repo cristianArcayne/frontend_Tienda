@@ -137,7 +137,97 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
   }
 
   get carritoValido(): boolean {
-    return this.cartItems.length > 0 && !!this.selectedUsuarioObj;
+    return this.cartItems.length > 0 && (!!this.selectedUsuarioObj || this.usuarioSearchTerm.trim().length > 0);
+  }
+
+  finalizarVenta(): void {
+    if (!this.carritoValido) return;
+
+    this.isSubmitting = true;
+    const cliTerm = this.usuarioSearchTerm.trim() || 'Consumidor Final';
+    const cliCi = this.selectedUsuarioObj ? this.selectedUsuarioObj.username : cliTerm;
+    const cliNombre = this.selectedUsuarioObj ? `${this.selectedUsuarioObj.nombre || ''} ${this.selectedUsuarioObj.apellido || ''}`.trim() : cliTerm;
+
+    const body = {
+      tipo: 'presencial',
+      estado: 'pendiente',
+      precio_total: this.totalCarrito,
+      usuario_id: this.selectedUsuarioObj ? this.selectedUsuarioObj.id : 1001,
+      cliente_ci: cliCi,
+      cliente_nombre: cliNombre,
+      razon_social: cliNombre,
+      nit_cliente: cliCi,
+      detalles: this.cartItems.map(item => ({
+        variante_producto_id: item.variante_producto_id,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario,
+      })),
+    };
+
+    this.apiService.create<Venta>(this.apiUrlVentas, body)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (venta) => {
+          this.snackBar.open(`Venta #${venta.id} creada exitosamente`, 'OK', { duration: 3000 });
+          this.router.navigate(['/ventas', venta.id]);
+        },
+        error: (err) => {
+          const msg = err.error?.detail || err.error?.[0] || 'Error al crear la venta';
+          this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
+          this.isSubmitting = false;
+        }
+      });
+  }
+
+  pagarYFinalizarVenta(): void {
+    if (!this.carritoValido) return;
+
+    const dialogRef = this.dialog.open(ProcesarPagoDialogComponent, {
+      width: '450px',
+      disableClose: true,
+      data: { total: this.totalCarrito }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result && result.success) {
+        this.isSubmitting = true;
+        const cliTerm = this.usuarioSearchTerm.trim() || 'Consumidor Final';
+        const cliCi = this.selectedUsuarioObj ? this.selectedUsuarioObj.username : cliTerm;
+        const cliNombre = this.selectedUsuarioObj ? `${this.selectedUsuarioObj.nombre || ''} ${this.selectedUsuarioObj.apellido || ''}`.trim() : cliTerm;
+        
+        const body = {
+          tipo: 'presencial',
+          estado: 'completado', // Completado directamente al pagar
+          precio_total: this.totalCarrito,
+          usuario_id: this.selectedUsuarioObj ? this.selectedUsuarioObj.id : 1001,
+          cliente_ci: cliCi,
+          cliente_nombre: cliNombre,
+          razon_social: cliNombre,
+          nit_cliente: cliCi,
+          metodo: result.metodo,
+          detalles: this.cartItems.map(item => ({
+            variante_producto_id: item.variante_producto_id,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio_unitario,
+          })),
+        };
+
+        this.apiService.create<Venta>(this.apiUrlVentas, body)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (venta) => {
+              const metodoFormateado = result.metodo.toUpperCase();
+              this.snackBar.open(`¡Venta #${venta.id} pagada vía ${metodoFormateado} y guardada con éxito!`, 'OK', { duration: 5000 });
+              this.router.navigate(['/ventas', venta.id]);
+            },
+            error: (err) => {
+              const msg = err.error?.detail || err.error?.[0] || 'Error al registrar la venta pagada';
+              this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
+              this.isSubmitting = false;
+            }
+          });
+      }
+    });
   }
 
   private getProductoImagen(productoId: number): string | null {

@@ -413,4 +413,17 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     return estrellas;
   }
+
+  probarConIA(prod: Producto, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.router.navigate(['/extra/vestidor'], {
+      queryParams: {
+        ropaId: prod.id,
+        ropaNombre: prod.nombre,
+        ropaImagen: prod.imagen_principal || ''
+      }
+    });
+  }
 }

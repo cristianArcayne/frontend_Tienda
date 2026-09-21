@@ -39,7 +39,9 @@
             Cargando clientes...
           </mat-option>
           <mat-option *ngIf="!isLoadingUsuarios && filteredUsuarios.length === 0 && usuarioSearchTerm.length > 0" disabled>
-            No se encontraron clientes
+            <span style="color: #4f46e5; font-weight: bold;">
+              ✨ Cliente Nuevo: "{{ usuarioSearchTerm }}" (Se registrará automáticamente)
+            </span>
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
@@ -55,6 +57,16 @@
         <button mat-icon-button color="warn" matTooltip="Cambiar cliente" (click)="limpiarUsuario()">
           <mat-icon>close</mat-icon>
         </button>
+      </div>
+
+      <div *ngIf="!selectedUsuarioObj && usuarioSearchTerm.trim().length > 0" class="selected-user-info" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+        <mat-icon class="selected-user-icon" style="color: #16a34a;">person_add</mat-icon>
+        <div class="selected-user-details">
+          <span class="selected-user-name" style="color: #15803d; font-weight: bold;">
+            Cliente Nuevo: {{ usuarioSearchTerm }}
+          </span>
+          <span class="selected-user-username" style="color: #166534;">Se registrará automáticamente al completar la venta</span>
+        </div>
       </div>
 
       <mat-form-field appearance="outline" class="w-full m-b-16">

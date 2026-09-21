@@ -4,13 +4,15 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ConfigService } from 'src/app/services/config.service';
 
@@ -46,248 +48,506 @@ export interface PrendaAR {
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatProgressBarModule
   ],
   template: `
-    <div class="vestidor-container">
-      <div class="m-b-16 d-flex align-items-center justify-content-between flex-wrap gap-12">
-        <div>
-          <h2 class="m-b-4 font-weight-bold" style="color: #0f172a;">[CU16] Vestidor Virtual y Probador 3D (AR)</h2>
-          <p class="text-muted m-0">Visualización tridimensional de prendas, ajuste corporal y preparación para realidad aumentada móvil</p>
+    <div class="vestidor-mobile">
+      <!-- Header -->
+      <div class="vestidor-header">
+        <div class="header-top">
+          <mat-icon class="header-icon">auto_awesome</mat-icon>
+          <h2>Probador Virtual con IA</h2>
         </div>
-        <div class="badge-ar p-x-12 p-y-6 rounded-pill d-flex align-items-center gap-8 bg-light-primary text-primary">
-          <mat-icon>view_in_ar</mat-icon>
-          <strong>Soporte ARCore / SceneKit Activo</strong>
+        <p class="header-sub">Sube tu foto y mira cómo te queda la ropa al instante</p>
+      </div>
+
+      <!-- ===== PRENDA SELECCIONADA ===== -->
+      <div *ngIf="prendaSeleccionadaNombre" class="prenda-card">
+        <img [src]="getImagenUrl(prendaSeleccionadaImagen)" [alt]="prendaSeleccionadaNombre"
+             class="prenda-img" (error)="onImgError($event)" />
+        <div class="prenda-info">
+          <span class="prenda-badge">Prenda seleccionada</span>
+          <h3>{{ prendaSeleccionadaNombre }}</h3>
+        </div>
+        <button mat-icon-button class="cambiar-btn" (click)="cambiarPrenda()" matTooltip="Cambiar prenda">
+          <mat-icon>swap_horiz</mat-icon>
+        </button>
+      </div>
+
+      <!-- ===== SI NO HAY PRENDA, ELEGIR DEL CATÁLOGO ===== -->
+      <div *ngIf="!prendaSeleccionadaNombre && !isLoading" class="elegir-section">
+        <div class="elegir-header">
+          <mat-icon>checkroom</mat-icon>
+          <span>Primero elige una prenda para probarte</span>
+        </div>
+
+        <div *ngIf="prendasAR.length === 0 && !isLoadingPrendas" class="empty-prendas">
+          <mat-icon>inventory_2</mat-icon>
+          <p>No hay prendas disponibles con soporte IA</p>
+          <button mat-stroked-button color="primary" (click)="irAlCatalogo()">
+            <mat-icon>storefront</mat-icon>
+            Ir al Catálogo
+          </button>
+        </div>
+
+        <div class="prendas-grid" *ngIf="prendasAR.length > 0">
+          <div *ngFor="let item of prendasAR" class="prenda-mini" (click)="seleccionarPrenda(item)">
+            <img [src]="getImagenUrl(item.imagen_uri)" [alt]="item.nombre"
+                 class="prenda-mini-img" (error)="onImgError($event)" />
+            <div class="prenda-mini-info">
+              <span class="prenda-mini-cat">{{ item.categoria }}</span>
+              <span class="prenda-mini-name">{{ item.nombre }}</span>
+              <span class="prenda-mini-price">Bs. {{ item.precio | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="isLoadingPrendas" class="loading-prendas">
+          <mat-spinner diameter="32"></mat-spinner>
+          <span>Cargando prendas...</span>
         </div>
       </div>
 
-      <!-- Simulador de Ajuste Corporal Virtual -->
-      <mat-card class="m-b-20" style="border-left: 4px solid #3b82f6; background: #f8fafc;">
-        <mat-card-content class="p-16">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-12">
-            <div>
-              <h3 class="m-0 font-weight-bold text-primary">Probador de Talla y Ajuste Virtual (Smart Fit)</h3>
-              <p class="text-muted m-t-4 m-b-0" style="font-size: 13px;">Ingrese sus medidas corporales estimadas para validar la compatibilidad y calce de la prenda 3D</p>
-            </div>
-            <div class="d-flex gap-12 flex-wrap align-items-center">
-              <mat-form-field appearance="outline" style="width: 120px;" subscriptSizing="dynamic">
-                <mat-label>Altura (cm)</mat-label>
-                <input matInput type="number" [(ngModel)]="medidas.altura" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" style="width: 120px;" subscriptSizing="dynamic">
-                <mat-label>Pecho (cm)</mat-label>
-                <input matInput type="number" [(ngModel)]="medidas.pecho" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" style="width: 120px;" subscriptSizing="dynamic">
-                <mat-label>Cintura (cm)</mat-label>
-                <input matInput type="number" [(ngModel)]="medidas.cintura" />
-              </mat-form-field>
-
-              <button mat-raised-button color="primary" [disabled]="probandoAjuste" (click)="validarAjusteCorporal()">
-                <mat-icon *ngIf="!probandoAjuste">accessibility_new</mat-icon>
-                <mat-spinner *ngIf="probandoAjuste" diameter="20"></mat-spinner>
-                Calcular Calce
-              </button>
-            </div>
-          </div>
-
-          <!-- Resultado del ajuste -->
-          <div *ngIf="resultadoAjuste" class="m-t-12 p-12 rounded" [style.backgroundColor]="resultadoAjuste.es_compatible ? '#dcfce7' : '#fef9c3'" style="border: 1px solid #cbd5e1;">
-            <div class="d-flex align-items-center gap-8">
-              <mat-icon [style.color]="resultadoAjuste.es_compatible ? '#15803d' : '#a16207'">
-                {{ resultadoAjuste.es_compatible ? 'check_circle' : 'info' }}
-              </mat-icon>
-              <div>
-                <strong>Recomendación Smart Fit:</strong> {{ resultadoAjuste.recomendacion }}
-                <span class="m-l-8 text-muted" style="font-size: 12px;">(Talla sugerida: {{ resultadoAjuste.talla_sugerida }})</span>
-              </div>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Spinner de Carga -->
-      <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
-        <mat-spinner diameter="50"></mat-spinner>
+      <!-- ===== LOADING PRINCIPAL ===== -->
+      <div *ngIf="isLoading" class="loading-section">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Cargando...</p>
       </div>
 
-      <!-- Catálogo de Prendas con Modelos 3D -->
-      <div *ngIf="!isLoading" class="grid-ar" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-        <mat-card *ngFor="let item of prendasAR" class="card-prenda-ar">
-          <div class="position-relative">
-            <img [src]="item.imagen_uri || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b'"
-                 [alt]="item.nombre"
-                 style="width: 100%; height: 220px; object-fit: cover; border-top-left-radius: 8px; border-top-right-radius: 8px;" />
+      <!-- ===== SUBIR FOTO ===== -->
+      <div *ngIf="prendaSeleccionadaNombre && !resultadoImagen" class="upload-section">
 
-            <div class="chip-3d-badge">
-              <mat-icon style="font-size: 16px; width: 16px; height: 16px;">3d_rotation</mat-icon>
-              3D AR READY
-            </div>
-          </div>
-
-          <mat-card-content class="p-16">
-            <div class="d-flex justify-content-between align-items-start m-b-8">
-              <div>
-                <span class="categoria-label">{{ item.categoria }}</span>
-                <h4 class="m-t-4 m-b-0 font-weight-bold">{{ item.nombre }}</h4>
-              </div>
-              <strong class="precio-label">Bs. {{ item.precio | number:'1.2-2' }}</strong>
-            </div>
-
-            <!-- Metadatos de AR -->
-            <div class="meta-ar p-8 rounded bg-light m-b-12" style="font-size: 12px; color: #475569;">
-              <div><strong>Anclaje:</strong> {{ item.posicion_anclaje }}</div>
-              <div><strong>Dimensiones:</strong> {{ item.dimensiones_aprox_cm.ancho }} x {{ item.dimensiones_aprox_cm.alto }} x {{ item.dimensiones_aprox_cm.profundidad }} cm</div>
-              <div><strong>Formato:</strong> .{{ item.formato_3d | uppercase }}</div>
-            </div>
-
-            <!-- Variantes de Texturas -->
-            <div class="d-flex align-items-center gap-6 m-b-16" *ngIf="item.texturas_disponibles && item.texturas_disponibles.length > 0">
-              <span class="text-muted" style="font-size: 12px;">Variantes:</span>
-              <div *ngFor="let t of item.texturas_disponibles"
-                   [style.backgroundColor]="t.color_hex"
-                   style="width: 16px; height: 16px; border-radius: 50%; border: 1px solid #aaa;"
-                   [matTooltip]="t.color_nombre + ' (' + t.talla + ')'">
-              </div>
-            </div>
-
-            <button mat-raised-button color="primary" class="w-100" (click)="abrirVisor3D(item)">
-              <mat-icon class="m-r-8">view_in_ar</mat-icon>
-              Ver en Probador 3D
-            </button>
-          </mat-card-content>
-        </mat-card>
-      </div>
-
-      <!-- Modal Visor 3D Interactivo -->
-      <div *ngIf="prendaSeleccionada" class="modal-visor-3d" (click)="cerrarVisor3D()">
-        <div class="modal-content-3d" (click)="$event.stopPropagation()">
-          <div class="d-flex justify-content-between align-items-center p-16" style="border-bottom: 1px solid #e2e8f0;">
-            <div>
-              <h3 class="m-0">{{ prendaSeleccionada.nombre }}</h3>
-              <p class="text-muted m-0" style="font-size: 12px;">Visor Tridimensional Interactivo • {{ prendaSeleccionada.posicion_anclaje }}</p>
-            </div>
-            <button mat-icon-button (click)="cerrarVisor3D()">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-
-          <div class="visor-stage" style="height: 380px; background: radial-gradient(circle, #f8fafc 0%, #cbd5e1 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-            <model-viewer
-              [src]="get3dUrl(prendaSeleccionada.modelo_3d_uri)"
-              camera-controls
-              auto-rotate
-              ar
-              shadow-intensity="1"
-              style="width: 100%; height: 100%;">
-            </model-viewer>
-
-            <div class="stage-instructions">
-              <mat-icon style="font-size: 16px; width: 16px; height: 16px;">touch_app</mat-icon>
-              Arrastra para rotar 360° • Rueda del ratón para hacer zoom
-            </div>
-          </div>
-
-          <div class="p-16 d-flex justify-content-between align-items-center bg-light">
-            <div style="font-size: 13px;">
-              <strong>Dimensiones:</strong> {{ prendaSeleccionada.dimensiones_aprox_cm.ancho }} x {{ prendaSeleccionada.dimensiones_aprox_cm.alto }} cm
-            </div>
-            <button mat-stroked-button color="primary" (click)="cerrarVisor3D()">
-              Cerrar Probador
-            </button>
-          </div>
+        <!-- Preview de foto -->
+        <div *ngIf="fotoPreview" class="foto-preview-container">
+          <img [src]="fotoPreview" alt="Tu foto" class="foto-preview" />
+          <button mat-icon-button class="remove-foto" (click)="quitarFoto()">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
+
+        <!-- Botón subir foto -->
+        <div *ngIf="!fotoPreview" class="upload-area" (click)="fileInput.click()">
+          <mat-icon class="upload-icon">add_a_photo</mat-icon>
+          <h3>Sube tu foto</h3>
+          <p>Toca para tomar una foto o elegir de tu galería</p>
+          <span class="upload-hint">JPG o PNG • Foto de cuerpo completo</span>
+        </div>
+
+        <input #fileInput type="file" accept="image/jpeg,image/png,image/webp"
+               capture="user" (change)="onFotoSeleccionada($event)" style="display: none;" />
+
+        <!-- Botón probar -->
+        <button *ngIf="fotoPreview" mat-raised-button color="primary"
+                class="btn-probar" [disabled]="generandoImagen"
+                (click)="probarRopaConIA()">
+          <mat-icon *ngIf="!generandoImagen">auto_awesome</mat-icon>
+          <mat-spinner *ngIf="generandoImagen" diameter="22" class="spinner-white"></mat-spinner>
+          {{ generandoImagen ? 'Generando imagen...' : '✨ Probar Ropa con IA' }}
+        </button>
+
+        <!-- Progress bar durante generación -->
+        <div *ngIf="generandoImagen" class="progress-section">
+          <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+          <p class="progress-text">
+            <mat-icon class="anim-pulse">auto_awesome</mat-icon>
+            La IA está vistiendo tu foto con la prenda... esto puede tardar unos segundos
+          </p>
+        </div>
+      </div>
+
+      <!-- ===== RESULTADO ===== -->
+      <div *ngIf="resultadoImagen" class="resultado-section">
+        <div class="resultado-badge">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ resultadoMensaje }}</span>
+        </div>
+
+        <div class="resultado-img-container">
+          <img [src]="resultadoImagen" alt="Resultado Try-On" class="resultado-img" />
+        </div>
+
+        <div class="resultado-actions">
+          <button mat-raised-button color="primary" (click)="descargarResultado()">
+            <mat-icon>download</mat-icon>
+            Descargar
+          </button>
+          <button mat-stroked-button color="primary" (click)="probarOtraFoto()">
+            <mat-icon>photo_camera</mat-icon>
+            Otra foto
+          </button>
+          <button mat-stroked-button (click)="cambiarPrenda()">
+            <mat-icon>checkroom</mat-icon>
+            Otra prenda
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== ERROR ===== -->
+      <div *ngIf="errorMensaje" class="error-section">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errorMensaje }}</p>
+        <button mat-stroked-button color="primary" (click)="errorMensaje = ''">
+          Entendido
+        </button>
       </div>
     </div>
   `,
   styles: [`
-    .chip-3d-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #38bdf8;
-      font-size: 11px;
-      font-weight: bold;
-      padding: 4px 8px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      backdrop-filter: blur(4px);
+    .vestidor-mobile {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
-    .categoria-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      color: #64748b;
-      letter-spacing: 0.5px;
-      font-weight: 600;
+
+    .vestidor-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 20px 16px 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 20px;
+      color: white;
     }
-    .precio-label {
-      color: #2563eb;
-      font-size: 16px;
-    }
-    .bg-light-primary { background-color: #eff6ff; }
-    .bg-light { background-color: #f8fafc; }
-    .text-primary { color: #2563eb; }
-    .card-prenda-ar {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      overflow: hidden;
-      border-radius: 12px;
-    }
-    .card-prenda-ar:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-    .modal-visor-3d {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(4px);
+    .header-top {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
+      gap: 8px;
     }
-    .modal-content-3d {
-      background: #ffffff;
-      width: 90%;
-      max-width: 650px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    .header-top h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
     }
-    .stage-instructions {
-      position: absolute;
-      bottom: 12px;
-      background: rgba(15, 23, 42, 0.7);
-      color: #fff;
-      font-size: 12px;
-      padding: 6px 12px;
-      border-radius: 9999px;
+    .header-icon { font-size: 28px; width: 28px; height: 28px; }
+    .header-sub {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    /* Prenda seleccionada */
+    .prenda-card {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 12px;
+      background: white;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      position: relative;
     }
+    .prenda-img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .prenda-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .prenda-badge {
+      display: inline-block;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #6366f1;
+      letter-spacing: 0.5px;
+      background: #eef2ff;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .prenda-info h3 {
+      margin: 4px 0 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cambiar-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+
+    /* Elegir prenda */
+    .elegir-section {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .elegir-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #475569;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .prendas-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .prenda-mini {
+      cursor: pointer;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .prenda-mini:active, .prenda-mini:hover {
+      border-color: #6366f1;
+      transform: scale(0.97);
+    }
+    .prenda-mini-img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    .prenda-mini-info {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .prenda-mini-cat {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .prenda-mini-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .prenda-mini-price {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6366f1;
+    }
+    .empty-prendas {
+      text-align: center;
+      padding: 24px 0;
+      color: #94a3b8;
+    }
+    .empty-prendas mat-icon { font-size: 48px; width: 48px; height: 48px; }
+    .loading-prendas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px 0;
+      color: #64748b;
+    }
+
+    /* Loading */
+    .loading-section {
+      text-align: center;
+      padding: 40px 0;
+      color: #64748b;
+    }
+
+    /* Upload */
+    .upload-section {
+      margin-bottom: 16px;
+    }
+    .upload-area {
+      background: white;
+      border: 2px dashed #c7d2fe;
+      border-radius: 20px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 16px;
+    }
+    .upload-area:active {
+      border-color: #6366f1;
+      background: #eef2ff;
+    }
+    .upload-icon {
+      font-size: 56px;
+      width: 56px;
+      height: 56px;
+      color: #6366f1;
+      margin-bottom: 8px;
+    }
+    .upload-area h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .upload-area p {
+      margin: 4px 0 8px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .upload-hint {
+      font-size: 12px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 4px 12px;
+      border-radius: 8px;
+    }
+
+    /* Foto preview */
+    .foto-preview-container {
+      position: relative;
+      margin-bottom: 16px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    .foto-preview {
+      width: 100%;
+      max-height: 400px;
+      object-fit: cover;
+      display: block;
+    }
+    .remove-foto {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6) !important;
+      color: white !important;
+    }
+
+    /* Botón probar */
+    .btn-probar {
+      width: 100%;
+      height: 54px;
+      font-size: 17px;
+      font-weight: 700;
+      border-radius: 16px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    }
+    .spinner-white ::ng-deep circle {
+      stroke: white !important;
+    }
+
+    /* Progress */
+    .progress-section {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .progress-text {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: #6366f1;
+      font-weight: 500;
+    }
+    .anim-pulse {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Resultado */
+    .resultado-section {
+      margin-bottom: 16px;
+    }
+    .resultado-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #dcfce7;
+      color: #15803d;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .resultado-img-container {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      margin-bottom: 16px;
+    }
+    .resultado-img {
+      width: 100%;
+      display: block;
+    }
+    .resultado-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .resultado-actions button {
+      flex: 1;
+      min-width: 100px;
+      border-radius: 12px !important;
+      height: 44px;
+      font-weight: 600;
+    }
+
+    /* Error */
+    .error-section {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      color: #dc2626;
+      margin-bottom: 16px;
+    }
+    .error-section mat-icon { font-size: 40px; width: 40px; height: 40px; }
+    .error-section p { margin: 8px 0 12px; font-size: 14px; color: #991b1b; }
   `]
 })
 export class VestidorVirtualComponent implements OnInit, OnDestroy {
-  prendasAR: PrendaAR[] = [];
-  isLoading = false;
-  prendaSeleccionada: PrendaAR | null = null;
+  // Prenda seleccionada desde el catálogo
+  prendaSeleccionadaId: number | null = null;
+  prendaSeleccionadaNombre: string = '';
+  prendaSeleccionadaImagen: string = '';
 
-  medidas = {
-    altura: 175,
-    pecho: 96,
-    cintura: 82
-  };
-  probandoAjuste = false;
-  resultadoAjuste: any = null;
+  // Catálogo de prendas (si no viene preseleccionada)
+  prendasAR: PrendaAR[] = [];
+  isLoadingPrendas = false;
+
+  // Foto del usuario
+  fotoArchivo: File | null = null;
+  fotoPreview: string | null = null;
+
+  // Resultado de IA
+  generandoImagen = false;
+  resultadoImagen: string | null = null;
+  resultadoMensaje: string = '';
+  errorMensaje: string = '';
+
+  isLoading = false;
 
   private destroy$ = new Subject<void>();
   private apiBase: string;
@@ -295,13 +555,27 @@ export class VestidorVirtualComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private configService: ConfigService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.apiBase = this.configService.getApiBaseUrl().replace('/api', '/api/v1');
   }
 
   ngOnInit(): void {
-    this.cargarPrendasAR();
+    // Leer queryParams del catálogo
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      if (params['ropaId']) {
+        this.prendaSeleccionadaId = Number(params['ropaId']);
+        this.prendaSeleccionadaNombre = params['ropaNombre'] || 'Prenda seleccionada';
+        this.prendaSeleccionadaImagen = params['ropaImagen'] || '';
+      }
+
+      // Si no hay prenda preseleccionada, cargar catálogo
+      if (!this.prendaSeleccionadaId) {
+        this.cargarPrendasAR();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -310,63 +584,155 @@ export class VestidorVirtualComponent implements OnInit, OnDestroy {
   }
 
   cargarPrendasAR(): void {
-    this.isLoading = true;
+    this.isLoadingPrendas = true;
     this.http.get<PrendaAR[]>(`${this.apiBase}/ar/catalogo-3d`)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
           this.prendasAR = data;
-          this.isLoading = false;
+          this.isLoadingPrendas = false;
         },
-        error: (err) => {
-          console.error('Error al cargar catálogo 3D:', err);
-          this.isLoading = false;
-          this.snackBar.open('Error al cargar prendas con soporte 3D', 'Cerrar', { duration: 4000 });
+        error: () => {
+          this.isLoadingPrendas = false;
+          // Cargar del catálogo general como fallback
+          this.cargarDesdeCatalogoGeneral();
         }
       });
   }
 
-  get3dUrl(uri: string): string {
-    if (!uri) return '';
-    if (uri.startsWith('http://') || uri.startsWith('https://')) return uri;
-    return `http://127.0.0.1:8000${uri}`;
-  }
-
-  abrirVisor3D(item: PrendaAR): void {
-    this.prendaSeleccionada = item;
-  }
-
-  cerrarVisor3D(): void {
-    this.prendaSeleccionada = null;
-  }
-
-  validarAjusteCorporal(): void {
-    if (!this.prendasAR.length) return;
-    this.probandoAjuste = true;
-
-    const payload = {
-      ropa_id: this.prendasAR[0].ropa_id,
-      altura_cm: Number(this.medidas.altura),
-      pecho_cm: Number(this.medidas.pecho),
-      cintura_cm: Number(this.medidas.cintura)
-    };
-
-    this.http.post<any>(`${this.apiBase}/ar/validar-ajuste`, payload)
+  cargarDesdeCatalogoGeneral(): void {
+    const url = this.configService.getApiUrl('catalogo');
+    this.http.get<any>(url)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.probandoAjuste = false;
-          this.resultadoAjuste = res;
+          const items = Array.isArray(res) ? res : (res?.results || []);
+          this.prendasAR = items.map((p: any) => ({
+            ropa_id: p.id,
+            nombre: p.nombre,
+            categoria: p.categoria_nombre || 'General',
+            precio: p.precio_minimo || p.precio_base || 0,
+            imagen_uri: p.imagen_principal,
+            modelo_3d_uri: '',
+            formato_3d: '',
+            posicion_anclaje: '',
+            dimensiones_aprox_cm: { ancho: 0, alto: 0, profundidad: 0 },
+            texturas_disponibles: []
+          }));
         },
-        error: () => {
-          this.probandoAjuste = false;
-          // Fallback inteligente
-          this.resultadoAjuste = {
-            es_compatible: true,
-            recomendacion: 'Ajuste adecuado para complexión estándar con holgura confortable.',
-            talla_sugerida: 'M'
-          };
+        error: () => {}
+      });
+  }
+
+  seleccionarPrenda(item: PrendaAR): void {
+    this.prendaSeleccionadaId = item.ropa_id;
+    this.prendaSeleccionadaNombre = item.nombre;
+    this.prendaSeleccionadaImagen = item.imagen_uri || '';
+  }
+
+  cambiarPrenda(): void {
+    this.prendaSeleccionadaId = null;
+    this.prendaSeleccionadaNombre = '';
+    this.prendaSeleccionadaImagen = '';
+    this.resultadoImagen = null;
+    this.fotoPreview = null;
+    this.fotoArchivo = null;
+    this.errorMensaje = '';
+
+    if (this.prendasAR.length === 0) {
+      this.cargarPrendasAR();
+    }
+  }
+
+  onFotoSeleccionada(event: any): void {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño (máx 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.snackBar.open('La foto es muy grande. Máximo 10 MB.', 'OK', { duration: 3000 });
+      return;
+    }
+
+    this.fotoArchivo = file;
+
+    // Generar preview
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.fotoPreview = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  quitarFoto(): void {
+    this.fotoArchivo = null;
+    this.fotoPreview = null;
+  }
+
+  probarRopaConIA(): void {
+    if (!this.fotoArchivo || !this.prendaSeleccionadaId) return;
+
+    this.generandoImagen = true;
+    this.errorMensaje = '';
+    this.resultadoImagen = null;
+
+    const formData = new FormData();
+    formData.append('foto_usuario', this.fotoArchivo);
+    formData.append('ropa_id', this.prendaSeleccionadaId.toString());
+
+    this.http.post<any>(`${this.apiBase}/ar/try-on-ia`, formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.generandoImagen = false;
+          if (res.success && res.imagen_resultado) {
+            this.resultadoImagen = res.imagen_resultado;
+            this.resultadoMensaje = res.mensaje || '¡Así te queda! Generado con IA';
+            this.snackBar.open('🎉 ¡Imagen generada con éxito!', 'OK', { duration: 3000 });
+          } else {
+            this.errorMensaje = 'No se pudo generar la imagen. Intenta con otra foto.';
+          }
+        },
+        error: (err) => {
+          this.generandoImagen = false;
+          const detail = err.error?.detail || 'Error al generar la imagen. Intenta de nuevo.';
+          this.errorMensaje = detail;
+          this.snackBar.open(detail, 'Cerrar', { duration: 5000 });
         }
       });
+  }
+
+  probarOtraFoto(): void {
+    this.resultadoImagen = null;
+    this.resultadoMensaje = '';
+    this.fotoPreview = null;
+    this.fotoArchivo = null;
+  }
+
+  descargarResultado(): void {
+    if (!this.resultadoImagen) return;
+
+    const link = document.createElement('a');
+    link.href = this.resultadoImagen;
+    link.download = `tryon-${this.prendaSeleccionadaNombre?.replace(/\s+/g, '-') || 'resultado'}-${Date.now()}.png`;
+    link.target = '_blank';
+    link.click();
+  }
+
+  irAlCatalogo(): void {
+    this.router.navigate(['/extra/catalogo']);
+  }
+
+  getImagenUrl(url?: string | null): string {
+    if (!url) return 'assets/images/products/product-1.png';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const formatted = this.configService.formatImageUrl(url);
+    return formatted || 'assets/images/products/product-1.png';
+  }
+
+  onImgError(event: any): void {
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = 'assets/images/products/product-1.png';
+    }
   }
 }
