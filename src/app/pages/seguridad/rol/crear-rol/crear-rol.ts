@@ -50,8 +50,14 @@ export class CrearRolComponent implements OnInit, OnDestroy {
 
   get permisosFiltrados(): Permiso[] {
     const term = this.busqueda.toLowerCase().trim();
-    if (!term) return this.permisos;
-    return this.permisos.filter(p =>
+    // Excluir permisos técnicos que empiezan con auth_, auth. o contenttypes
+    const sinTecnicos = this.permisos.filter(p => {
+      const code = (p.codename || '').toLowerCase();
+      return !code.startsWith('auth_') && !code.startsWith('auth.') && !code.startsWith('contenttypes') && !code.startsWith('admin.');
+    });
+
+    if (!term) return sinTecnicos;
+    return sinTecnicos.filter(p =>
       p.nombre?.toLowerCase().includes(term) || p.codename?.toLowerCase().includes(term)
     );
   }
