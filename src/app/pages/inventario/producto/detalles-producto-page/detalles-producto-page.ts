@@ -214,15 +214,31 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     return [...this.columnasVarianteBase, ...this.columnasVarianteAdmin, ...this.columnasVarianteAcciones];
   }
 
+  formatImgUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    return this.configService.formatImageUrl(url);
+  }
+
   getImagenPrincipalUrl(): string | null {
-    if (!this.producto?.imagenes?.length) return null;
-    const principal = this.producto.imagenes.find(i => i.es_principal);
-    return principal ? principal.archivo_url : this.producto.imagenes[0].archivo_url;
+    let rawUrl: string | null | undefined = null;
+    if (this.producto?.imagenes?.length) {
+      const principal = this.producto.imagenes.find(i => i.es_principal);
+      rawUrl = principal ? principal.archivo_url : this.producto.imagenes[0].archivo_url;
+    } else if (this.producto) {
+      const prodAny = this.producto as any;
+      rawUrl = prodAny.imagen_principal || prodAny.imagen_url || prodAny.imagen_uri;
+    }
+    return rawUrl ? this.configService.formatImageUrl(rawUrl) : null;
   }
 
   getImagenSeleccionadaUrl(): string | null {
-    if (!this.producto?.imagenes?.length || this.imagenSeleccionadaIndex < 0) return null;
-    return this.producto.imagenes[this.imagenSeleccionadaIndex]?.archivo_url || null;
+    let rawUrl: string | null | undefined = null;
+    if (this.producto?.imagenes?.length && this.imagenSeleccionadaIndex >= 0) {
+      rawUrl = this.producto.imagenes[this.imagenSeleccionadaIndex]?.archivo_url;
+    } else {
+      return this.getImagenPrincipalUrl();
+    }
+    return rawUrl ? this.configService.formatImageUrl(rawUrl) : null;
   }
 
   get modelo3dDisponible(): Multimedia | null {
@@ -236,11 +252,28 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     this.imagenSeleccionadaIndex = index;
   }
 
-  abrirLightbox(index: number): void {
-    if (!this.producto?.imagenes?.length) return;
-    const total = this.producto.imagenes.length;
-    const safeIndex = Math.max(0, Math.min(index, total - 1));
-    this.seleccionarImagen(safeIndex);
+  abrirLightbox(index: number = 0): void {
+    let imagesToPass: Multimedia[] = [];
+    if (this.producto?.imagenes?.length) {
+      imagesToPass = this.producto.imagenes.map(img => ({
+        ...img,
+        archivo_url: this.configService.formatImageUrl(img.archivo_url)
+      }));
+    } else {
+      const mainUrl = this.getImagenPrincipalUrl();
+      if (mainUrl) {
+        imagesToPass = [{
+          id: 0,
+          archivo_url: mainUrl,
+          tipo: 'imagen',
+          es_principal: true,
+          orden: 0
+        } as Multimedia];
+      }
+    }
+
+    if (!imagesToPass.length) return;
+    const safeIndex = Math.max(0, Math.min(index, imagesToPass.length - 1));
 
     this.dialog.open(ImagenLightboxComponent, {
       width: '90vw',
@@ -248,9 +281,9 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
       maxWidth: '900px',
       autoFocus: false,
       data: {
-        images: this.producto.imagenes,
+        images: imagesToPass,
         startIndex: safeIndex,
-        title: this.producto.nombre
+        title: this.producto?.nombre
       }
     });
   }

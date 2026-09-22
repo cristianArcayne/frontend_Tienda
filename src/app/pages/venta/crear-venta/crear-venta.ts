@@ -232,11 +232,16 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
 
   private getProductoImagen(productoId: number): string | null {
     const prod = this.productos.find(p => p.id === productoId);
-    if (prod?.imagenes?.length) {
+    if (!prod) return null;
+    let url: string | null | undefined = null;
+    if (prod.imagenes?.length) {
       const principal = prod.imagenes.find(i => i.es_principal);
-      return principal ? principal.archivo_url : prod.imagenes[0].archivo_url;
+      url = principal ? principal.archivo_url : prod.imagenes[0].archivo_url;
+    } else {
+      const prodAny = prod as any;
+      url = prodAny.imagen_principal || prodAny.imagen_url || prodAny.imagen_uri;
     }
-    return null;
+    return url ? this.configService.formatImageUrl(url) : null;
   }
 
   private buildProductGroups(): void {

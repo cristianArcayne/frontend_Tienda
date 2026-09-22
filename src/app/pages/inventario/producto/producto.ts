@@ -186,6 +186,8 @@ export class ProductoComponent implements OnInit, OnDestroy {
       url = prodAny.imagen_principal;
     } else if (prodAny.imagen_uri) {
       url = prodAny.imagen_uri;
+    } else if (prodAny.imagen_url) {
+      url = prodAny.imagen_url;
     }
 
     if (url) {
