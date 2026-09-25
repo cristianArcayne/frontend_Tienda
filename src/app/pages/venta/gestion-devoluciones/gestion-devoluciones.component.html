@@ -1,0 +1,158 @@
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">
+        <i class="solars-icon solar--restart-square-line-duotone me-2 text-primary"></i>
+        Gestión de Devoluciones y Reembolsos (24 horas)
+      </h3>
+      <p class="text-muted mb-0">
+        Administración de solicitudes de reembolso online dentro de las 24 horas posteriores a la compra.
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="cargarDevoluciones()">
+      <mat-icon>refresh</mat-icon> Actualizar
+    </button>
+  </div>
+
+  <mat-card class="shadow-sm border-0">
+    <mat-card-content class="p-0">
+      <div *ngIf="isLoading" class="d-flex justify-content-center p-5">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <div *ngIf="!isLoading && devoluciones.length === 0" class="text-center p-5">
+        <mat-icon class="text-muted" style="font-size: 48px; width: 48px; height: 48px;">assignment_return</mat-icon>
+        <h5 class="mt-3 text-muted">No hay solicitudes de devolución registradas</h5>
+      </div>
+
+      <div class="table-responsive" *ngIf="!isLoading && devoluciones.length > 0">
+        <table mat-table [dataSource]="devoluciones" class="w-100 align-middle">
+          <!-- ID -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold"># ID</th>
+            <td mat-cell *matCellDef="let d">#{{ d.id }}</td>
+          </ng-container>
+
+          <!-- Venta ID -->
+          <ng-container matColumnDef="venta_id">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Venta Original</th>
+            <td mat-cell *matCellDef="let d">
+              <span class="badge bg-light text-dark border">Venta #{{ d.venta_id }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Cliente -->
+          <ng-container matColumnDef="cliente">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Cliente</th>
+            <td mat-cell *matCellDef="let d">
+              <strong>{{ d.cliente_nombre || 'Cliente CI ' + d.cliente_id }}</strong>
+              <div class="small text-muted" *ngIf="d.cuenta_bancaria_qr">
+                <i class="bi bi-qr-code"></i> Cuenta / QR: {{ d.cuenta_bancaria_qr }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Fecha Solicitud -->
+          <ng-container matColumnDef="fecha_solicitud">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Fecha Solicitud</th>
+            <td mat-cell *matCellDef="let d">{{ d.fecha_solicitud }}</td>
+          </ng-container>
+
+          <!-- Motivo -->
+          <ng-container matColumnDef="motivo">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Motivo</th>
+            <td mat-cell *matCellDef="let d" style="max-width: 250px;">
+              <small class="text-secondary">{{ d.motivo }}</small>
+            </td>
+          </ng-container>
+
+          <!-- Monto Reembolso -->
+          <ng-container matColumnDef="monto_reembolso">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Monto Reembolso</th>
+            <td mat-cell *matCellDef="let d">
+              <span class="fw-bold text-success">Bs. {{ d.monto_reembolso | number:'1.2-2' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Estado</th>
+            <td mat-cell *matCellDef="let d">
+              <span [class]="getEstadoClass(d.estado)">{{ d.estado }}</span>
+              <div *ngIf="d.observacion_admin" class="small text-muted mt-1">
+                <em>"{{ d.observacion_admin }}"</em>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="fw-bold">Acciones</th>
+            <td mat-cell *matCellDef="let d">
+              <button
+                *ngIf="d.estado === 'PENDIENTE'"
+                mat-stroked-button
+                color="primary"
+                size="small"
+                (click)="abrirResponderModal(d)"
+              >
+                <mat-icon size="16">edit</mat-icon> Responder
+              </button>
+              <span *ngIf="d.estado !== 'PENDIENTE'" class="text-muted small">Procesado</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- Modal Responder Solicitud -->
+<div
+  class="modal fade show d-block"
+  tabindex="-1"
+  style="background-color: rgba(0,0,0,0.5);"
+  *ngIf="selectedDevolucion"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Responder Devolución #{{ selectedDevolucion.id }}</h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Venta #:</strong> {{ selectedDevolucion.venta_id }}</p>
+        <p><strong>Cliente:</strong> {{ selectedDevolucion.cliente_nombre || selectedDevolucion.cliente_id }}</p>
+        <p><strong>Monto Reembolso:</strong> <span class="text-success fw-bold">Bs. {{ selectedDevolucion.monto_reembolso }}</span></p>
+        <p><strong>Motivo del Cliente:</strong> {{ selectedDevolucion.motivo }}</p>
+        <div *ngIf="selectedDevolucion.cuenta_bancaria_qr" class="alert alert-info py-2">
+          <strong>Cuenta/QR para transferencia:</strong> {{ selectedDevolucion.cuenta_bancaria_qr }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Observación / Nota del Administrador:</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            [(ngModel)]="observacionAdmin"
+            placeholder="Ej. Reembolso transferido mediante QR / Comprobante enviado."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-danger" (click)="responder('RECHAZADA')">
+          <i class="bi bi-x-circle me-1"></i> Rechazar
+        </button>
+        <div>
+          <button type="button" class="btn btn-secondary me-2" (click)="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn btn-success" (click)="responder('APROBADA')">
+            <i class="bi bi-check-circle me-1"></i> Aprobar Reembolso
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

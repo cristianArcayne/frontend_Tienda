@@ -204,4 +204,10 @@ export const navItems: NavItem[] = [
     route: '/ventas',
     permiso: PermisosService.VENTA_VIEW_VENTA,
   },
+  {
+    displayName: 'Gestión Devoluciones (24h)',
+    iconName: 'solar:restart-square-line-duotone',
+    route: '/ventas/devoluciones/gestion',
+    permiso: PermisosService.VENTA_VIEW_VENTA,
+  },
 ];

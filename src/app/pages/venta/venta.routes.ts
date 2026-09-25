@@ -6,6 +6,8 @@ import { VentaListComponent } from './venta-list/venta-list';
 import { CrearVentaComponent } from './crear-venta/crear-venta';
 import { DetalleVentaComponent } from './detalle-venta/detalle-venta';
 
+import { GestionDevolucionesComponent } from './gestion-devoluciones/gestion-devoluciones.component';
+
 const canAccessWithPermiso = (permiso: string) => {
   return () => {
     const permisosService = inject(PermisosService);
@@ -32,8 +34,14 @@ export const VentaRoutes: Routes = [
     canActivate: [canAccessWithPermiso(PermisosService.VENTA_ADD_VENTA)]
   },
   {
+    path: 'devoluciones/gestion',
+    component: GestionDevolucionesComponent,
+    canActivate: [canAccessWithPermiso(PermisosService.VENTA_VIEW_VENTA)]
+  },
+  {
     path: ':id',
     component: DetalleVentaComponent,
     canActivate: [canAccessWithPermiso(PermisosService.VENTA_VIEW_VENTA)]
   },
 ];
+
