@@ -58,6 +58,17 @@ export const PagesRoutes: Routes = [
       import('./venta/venta.routes').then((m) => m.VentaRoutes),
   },
   {
+    path: 'devoluciones',
+    loadComponent: () =>
+      import('./venta/gestion-devoluciones/gestion-devoluciones.component').then(
+        (m) => m.GestionDevolucionesComponent
+      ),
+    data: {
+      title: 'Gestión Devoluciones (24h)',
+      urls: [{ title: 'Dashboard', url: '/' }, { title: 'Gestión Devoluciones' }]
+    }
+  },
+  {
     path: 'favoritos',
     loadComponent: () =>
       import('./favoritos/favoritos.component').then((m) => m.FavoritosComponent),
