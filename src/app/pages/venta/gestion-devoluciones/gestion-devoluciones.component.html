@@ -90,7 +90,7 @@
             <th mat-header-cell *matHeaderCellDef class="fw-bold">Acciones</th>
             <td mat-cell *matCellDef="let d">
               <button
-                *ngIf="d.estado === 'PENDIENTE'"
+                *ngIf="esEstadoPendiente(d.estado)"
                 mat-stroked-button
                 color="primary"
                 size="small"
@@ -98,7 +98,7 @@
               >
                 <mat-icon size="16">edit</mat-icon> Responder
               </button>
-              <span *ngIf="d.estado !== 'PENDIENTE'" class="text-muted small">Procesado</span>
+              <span *ngIf="!esEstadoPendiente(d.estado)" class="text-muted small">Atendido ({{ d.estado }})</span>
             </td>
           </ng-container>
 
@@ -117,28 +117,72 @@
   style="background-color: rgba(0,0,0,0.5);"
   *ngIf="selectedDevolucion"
 >
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold">Responder Devolución #{{ selectedDevolucion.id }}</h5>
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-arrow-repeat text-primary me-2"></i>
+          Gestionar Solicitud de Reembolso #{{ selectedDevolucion.id }}
+        </h5>
         <button type="button" class="btn-close" (click)="cerrarModal()"></button>
       </div>
       <div class="modal-body">
-        <p><strong>Venta #:</strong> {{ selectedDevolucion.venta_id }}</p>
-        <p><strong>Cliente:</strong> {{ selectedDevolucion.cliente_nombre || selectedDevolucion.cliente_id }}</p>
-        <p><strong>Monto Reembolso:</strong> <span class="text-success fw-bold">Bs. {{ selectedDevolucion.monto_reembolso }}</span></p>
-        <p><strong>Motivo del Cliente:</strong> {{ selectedDevolucion.motivo }}</p>
-        <div *ngIf="selectedDevolucion.cuenta_bancaria_qr" class="alert alert-info py-2">
-          <strong>Cuenta/QR para transferencia:</strong> {{ selectedDevolucion.cuenta_bancaria_qr }}
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Venta Original:</strong> <span class="badge bg-light text-dark border">Pedido #{{ selectedDevolucion.venta_id }}</span></p>
+            <p class="mb-1"><strong>Cliente:</strong> {{ selectedDevolucion.cliente_nombre || 'CI ' + selectedDevolucion.cliente_id }}</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <p class="mb-1"><strong>Monto a Reembolsar:</strong> <span class="text-success fs-5 fw-bold">Bs. {{ selectedDevolucion.monto_reembolso | number:'1.2-2' }}</span></p>
+            <p class="mb-1"><strong>Estado Actual:</strong> <span [class]="getEstadoClass(selectedDevolucion.estado)">{{ selectedDevolucion.estado }}</span></p>
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-bold">Observación / Nota del Administrador:</label>
+        <div class="alert alert-light border py-2 mb-3">
+          <strong>Motivo indicado por el cliente:</strong>
+          <div class="text-secondary mt-1">{{ selectedDevolucion.motivo }}</div>
+        </div>
+
+        <!-- Cuenta / QR de destino -->
+        <div *ngIf="selectedDevolucion.cuenta_bancaria_qr" class="alert alert-info py-2 mb-3">
+          <i class="bi bi-wallet2 me-1"></i>
+          <strong>Datos de Abono / Cuenta / QR:</strong> {{ selectedDevolucion.cuenta_bancaria_qr }}
+        </div>
+
+        <!-- Tabla de Prendas de la Venta -->
+        <div *ngIf="selectedDevolucion.items && selectedDevolucion.items.length > 0" class="mb-3">
+          <label class="form-label fw-bold mb-1">Prendas Involucradas en la Venta:</label>
+          <div class="table-responsive border rounded">
+            <table class="table table-sm table-striped mb-0" style="font-size: 13px;">
+              <thead class="table-light">
+                <tr>
+                  <th>Prenda</th>
+                  <th>Talla</th>
+                  <th>Color</th>
+                  <th class="text-center">Cant.</th>
+                  <th class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let it of selectedDevolucion.items">
+                  <td><strong>{{ it.prenda_nombre }}</strong></td>
+                  <td><span class="badge bg-light text-dark border">{{ it.talla }}</span></td>
+                  <td>{{ it.color }}</td>
+                  <td class="text-center">{{ it.cantidad }}</td>
+                  <td class="text-end fw-bold text-success">Bs. {{ it.subtotal | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Observación / Nota del Administrador (Resolución):</label>
           <textarea
             class="form-control"
             rows="3"
             [(ngModel)]="observacionAdmin"
-            placeholder="Ej. Reembolso transferido mediante QR / Comprobante enviado."
+            placeholder="Ej. Reembolso transferido mediante QR / Aprobado por política de 24 horas."
           ></textarea>
         </div>
       </div>
@@ -156,3 +200,4 @@
     </div>
   </div>
 </div>
+

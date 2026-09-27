@@ -62,12 +62,19 @@ export class GestionDevolucionesComponent implements OnInit {
   cargarDevoluciones(): void {
     this.isLoading = true;
     this.devolucionesService.getTodasDevolucionesAdmin().subscribe({
-      next: (data) => {
-        this.devoluciones = data;
+      next: (data: any) => {
+        if (Array.isArray(data)) {
+          this.devoluciones = data;
+        } else if (data && Array.isArray(data.results)) {
+          this.devoluciones = data.results;
+        } else {
+          this.devoluciones = [];
+        }
         this.isLoading = false;
         this.cdr.markForCheck();
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error al cargar la lista de devoluciones:', err);
         this.snackBar.open('Error al cargar la lista de devoluciones', 'Cerrar', { duration: 4000 });
         this.isLoading = false;
         this.cdr.markForCheck();
@@ -93,7 +100,7 @@ export class GestionDevolucionesComponent implements OnInit {
       .subscribe({
         next: (devActualizada) => {
           const statusText = estado === 'APROBADA' ? 'aprobada' : 'rechazada';
-          this.snackBar.open(`Solicitud #${devActualizada.id} ${statusText} exitosamente.`, 'Cerrar', { duration: 4000 });
+          this.snackBar.open(`Solicitud #${devActualizada.id || this.selectedDevolucion?.id} ${statusText} exitosamente.`, 'Cerrar', { duration: 4000 });
           this.cerrarModal();
           this.cargarDevoluciones();
         },
@@ -104,16 +111,24 @@ export class GestionDevolucionesComponent implements OnInit {
       });
   }
 
+  esEstadoPendiente(estado: string): boolean {
+    const st = (estado || '').toUpperCase();
+    return st === 'PENDIENTE' || st === 'SOLICITADA' || st === 'EN_REVISION';
+  }
+
   getEstadoClass(estado: string): string {
-    switch (estado.toUpperCase()) {
+    switch ((estado || '').toUpperCase()) {
       case 'APROBADA':
-        return 'badge bg-success';
+        return 'badge bg-success text-white px-2 py-1';
       case 'RECHAZADA':
-        return 'badge bg-danger';
+        return 'badge bg-danger text-white px-2 py-1';
       case 'PENDIENTE':
-        return 'badge bg-warning text-dark';
+      case 'SOLICITADA':
+      case 'EN_REVISION':
+        return 'badge bg-warning text-dark px-2 py-1';
       default:
-        return 'badge bg-secondary';
+        return 'badge bg-secondary text-white px-2 py-1';
     }
   }
 }
+

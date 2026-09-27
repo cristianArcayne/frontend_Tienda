@@ -49,6 +49,22 @@ export interface ResumenInventario {
   items: VarianteStockItem[];
 }
 
+export interface SucursalDisponibilidad {
+  sucursal_id: number;
+  sucursal_nombre: string;
+  ciudad: string;
+  stock_fisico: number;
+  stock_reservado: number;
+  stock_disponible: number;
+  estado_stock: string;
+}
+
+export interface PrendaSucursalesDetalle {
+  prenda_id: number;
+  prenda_nombre: string;
+  sucursales: SucursalDisponibilidad[];
+}
+
 @Component({
   selector: 'app-inventario-fisico',
   standalone: true,
@@ -87,18 +103,247 @@ export interface ResumenInventario {
         </div>
       </div>
 
-      <!-- Barra de Sucursales y Filtros -->
+      <!-- BUSCADOR GLOBAL DE PRENDAS ENTRE SUCURSALES -->
+      <mat-card class="m-b-16 p-16 bg-white" style="border-left: 5px solid #2563eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-12 m-b-12">
+          <div class="d-flex align-items-center gap-8">
+            <div style="background-color: #eff6ff; padding: 8px; border-radius: 8px;">
+              <mat-icon style="color: #2563eb; display: block;">travel_explore</mat-icon>
+            </div>
+            <div>
+              <h3 class="m-0 font-weight-bold" style="color: #1e3a8a; font-size: 16px;">
+                Buscador de Prendas y Existencias por Sucursal
+              </h3>
+              <p class="text-muted m-0" style="font-size: 13px;">
+                Busque cualquier prenda para conocer de inmediato qué sucursales la tienen disponible y su stock exacto
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-12 flex-wrap">
+          <mat-form-field appearance="outline" style="flex: 3; min-width: 280px;" subscriptSizing="dynamic">
+            <mat-label>Nombre, categoría o palabra clave de la prenda...</mat-label>
+            <input matInput [(ngModel)]="busquedaGlobalPrenda" (keyup.enter)="buscarPrendasCadena()" placeholder="Ej. Chaqueta, Denim, Vestido, Jean..." />
+            <button *ngIf="busquedaGlobalPrenda" matSuffix mat-icon-button (click)="limpiarBusquedaGlobal()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" (click)="buscarPrendasCadena()" [disabled]="cargandoGlobal" style="height: 48px; min-width: 170px;">
+            <mat-icon *ngIf="!cargandoGlobal" class="m-r-6">search</mat-icon>
+            <mat-spinner *ngIf="cargandoGlobal" diameter="20" class="m-r-6"></mat-spinner>
+            Buscar en Sucursales
+          </button>
+        </div>
+
+        <!-- Indicador de carga de búsqueda global -->
+        <div *ngIf="cargandoGlobal" class="d-flex align-items-center justify-content-center p-y-24">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span class="m-l-12 text-muted">Consultando existencias en todas las sucursales...</span>
+        </div>
+
+        <!-- Resultados del buscador global -->
+        <div *ngIf="!cargandoGlobal && busquedaRealizada" class="m-t-16">
+          <div *ngIf="resultadosGlobales.length === 0" class="p-16 text-center text-muted" style="background-color: #f8fafc; border-radius: 8px;">
+            <mat-icon style="font-size: 32px; height: 32px; width: 32px; color: #94a3b8;">search_off</mat-icon>
+            <div class="m-t-4 font-weight-bold">No se encontraron prendas con "{{ busquedaGlobalPrenda }}"</div>
+            <small>Intente con otro término o verifique la ortografía</small>
+          </div>
+
+          <div *ngIf="resultadosGlobales.length > 0">
+            <div class="d-flex justify-content-between align-items-center m-b-10">
+              <span class="font-weight-bold" style="color: #334155;">
+                {{ resultadosGlobales.length }} prenda(s) encontrada(s):
+              </span>
+              <button mat-button color="warn" (click)="limpiarBusquedaGlobal()" style="font-size: 12px; height: 28px; line-height: 28px;">
+                <mat-icon style="font-size: 16px; width: 16px; height: 16px; margin-right: 4px;">close</mat-icon>
+                Ocultar Resultados
+              </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div *ngFor="let p of resultadosGlobales" class="p-16" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-8 m-b-12">
+                  <div class="d-flex align-items-center gap-10">
+                    <span class="badge bg-light-primary text-primary p-x-8 p-y-4 rounded font-weight-bold" style="font-size: 12px;">
+                      {{ p.codigo || ('ROPA-' + p.id) }}
+                    </span>
+                    <strong style="font-size: 16px; color: #0f172a;">{{ p.nombre }}</strong>
+                    <span class="text-muted" style="font-size: 13px;">({{ p.categoria_nombre }})</span>
+                  </div>
+                  <div>
+                    <span class="text-muted font-weight-bold" style="font-size: 14px;">
+                      Precio: Bs. {{ p.precio_promocional || p.precio_base | number:'1.2-2' }}
+                    </span>
+                    <span class="m-l-12 badge" [ngClass]="p.stock_disponible_cadena > 0 ? 'bg-light-success text-success' : 'bg-light-danger text-danger'">
+                      {{ p.stock_disponible_cadena > 0 ? (p.stock_disponible_cadena + ' uds. en cadena') : 'Agotado en cadena' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Tabla de sucursales que tienen esta prenda -->
+                <div class="table-responsive bg-white rounded" style="border: 1px solid #e2e8f0;">
+                  <table class="w-full table-sucursales" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                      <tr style="background-color: #f1f5f9; text-align: left; border-bottom: 1px solid #cbd5e1;">
+                        <th style="padding: 8px 12px;">Sucursal / Ciudad</th>
+                        <th style="padding: 8px 12px; text-align: center;">Stock Físico</th>
+                        <th style="padding: 8px 12px; text-align: center;">Reservado</th>
+                        <th style="padding: 8px 12px; text-align: center;">Disponible Venta</th>
+                        <th style="padding: 8px 12px; text-align: center;">Estado</th>
+                        <th style="padding: 8px 12px; text-align: right;">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let suc of obtenerSucursalesPrenda(p)" style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 12px;">
+                          <div class="d-flex align-items-center gap-6">
+                            <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #475569;">store</mat-icon>
+                            <strong>{{ suc.sucursal_nombre }}</strong>
+                            <span class="text-muted">({{ suc.ciudad }})</span>
+                            <span *ngIf="suc.sucursal_id === sucursalSeleccionadaId" class="badge bg-light-primary text-primary p-x-6 p-y-2 rounded" style="font-size: 10px;">
+                              ACTUAL
+                            </span>
+                          </div>
+                        </td>
+                        <td style="padding: 8px 12px; text-align: center; font-weight: bold;">
+                          {{ suc.stock_fisico }}
+                        </td>
+                        <td style="padding: 8px 12px; text-align: center;">
+                          <span class="text-warning font-weight-bold">{{ suc.stock_reservado }}</span>
+                        </td>
+                        <td style="padding: 8px 12px; text-align: center;">
+                          <span class="badge p-x-8 p-y-2 rounded font-weight-bold" [ngClass]="suc.stock_disponible > 0 ? 'bg-light-success text-success' : 'bg-light-danger text-danger'">
+                            {{ suc.stock_disponible }}
+                          </span>
+                        </td>
+                        <td style="padding: 8px 12px; text-align: center;">
+                          <span [ngClass]="{
+                            'badge-disponible': suc.estado_stock === 'DISPONIBLE',
+                            'badge-bajo': suc.estado_stock === 'ULTIMAS_UNIDADES' || suc.estado_stock === 'BAJO_STOCK',
+                            'badge-agotado': suc.estado_stock === 'AGOTADO'
+                          }" class="badge-status">
+                            {{ suc.estado_stock === 'ULTIMAS_UNIDADES' ? 'ÚLTIMAS UDS' : suc.estado_stock }}
+                          </span>
+                        </td>
+                        <td style="padding: 8px 12px; text-align: right;">
+                          <button mat-stroked-button color="primary" style="font-size: 11px; height: 28px; line-height: 28px; padding: 0 8px;"
+                                  [disabled]="suc.sucursal_id === sucursalSeleccionadaId"
+                                  (click)="seleccionarSucursal(suc.sucursal_id)">
+                            <mat-icon style="font-size: 14px; width: 14px; height: 14px; margin-right: 4px;">swap_horiz</mat-icon>
+                            {{ suc.sucursal_id === sucursalSeleccionadaId ? 'En esta sucursal' : 'Ver inventario aquí' }}
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- MODAL / POPUP DE DETALLE MULTISUCURSAL POR PRENDA -->
+      <mat-card *ngIf="mostrarModalDetalle && prendaDetalle" class="m-b-16 p-16 bg-white" style="border: 2px solid #3b82f6; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+        <div class="d-flex align-items-center justify-content-between m-b-12">
+          <div class="d-flex align-items-center gap-8">
+            <mat-icon color="primary">hub</mat-icon>
+            <div>
+              <h3 class="m-0 font-weight-bold" style="color: #1e3a8a;">
+                Disponibilidad Multitienda: {{ prendaDetalle.prenda_nombre }}
+              </h3>
+              <small class="text-muted">Desglose de existencias físicas y disponibles en todas las sucursales de la cadena</small>
+            </div>
+          </div>
+          <button mat-icon-button (click)="cerrarModalDetalle()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="w-full table-bordered" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="background-color: #f1f5f9; text-align: left; border-bottom: 2px solid #cbd5e1;">
+                <th style="padding: 10px 12px;">Sucursal</th>
+                <th style="padding: 10px 12px;">Ciudad</th>
+                <th style="padding: 10px 12px; text-align: center;">Stock Físico</th>
+                <th style="padding: 10px 12px; text-align: center;">Stock Reservado</th>
+                <th style="padding: 10px 12px; text-align: center;">Disponible Venta</th>
+                <th style="padding: 10px 12px; text-align: center;">Estado</th>
+                <th style="padding: 10px 12px; text-align: center;">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of prendaDetalle.sucursales" style="border-bottom: 1px solid #e2e8f0;" [style.backgroundColor]="s.sucursal_id === sucursalSeleccionadaId ? '#eff6ff' : 'white'">
+                <td style="padding: 10px 12px; font-weight: bold;">
+                  {{ s.sucursal_nombre }}
+                  <span *ngIf="s.sucursal_id === sucursalSeleccionadaId" class="badge bg-light-primary text-primary p-x-6 p-y-2 rounded m-l-6" style="font-size: 10px;">
+                    Seleccionada
+                  </span>
+                </td>
+                <td style="padding: 10px 12px;">{{ s.ciudad }}</td>
+                <td style="padding: 10px 12px; text-align: center; font-weight: bold; font-size: 15px;">
+                  {{ s.stock_fisico }}
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <span class="badge bg-light-warning text-warning p-x-8 p-y-2 rounded font-weight-bold">
+                    {{ s.stock_reservado }}
+                  </span>
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <span class="badge bg-light-success text-success p-x-10 p-y-4 rounded font-weight-bold" style="font-size: 14px;">
+                    {{ s.stock_disponible }}
+                  </span>
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <span [ngClass]="{
+                    'badge-disponible': s.estado_stock === 'DISPONIBLE',
+                    'badge-bajo': s.estado_stock === 'BAJO_STOCK' || s.estado_stock === 'ULTIMAS_UNIDADES',
+                    'badge-agotado': s.estado_stock === 'AGOTADO'
+                  }" class="badge-status">
+                    {{ s.estado_stock }}
+                  </span>
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <button mat-raised-button color="primary" style="font-size: 11px; height: 30px; line-height: 30px;"
+                          [disabled]="s.sucursal_id === sucursalSeleccionadaId"
+                          (click)="seleccionarSucursal(s.sucursal_id)">
+                    <mat-icon style="font-size: 16px; width: 16px; height: 16px; margin-right: 4px;">storefront</mat-icon>
+                    Ir a esta sucursal
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </mat-card>
+
+      <!-- Barra de Sucursal Activa y Filtro Local -->
       <mat-card class="m-b-16 p-12 bg-white">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-16">
-          <div class="d-flex align-items-center gap-12" style="flex: 1; min-width: 280px;">
+          <div class="d-flex align-items-center gap-12" style="flex: 1; min-width: 260px;">
             <mat-icon color="primary">storefront</mat-icon>
             <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <mat-label>Sucursal Activa</mat-label>
+              <mat-label>Sucursal Activa para Gestión de Existencias</mat-label>
               <mat-select [(ngModel)]="sucursalSeleccionadaId" (selectionChange)="onSucursalChange()">
                 <mat-option *ngFor="let s of sucursales" [value]="s.id">
                   {{ s.nombre }} — ({{ s.ciudad }})
                 </mat-option>
               </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Filtro rápido en la tabla de la sucursal activa -->
+          <div class="d-flex align-items-center gap-12" style="flex: 2; min-width: 260px;">
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <mat-label>Filtrar prendas de esta sucursal (Nombre, SKU, Talla, Color)...</mat-label>
+              <input matInput [(ngModel)]="filtroLocal" (ngModelChange)="aplicarFiltros()" placeholder="Buscar en tabla..." />
+              <button *ngIf="filtroLocal" matSuffix mat-icon-button (click)="filtroLocal = ''; aplicarFiltros()">
+                <mat-icon>close</mat-icon>
+              </button>
+              <mat-icon *ngIf="!filtroLocal" matPrefix class="text-muted m-r-8">filter_alt</mat-icon>
             </mat-form-field>
           </div>
 
@@ -263,7 +508,7 @@ export interface ResumenInventario {
         </mat-card-content>
       </mat-card>
 
-      <!-- Tabla de Existencias -->
+      <!-- Tabla de Existencias de la Sucursal Activa -->
       <mat-card>
         <mat-card-content>
           <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
@@ -342,6 +587,17 @@ export interface ResumenInventario {
                 </td>
               </ng-container>
 
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef style="text-align: center;">Disponibilidad Cadena</th>
+                <td mat-cell *matCellDef="let element" style="text-align: center;">
+                  <button mat-stroked-button color="primary" style="font-size: 11px; height: 30px; line-height: 30px; padding: 0 10px;"
+                          (click)="consultarOtrasSucursales(element)" matTooltip="Ver stock de esta prenda en todas las sucursales">
+                    <mat-icon style="font-size: 16px; width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;">storefront</mat-icon>
+                    En Sucursales
+                  </button>
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
@@ -349,8 +605,9 @@ export interface ResumenInventario {
 
           <div *ngIf="!isLoading && itemsFiltrados.length === 0" class="p-32 text-center text-muted">
             <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #cbd5e1;">inventory</mat-icon>
-            <h4 class="m-t-12">No hay prendas registradas para esta sucursal</h4>
-            <p>Haga clic en "Entrada de Mercadería" para cargar existencias físicas.</p>
+            <h4 class="m-t-12">No se encontraron prendas con los filtros aplicados</h4>
+            <p *ngIf="filtroLocal">Intente borrar o ajustar el término de búsqueda "{{ filtroLocal }}".</p>
+            <p *ngIf="!filtroLocal">Haga clic en "Entrada de Mercadería" para cargar existencias físicas.</p>
           </div>
         </mat-card-content>
       </mat-card>
@@ -390,18 +647,33 @@ export interface ResumenInventario {
     .bg-light-danger { background-color: #fef2f2; }
     .text-danger { color: #b91c1c; }
 
+    .gap-6 { gap: 6px; }
     .gap-8 { gap: 8px; }
+    .gap-10 { gap: 10px; }
     .gap-12 { gap: 12px; }
     .gap-16 { gap: 16px; }
   `]
 })
 export class InventarioFisicoComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = ['sku', 'prenda', 'variante', 'fisico', 'reservado', 'disponible', 'estado'];
+  displayedColumns: string[] = ['sku', 'prenda', 'variante', 'fisico', 'reservado', 'disponible', 'estado', 'acciones'];
   sucursales: any[] = [];
   sucursalSeleccionadaId: number = 1;
   resumen: ResumenInventario | null = null;
   itemsTotales: VarianteStockItem[] = [];
   itemsFiltrados: VarianteStockItem[] = [];
+
+  // Búsqueda global entre sucursales
+  busquedaGlobalPrenda: string = '';
+  cargandoGlobal: boolean = false;
+  busquedaRealizada: boolean = false;
+  resultadosGlobales: any[] = [];
+
+  // Modal / panel de disponibilidad de prenda seleccionada
+  prendaDetalle: PrendaSucursalesDetalle | null = null;
+  mostrarModalDetalle: boolean = false;
+
+  // Filtro local en tabla activa
+  filtroLocal: string = '';
 
   isLoading = false;
   guardando = false;
@@ -487,11 +759,124 @@ export class InventarioFisicoComponent implements OnInit, OnDestroy {
   }
 
   aplicarFiltros(): void {
+    let filtrados = [...this.itemsTotales];
+
     if (this.soloAlertas) {
-      this.itemsFiltrados = this.itemsTotales.filter(i => i.estado_stock === 'BAJO_STOCK' || i.estado_stock === 'AGOTADO');
-    } else {
-      this.itemsFiltrados = [...this.itemsTotales];
+      filtrados = filtrados.filter(i => i.estado_stock === 'BAJO_STOCK' || i.estado_stock === 'AGOTADO');
     }
+
+    if (this.filtroLocal && this.filtroLocal.trim() !== '') {
+      const term = this.filtroLocal.trim().toLowerCase();
+      filtrados = filtrados.filter(i =>
+        (i.ropa_nombre && i.ropa_nombre.toLowerCase().includes(term)) ||
+        (i.sku && i.sku.toLowerCase().includes(term)) ||
+        (i.categoria_nombre && i.categoria_nombre.toLowerCase().includes(term)) ||
+        (i.talla && i.talla.toLowerCase().includes(term)) ||
+        (i.color && i.color.toLowerCase().includes(term)) ||
+        (i.cod_barra && i.cod_barra.toLowerCase().includes(term))
+      );
+    }
+
+    this.itemsFiltrados = filtrados;
+  }
+
+  // Búsqueda global de prendas en toda la cadena de sucursales
+  buscarPrendasCadena(): void {
+    const term = (this.busquedaGlobalPrenda || '').trim();
+    if (!term) {
+      this.snackBar.open('Ingrese el nombre o código de la prenda para buscar', 'OK', { duration: 3000 });
+      return;
+    }
+
+    this.cargandoGlobal = true;
+    this.busquedaRealizada = true;
+
+    this.http.get<any[]>(`${this.apiBase}/catalogo-disponibilidad/?buscar=${encodeURIComponent(term)}&solo_con_stock=false`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.cargandoGlobal = false;
+          this.resultadosGlobales = Array.isArray(data) ? data : [];
+        },
+        error: (err) => {
+          this.cargandoGlobal = false;
+          console.error('Error al buscar prendas en sucursales:', err);
+          this.snackBar.open('Error al consultar stock de la prenda en las sucursales', 'Cerrar', { duration: 4000 });
+        }
+      });
+  }
+
+  limpiarBusquedaGlobal(): void {
+    this.busquedaGlobalPrenda = '';
+    this.resultadosGlobales = [];
+    this.busquedaRealizada = false;
+  }
+
+  // Extrae y consolida las sucursales y sus existencias para una prenda del catálogo
+  obtenerSucursalesPrenda(prenda: any): SucursalDisponibilidad[] {
+    const mapSucursales = new Map<number, SucursalDisponibilidad>();
+
+    if (prenda.variantes && Array.isArray(prenda.variantes)) {
+      for (const v of prenda.variantes) {
+        if (v.disponibilidad_sucursales && Array.isArray(v.disponibilidad_sucursales)) {
+          for (const s of v.disponibilidad_sucursales) {
+            if (!mapSucursales.has(s.sucursal_id)) {
+              mapSucursales.set(s.sucursal_id, {
+                sucursal_id: s.sucursal_id,
+                sucursal_nombre: s.sucursal_nombre,
+                ciudad: s.ciudad,
+                stock_fisico: s.stock_fisico || 0,
+                stock_reservado: s.stock_reservado || 0,
+                stock_disponible: s.stock_disponible || 0,
+                estado_stock: s.estado_stock || 'DISPONIBLE'
+              });
+            } else {
+              const exist = mapSucursales.get(s.sucursal_id)!;
+              exist.stock_fisico += (s.stock_fisico || 0);
+              exist.stock_reservado += (s.stock_reservado || 0);
+              exist.stock_disponible += (s.stock_disponible || 0);
+              exist.estado_stock = exist.stock_disponible > 5 ? 'DISPONIBLE' : (exist.stock_disponible > 0 ? 'ULTIMAS_UNIDADES' : 'AGOTADO');
+            }
+          }
+        }
+      }
+    }
+
+    return Array.from(mapSucursales.values());
+  }
+
+  // Consulta el desglose de existencias de una prenda específica en todas las tiendas
+  consultarOtrasSucursales(item: VarianteStockItem): void {
+    if (!item.ropa_id) return;
+
+    this.http.get<PrendaSucursalesDetalle>(`${this.apiBase}/catalogo-disponibilidad/prendas/${item.ropa_id}/disponibilidad-sucursales`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.prendaDetalle = data;
+          this.mostrarModalDetalle = true;
+          // Hacer scroll suave hacia el modal de detalle
+          setTimeout(() => {
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          }, 100);
+        },
+        error: (err) => {
+          console.error('Error al consultar stock de la prenda:', err);
+          this.snackBar.open('No se pudo obtener la disponibilidad en otras sucursales', 'Cerrar', { duration: 3000 });
+        }
+      });
+  }
+
+  cerrarModalDetalle(): void {
+    this.mostrarModalDetalle = false;
+    this.prendaDetalle = null;
+  }
+
+  seleccionarSucursal(sucursalId: number): void {
+    this.sucursalSeleccionadaId = sucursalId;
+    this.cargarInventario();
+    this.cerrarModalDetalle();
+    this.snackBar.open('Mostrando existencias de la sucursal seleccionada', 'OK', { duration: 3000 });
   }
 
   abrirModalEntrada(): void {
