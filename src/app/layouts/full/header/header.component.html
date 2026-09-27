@@ -18,6 +18,17 @@
     </mat-icon>
   </button>
 
+  <!-- Solicitudes de Devolución / Reembolsos Pendientes (Admin) -->
+  <button mat-icon-button routerLink="/ventas/devoluciones/gestion" matTooltip="Solicitudes de Reembolso Pendientes" class="m-r-8"
+          *ngIf="!esCliente()">
+    <mat-icon
+      [matBadge]="conteoDevolucionesPendientes()"
+      matBadgeColor="warn"
+      [matBadgeHidden]="conteoDevolucionesPendientes() === 0">
+      assignment_return
+    </mat-icon>
+  </button>
+
   <!-- Favoritos -->
   <button mat-icon-button routerLink="/favoritos" matTooltip="Mis Favoritos" class="m-r-8">
     <mat-icon [matBadge]="favoritosService.obtenerCantidadItems()" matBadgeColor="warn" [matBadgeHidden]="favoritosService.obtenerCantidadItems() === 0">favorite</mat-icon>

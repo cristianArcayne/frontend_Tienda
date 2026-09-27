@@ -30,8 +30,9 @@ import { Pagination } from 'src/app/models/pagination.model';
 import { AlertaIa } from 'src/app/models/ia/alerta-ia.model';
 import { PerfilUsuarioDialogComponent } from 'src/app/components/perfil-usuario-dialog/perfil-usuario-dialog.component';
 
-import { Subject } from 'rxjs';
+import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { DevolucionesService } from 'src/app/services/devoluciones.service';
 
 @Component({
   selector: 'app-header',
@@ -58,6 +59,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   currentUsername: string = '';
   conteoAlertasNoLeidas = signal(0);
+  conteoDevolucionesPendientes = signal(0);
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -67,6 +69,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private configService: ConfigService,
     private alertasRefreshService: AlertasRefreshService,
+    private devolucionesService: DevolucionesService,
     private router: Router,
     private dialog: MatDialog,
   ) {}
@@ -75,9 +78,23 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.obtenerUsuarioActual();
     if (!this.esCliente()) {
       this.cargarConteoAlertas();
+      this.cargarConteoDevoluciones();
       this.alertasRefreshService.alertasRefresh$
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => this.cargarConteoAlertas());
+      this.devolucionesService.devolucionesUpdated$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => this.cargarConteoDevoluciones());
+
+      // Verificación periódica cada 30 segundos
+      timer(30000, 30000)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => {
+          if (!this.esCliente()) {
+            this.cargarConteoAlertas();
+            this.cargarConteoDevoluciones();
+          }
+        });
     }
   }
 
@@ -88,6 +105,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (data: Pagination<AlertaIa>) => this.conteoAlertasNoLeidas.set(data.count),
         error: () => this.conteoAlertasNoLeidas.set(0)
+      });
+  }
+
+  private cargarConteoDevoluciones(): void {
+    this.devolucionesService.getConteoPendientes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (count) => this.conteoDevolucionesPendientes.set(count),
+        error: () => this.conteoDevolucionesPendientes.set(0)
       });
   }
 

@@ -33,7 +33,6 @@ import { DevolucionesService, Devolucion } from '../../../services/devoluciones.
 })
 export class GestionDevolucionesComponent implements OnInit {
   displayedColumns: string[] = [
-    'id',
     'venta_id',
     'cliente',
     'fecha_solicitud',
@@ -54,6 +53,24 @@ export class GestionDevolucionesComponent implements OnInit {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
+
+  formatearFecha(fechaStr?: string): string {
+    if (!fechaStr) return '-';
+    try {
+      const f = new Date(fechaStr);
+      if (isNaN(f.getTime())) return fechaStr;
+      return f.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return fechaStr;
+    }
+  }
 
   ngOnInit(): void {
     this.cargarDevoluciones();

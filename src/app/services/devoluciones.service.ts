@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, of, Subject } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
 import { ConfigService } from './config.service';
 
 export interface ItemDevolucion {
@@ -36,6 +36,8 @@ export interface Devolucion {
   providedIn: 'root'
 })
 export class DevolucionesService {
+  readonly devolucionesUpdated$ = new Subject<void>();
+
   constructor(
     private http: HttpClient,
     private configService: ConfigService
@@ -85,7 +87,22 @@ export class DevolucionesService {
       observacion,
       respuesta_admin: observacion
     };
-    return this.http.put<Devolucion>(`${this.baseUrl}/devoluciones/admin/${id}/responder`, payload);
+    return this.http.put<Devolucion>(`${this.baseUrl}/devoluciones/admin/${id}/responder`, payload).pipe(
+      tap(() => this.devolucionesUpdated$.next())
+    );
+  }
+
+  getConteoPendientes(): Observable<number> {
+    return this.http.get<{ count: number }>(`${this.baseUrl}/devoluciones/admin/pendientes-count`).pipe(
+      map(res => res?.count || 0),
+      catchError(() => {
+        const v1Url = this.baseUrl.replace(/\/api$/, '/api/v1');
+        return this.http.get<{ count: number }>(`${v1Url}/devoluciones/admin/pendientes-count`).pipe(
+          map(res => res?.count || 0),
+          catchError(() => of(0))
+        );
+      })
+    );
   }
 
   verificarElegibilidad(ventaId: number): Observable<{ elegible: boolean; horas_restantes: number; mensaje: string }> {
