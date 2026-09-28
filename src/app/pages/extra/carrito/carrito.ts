@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -132,6 +132,11 @@ export class CarritoComponent implements OnInit {
         this.snackBar.open('Error al agregar al carrito', 'Cerrar', { duration: 3000 });
       }
     });
+  }
+
+  getImagenUrl(url?: string | null): string {
+    if (!url) return 'assets/images/products/product-1.png';
+    return this.configService.formatImageUrl(url) || 'assets/images/products/product-1.png';
   }
 
   eliminarItem(varianteId: number): void {

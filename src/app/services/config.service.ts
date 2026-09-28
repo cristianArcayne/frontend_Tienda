@@ -33,8 +33,8 @@ export class ConfigService {
     const protocol = window.location.protocol;
     let port = window.location.port;
 
-    // Si está en localhost (puede ser con o sin subdominio)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Si está en localhost o desplegado en Vercel, usar la URL del backend configurada
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('vercel.app')) {
       return environment.apiBaseUrl;
     }
 
@@ -89,5 +89,38 @@ export class ConfigService {
    */
   setApiBaseUrl(url: string): void {
     this.apiBaseUrl = url;
+  }
+
+  /**
+   * Formatea URLs de imágenes o recursos multimedia para que apunten al servidor backend correcto
+   */
+  formatImageUrl(url: string | null | undefined): string {
+    if (!url || typeof url !== 'string' || url.trim() === '') {
+      return '';
+    }
+
+    let cleanUrl = url.trim();
+
+    // Obtener la raíz del servidor backend eliminando el sufijo /api
+    const serverBase = this.apiBaseUrl.replace(/\/api\/?$/, '');
+
+    // Si viene con localhost:8000 o 127.0.0.1:8000 pero estamos en entorno remoto (Vercel)
+    if (cleanUrl.includes('localhost:8000') || cleanUrl.includes('127.0.0.1:8000')) {
+      const isRemote = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      if (isRemote) {
+        cleanUrl = cleanUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1):8000/, serverBase);
+      }
+    }
+
+    // Si es una ruta relativa (/static/...)
+    if (cleanUrl.startsWith('/static/')) {
+      return `${serverBase}${cleanUrl}`;
+    }
+
+    if (cleanUrl.startsWith('static/')) {
+      return `${serverBase}/${cleanUrl}`;
+    }
+
+    return cleanUrl;
   }
 }

@@ -1,1 +1,48 @@
-.m-t-24 { margin-top: 24px; }
+.reportes-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.cu-badge {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.preset-chip {
+  border-radius: 20px !important;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  color: #334155;
+
+  &:hover {
+    background-color: #e2e8f0;
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    border-color: #4f46e5 !important;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+  }
+}
+
+.custom-reportes-tabs {
+  ::ng-deep .mat-mdc-tab-header {
+    border-bottom: 1px solid #f1f5f9;
+    background-color: #fcfcfd;
+  }
+
+  ::ng-deep .mat-mdc-tab-label-container {
+    padding: 0 16px;
+  }
+}

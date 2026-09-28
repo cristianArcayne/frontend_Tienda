@@ -39,7 +39,7 @@
             <td mat-cell *matCellDef="let element">
               <div class="d-flex align-items-center">
                 <img *ngIf="element.variante_producto_info.producto_imagen"
-                  [src]="element.variante_producto_info.producto_imagen" width="40" class="rounded m-r-8">
+                  [src]="getImagenUrl(element.variante_producto_info.producto_imagen)" width="40" class="rounded m-r-8">
                 <div>
                   <span class="f-w-600 d-block">{{ element.variante_producto_info.producto_nombre }}</span>
                   <small class="text-muted">SKU: {{ element.variante_producto_info.sku }}</small>
@@ -119,7 +119,7 @@
       <div *ngFor="let rec of productosRecomendados" class="recomendado-card">
         <a [routerLink]="['/inventario/productos', rec.id]" class="recomendado-link">
           <div class="recomendado-img">
-            <img *ngIf="rec.imagen_principal" [src]="rec.imagen_principal" [alt]="rec.nombre">
+            <img *ngIf="rec.imagen_principal" [src]="getImagenUrl(rec.imagen_principal)" [alt]="rec.nombre">
             <mat-icon *ngIf="!rec.imagen_principal">image</mat-icon>
           </div>
           <div class="recomendado-nombre">{{ rec.nombre }}</div>

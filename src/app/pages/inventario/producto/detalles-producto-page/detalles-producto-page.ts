@@ -81,8 +81,8 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   imagenSeleccionadaIndex = -1;
   tipoMultimedia: 'imagen' | 'video' | 'realidad_aumentada' = 'imagen';
 
-  private readonly columnasVarianteBase: string[] = ['sku', 'precio', 'cantidad'];
-  private readonly columnasVarianteAdmin: string[] = ['costo_ponderado', 'limite_cantidad'];
+  private readonly columnasVarianteBase: string[] = ['foto', 'nombre', 'color', 'precio', 'cantidad'];
+  private readonly columnasVarianteAdmin: string[] = ['costo_ponderado'];
   private readonly columnasVarianteAcciones: string[] = ['acciones'];
 
   private productoId: number;
@@ -214,15 +214,31 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     return [...this.columnasVarianteBase, ...this.columnasVarianteAdmin, ...this.columnasVarianteAcciones];
   }
 
+  formatImgUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    return this.configService.formatImageUrl(url);
+  }
+
   getImagenPrincipalUrl(): string | null {
-    if (!this.producto?.imagenes?.length) return null;
-    const principal = this.producto.imagenes.find(i => i.es_principal);
-    return principal ? principal.archivo_url : this.producto.imagenes[0].archivo_url;
+    let rawUrl: string | null | undefined = null;
+    if (this.producto?.imagenes?.length) {
+      const principal = this.producto.imagenes.find(i => i.es_principal);
+      rawUrl = principal ? principal.archivo_url : this.producto.imagenes[0].archivo_url;
+    } else if (this.producto) {
+      const prodAny = this.producto as any;
+      rawUrl = prodAny.imagen_principal || prodAny.imagen_url || prodAny.imagen_uri;
+    }
+    return rawUrl ? this.configService.formatImageUrl(rawUrl) : null;
   }
 
   getImagenSeleccionadaUrl(): string | null {
-    if (!this.producto?.imagenes?.length || this.imagenSeleccionadaIndex < 0) return null;
-    return this.producto.imagenes[this.imagenSeleccionadaIndex]?.archivo_url || null;
+    let rawUrl: string | null | undefined = null;
+    if (this.producto?.imagenes?.length && this.imagenSeleccionadaIndex >= 0) {
+      rawUrl = this.producto.imagenes[this.imagenSeleccionadaIndex]?.archivo_url;
+    } else {
+      return this.getImagenPrincipalUrl();
+    }
+    return rawUrl ? this.configService.formatImageUrl(rawUrl) : null;
   }
 
   get modelo3dDisponible(): Multimedia | null {
@@ -236,11 +252,28 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     this.imagenSeleccionadaIndex = index;
   }
 
-  abrirLightbox(index: number): void {
-    if (!this.producto?.imagenes?.length) return;
-    const total = this.producto.imagenes.length;
-    const safeIndex = Math.max(0, Math.min(index, total - 1));
-    this.seleccionarImagen(safeIndex);
+  abrirLightbox(index: number = 0): void {
+    let imagesToPass: Multimedia[] = [];
+    if (this.producto?.imagenes?.length) {
+      imagesToPass = this.producto.imagenes.map(img => ({
+        ...img,
+        archivo_url: this.configService.formatImageUrl(img.archivo_url)
+      }));
+    } else {
+      const mainUrl = this.getImagenPrincipalUrl();
+      if (mainUrl) {
+        imagesToPass = [{
+          id: 0,
+          archivo_url: mainUrl,
+          tipo: 'imagen',
+          es_principal: true,
+          orden: 0
+        } as Multimedia];
+      }
+    }
+
+    if (!imagesToPass.length) return;
+    const safeIndex = Math.max(0, Math.min(index, imagesToPass.length - 1));
 
     this.dialog.open(ImagenLightboxComponent, {
       width: '90vw',
@@ -248,9 +281,9 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
       maxWidth: '900px',
       autoFocus: false,
       data: {
-        images: this.producto.imagenes,
+        images: imagesToPass,
         startIndex: safeIndex,
-        title: this.producto.nombre
+        title: this.producto?.nombre
       }
     });
   }
@@ -470,6 +503,54 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
           this.cargarVariantes();
         }
       });
+  }
+
+  varianteParaSubirFoto: VarianteProducto | null = null;
+  subiendoFotoVariante = false;
+
+  abrirSubirFotoVariante(variante: VarianteProducto, fileInput: HTMLInputElement): void {
+    this.varianteParaSubirFoto = variante;
+    fileInput.value = '';
+    fileInput.click();
+  }
+
+  onFotoVarianteSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0 || !this.varianteParaSubirFoto) return;
+
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    this.subiendoFotoVariante = true;
+    const url = `${this.variantesUrl}${this.varianteParaSubirFoto.id}/imagen/`;
+    this.snackBar.open('Subiendo foto de la variante...', '', { duration: 2000 });
+
+    this.http.post<any>(url, formData).subscribe({
+      next: () => {
+        this.subiendoFotoVariante = false;
+        this.snackBar.open('¡Foto de la variante subida correctamente!', 'Cerrar', { duration: 3500 });
+        this.cargarVariantes();
+      },
+      error: (err) => {
+        this.subiendoFotoVariante = false;
+        console.error('Error al subir foto de variante:', err);
+        this.snackBar.open('Error al subir la foto de la variante', 'Cerrar', { duration: 4000 });
+      }
+    });
+  }
+
+  abrirEnVestidor(variante: VarianteProducto): void {
+    const imgUrl = variante.imagen_url || this.getImagenPrincipalUrl() || '';
+    const colorNombre = variante.color_nombre || (variante.color ? (variante.color as any).nombre : '');
+    const nombre = `${this.producto?.nombre || 'Prenda'} ${colorNombre ? '(' + colorNombre + ')' : ''}`;
+    this.router.navigate(['/extra/vestidor'], {
+      queryParams: {
+        ropa_id: this.productoId,
+        nombre: nombre,
+        imagen_uri: imgUrl
+      }
+    });
   }
   
   toggleFavorito(): void {

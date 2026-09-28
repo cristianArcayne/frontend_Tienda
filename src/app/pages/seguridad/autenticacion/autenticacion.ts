@@ -45,6 +45,7 @@ export class Autenticacion implements OnDestroy {
   form = new FormGroup({
     username: new FormControl('', [Validators.required, Validators.minLength(3)]),
     password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    rememberMe: new FormControl(false),
   });
 
   private destroy$ = new Subject<void>();
@@ -89,8 +90,9 @@ export class Autenticacion implements OnDestroy {
       username: this.form.value.username || '',
       password: this.form.value.password || '',
     };
+    const rememberMe = !!this.form.value.rememberMe;
 
-    this.authService.login(credentials)
+    this.authService.login(credentials, rememberMe)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {

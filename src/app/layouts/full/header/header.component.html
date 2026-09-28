@@ -18,6 +18,17 @@
     </mat-icon>
   </button>
 
+  <!-- Solicitudes de Devolución / Reembolsos Pendientes (Admin) -->
+  <button mat-icon-button routerLink="/ventas/devoluciones/gestion" matTooltip="Solicitudes de Reembolso Pendientes" class="m-r-8"
+          *ngIf="!esCliente()">
+    <mat-icon
+      [matBadge]="conteoDevolucionesPendientes()"
+      matBadgeColor="warn"
+      [matBadgeHidden]="conteoDevolucionesPendientes() === 0">
+      assignment_return
+    </mat-icon>
+  </button>
+
   <!-- Favoritos -->
   <button mat-icon-button routerLink="/favoritos" matTooltip="Mis Favoritos" class="m-r-8">
     <mat-icon [matBadge]="favoritosService.obtenerCantidadItems()" matBadgeColor="warn" [matBadgeHidden]="favoritosService.obtenerCantidadItems() === 0">favorite</mat-icon>
@@ -41,17 +52,17 @@
 
   <!-- Menú Desplegable -->
   <mat-menu #userMenu="matMenu">
-    <button mat-menu-item>
+    <button mat-menu-item (click)="abrirPerfil()">
       <mat-icon>person</mat-icon>
       <span>Mi Perfil</span>
     </button>
-    <button mat-menu-item>
-      <mat-icon>settings</mat-icon>
-      <span>Configuración</span>
+    <button mat-menu-item routerLink="/favoritos">
+      <mat-icon>favorite</mat-icon>
+      <span>Mis Favoritos</span>
     </button>
-    <button mat-menu-item *ngIf="!esCliente()" (click)="abrirConfigAtajos()">
-      <mat-icon>keyboard</mat-icon>
-      <span>Atajos de Teclado</span>
+    <button mat-menu-item routerLink="/configuracion">
+      <mat-icon>settings</mat-icon>
+      <span>Configuraciones</span>
     </button>
     <mat-divider></mat-divider>
     <button mat-menu-item (click)="cerrarSesion()" class="logout-button">

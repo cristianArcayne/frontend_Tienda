@@ -28,10 +28,11 @@ import { ConfigService } from 'src/app/services/config.service';
 import { AlertasRefreshService } from 'src/app/services/alertas-refresh.service';
 import { Pagination } from 'src/app/models/pagination.model';
 import { AlertaIa } from 'src/app/models/ia/alerta-ia.model';
-import { ConfigurarAtajosComponent } from 'src/app/components/configurar-atajos/configurar-atajos.component';
+import { PerfilUsuarioDialogComponent } from 'src/app/components/perfil-usuario-dialog/perfil-usuario-dialog.component';
 
-import { Subject } from 'rxjs';
+import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { DevolucionesService } from 'src/app/services/devoluciones.service';
 
 @Component({
   selector: 'app-header',
@@ -58,6 +59,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   currentUsername: string = '';
   conteoAlertasNoLeidas = signal(0);
+  conteoDevolucionesPendientes = signal(0);
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -67,18 +69,32 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private configService: ConfigService,
     private alertasRefreshService: AlertasRefreshService,
+    private devolucionesService: DevolucionesService,
     private router: Router,
     private dialog: MatDialog,
   ) {}
-
 
   ngOnInit(): void {
     this.obtenerUsuarioActual();
     if (!this.esCliente()) {
       this.cargarConteoAlertas();
+      this.cargarConteoDevoluciones();
       this.alertasRefreshService.alertasRefresh$
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => this.cargarConteoAlertas());
+      this.devolucionesService.devolucionesUpdated$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => this.cargarConteoDevoluciones());
+
+      // Verificación periódica cada 30 segundos
+      timer(30000, 30000)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => {
+          if (!this.esCliente()) {
+            this.cargarConteoAlertas();
+            this.cargarConteoDevoluciones();
+          }
+        });
     }
   }
 
@@ -89,6 +105,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (data: Pagination<AlertaIa>) => this.conteoAlertasNoLeidas.set(data.count),
         error: () => this.conteoAlertasNoLeidas.set(0)
+      });
+  }
+
+  private cargarConteoDevoluciones(): void {
+    this.devolucionesService.getConteoPendientes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (count) => this.conteoDevolucionesPendientes.set(count),
+        error: () => this.conteoDevolucionesPendientes.set(0)
       });
   }
 
@@ -114,18 +139,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Cerrar sesión y redirigir al login
-   */
   esCliente(): boolean {
     const roles = this.authService.getRoles();
     return !this.authService.isSuperuser() && roles.length === 1 && roles[0]?.toLowerCase() === 'cliente';
   }
 
-  abrirConfigAtajos(): void {
-    this.dialog.open(ConfigurarAtajosComponent, {
-      width: '650px',
-      disableClose: false,
+  abrirPerfil(): void {
+    this.dialog.open(PerfilUsuarioDialogComponent, {
+      width: '420px',
+      data: {
+        username: this.authService.getUsername() || this.currentUsername,
+        nombreCompleto: this.authService.getNombreCompleto() || this.currentUsername,
+        roles: this.authService.getRoles(),
+        usuarioId: this.authService.getUsuarioId(),
+        isSuperuser: this.authService.isSuperuser(),
+      }
     });
   }
 
@@ -134,7 +162,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          // El router.navigate ya ocurre en logout() del AuthService
           this.router.navigate(['/login']);
         },
         error: (error) => {

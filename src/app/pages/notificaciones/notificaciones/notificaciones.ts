@@ -77,8 +77,22 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   pushActiva = false;
 
   tiposDescuento = [
-    { value: 'porcentaje', label: 'Porcentaje' },
-    { value: 'monto_fijo', label: 'Monto fijo' },
+    { value: 'porcentaje', label: 'Porcentaje (%)' },
+    { value: 'monto_fijo', label: 'Monto Fijo (Bs.)' },
+  ];
+
+  descuentosPresets = [
+    { label: '🏷️ 10% OFF', valor: 10 },
+    { label: '🔥 20% OFF', valor: 20 },
+    { label: '⚡ 30% OFF', valor: 30 },
+    { label: '💥 50% LIQ.', valor: 50 },
+  ];
+
+  duracionesPresets = [
+    { label: 'Fin de Semana (3d)', dias: 3 },
+    { label: 'Esta Semana (7d)', dias: 7 },
+    { label: 'Quincena (15d)', dias: 15 },
+    { label: 'Todo el Mes (30d)', dias: 30 },
   ];
 
   promocionForm = this.fb.group({
@@ -86,9 +100,14 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     descripcion: ['', [Validators.required, Validators.maxLength(500)]],
     producto: ['', Validators.required],
     tipo_descuento: ['porcentaje', Validators.required],
-    valor_descuento: [0, [Validators.required, Validators.min(0)]],
+    valor_descuento: [20, [Validators.required, Validators.min(0)]],
     fecha_inicio: ['', Validators.required],
     fecha_fin: ['', Validators.required],
+  });
+
+  broadcastForm = this.fb.group({
+    titulo: ['🎉 ¡Gran Promoción en FashionStore!', [Validators.required, Validators.maxLength(120)]],
+    mensaje: ['Descuentos exclusivos en todas las prendas de temporada. ¡Aprovecha hoy!', [Validators.required, Validators.maxLength(500)]],
   });
 
   private destroy$ = new Subject<void>();
@@ -106,6 +125,83 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     this.loadProductos();
     this.loadPromociones();
     this.loadNotificaciones();
+    this.aplicarDuracionPreset(7);
+  }
+
+  aplicarDuracionPreset(dias: number): void {
+    const ahora = new Date();
+    const fin = new Date();
+    fin.setDate(ahora.getDate() + dias);
+    this.promocionForm.patchValue({
+      fecha_inicio: this.formatDateTimeLocal(ahora),
+      fecha_fin: this.formatDateTimeLocal(fin),
+    });
+  }
+
+  aplicarDescuentoPreset(porcentaje: number): void {
+    this.promocionForm.patchValue({
+      tipo_descuento: 'porcentaje',
+      valor_descuento: porcentaje,
+    });
+    this.actualizarSugerenciaTexto();
+  }
+
+  onProductSelected(): void {
+    this.actualizarSugerenciaTexto();
+  }
+
+  actualizarSugerenciaTexto(): void {
+    const prodId = this.promocionForm.get('producto')?.value;
+    const prod = this.productos.find((p) => String(p.id) === String(prodId));
+    const tipo = this.promocionForm.get('tipo_descuento')?.value;
+    const valor = this.promocionForm.get('valor_descuento')?.value || 0;
+
+    const nombrePrenda = prod ? prod.nombre : 'Prenda Seleccionada';
+    const txtDescuento = tipo === 'porcentaje' ? `${valor}% OFF` : `Bs. ${valor} OFF`;
+
+    const tituloSugerido = `🎉 ¡${txtDescuento} en ${nombrePrenda}!`;
+    const descSugerida = `Aprovecha un descuento exclusivo en ${nombrePrenda}. ¡Disponible en tienda y app móvil!`;
+
+    const currentTitle = this.promocionForm.get('titulo')?.value;
+    if (!currentTitle || currentTitle.startsWith('🎉')) {
+      this.promocionForm.patchValue({
+        titulo: tituloSugerido,
+        descripcion: descSugerida,
+      });
+    }
+  }
+
+  get selectedProduct(): Producto | undefined {
+    const id = this.promocionForm.get('producto')?.value;
+    return this.productos.find((p) => String(p.id) === String(id));
+  }
+
+  getPrecioOriginal(): number {
+    return this.selectedProduct?.precio_minimo || 120;
+  }
+
+  getPrecioFinalCalculado(): number {
+    const original = this.getPrecioOriginal();
+    const tipo = this.promocionForm.get('tipo_descuento')?.value;
+    const valor = Number(this.promocionForm.get('valor_descuento')?.value || 0);
+
+    if (tipo === 'porcentaje') {
+      const descuento = (original * valor) / 100;
+      return Math.max(0, Math.round((original - descuento) * 100) / 100);
+    } else {
+      return Math.max(0, Math.round((original - valor) * 100) / 100);
+    }
+  }
+
+  getAhorroCalculado(): number {
+    const original = this.getPrecioOriginal();
+    const finalPrice = this.getPrecioFinalCalculado();
+    return Math.max(0, Math.round((original - finalPrice) * 100) / 100);
+  }
+
+  private formatDateTimeLocal(d: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   ngOnDestroy(): void {
@@ -354,20 +450,47 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   probarNotificacion(): void {
     this.isPushBusy = true;
     this.notificacionesService.probar({
-      titulo: 'Prueba',
-      mensaje: 'Las notificaciones funcionan',
+      titulo: '🎉 Prueba de Notificación',
+      mensaje: '¡Las notificaciones emergentes entre Web y Móvil están activas y funcionando en tiempo real!',
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.isPushBusy = false;
-          this.snackBar.open('Notificacion de prueba enviada', 'OK', { duration: 3000 });
+          this.snackBar.open('¡Notificación de prueba enviada a la App Móvil y Web!', 'OK', { duration: 4000 });
           this.loadNotificaciones();
         },
         error: (error) => {
           console.error('Error al probar notificacion:', error);
           this.isPushBusy = false;
           this.snackBar.open('No se pudo enviar la notificacion de prueba', 'Cerrar', { duration: 5000 });
+        },
+      });
+  }
+
+  enviarAvisoInmediato(): void {
+    if (this.broadcastForm.invalid) {
+      this.broadcastForm.markAllAsTouched();
+      return;
+    }
+    const raw = this.broadcastForm.getRawValue();
+    this.isPushBusy = true;
+    this.notificacionesService.probar({
+      titulo: raw.titulo || 'Aviso FashionStore',
+      mensaje: raw.mensaje || '',
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isPushBusy = false;
+          this.snackBar.open('¡Aviso publicado y enviado al móvil exitosamente!', 'OK', { duration: 4000 });
+          this.loadNotificaciones();
+          this.loadPromociones();
+        },
+        error: (error) => {
+          console.error('Error al emitir aviso:', error);
+          this.isPushBusy = false;
+          this.snackBar.open('No se pudo enviar el aviso al móvil', 'Cerrar', { duration: 5000 });
         },
       });
   }

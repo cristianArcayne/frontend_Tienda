@@ -48,8 +48,7 @@
             *ngFor="let permiso of permisosFiltrados"
             [value]="permiso.id"
             [selected]="seleccionados.has(permiso.id)">
-            <strong>{{ permiso.nombre }}</strong>
-            <div style="font-size: 12px; color: #999;">{{ permiso.codename }}</div>
+            <span style="font-weight: 600; font-size: 13.5px; color: #1e293b;">{{ permiso.nombre }}</span>
           </mat-list-option>
         </mat-selection-list>
 

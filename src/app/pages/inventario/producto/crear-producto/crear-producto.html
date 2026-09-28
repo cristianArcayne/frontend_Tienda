@@ -1,12 +1,62 @@
-<h2 mat-dialog-title>
-  {{ isEditMode ? 'Editar Producto' : 'Crear Nuevo Producto' }}
+<h2 mat-dialog-title style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1e293b;">
+  <mat-icon color="primary">{{ isEditMode ? 'edit' : 'checkroom' }}</mat-icon>
+  {{ isEditMode ? 'Editar Prenda' : 'Registrar Nueva Prenda' }}
 </h2>
 
 <mat-dialog-content>
-  <form [formGroup]="form" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+  <form [formGroup]="form" style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px;">
+
+    <!-- Zona de Carga de Imagen desde Dispositivo -->
+    <div class="image-upload-wrapper">
+      <label class="section-label">
+        <mat-icon>add_photo_alternate</mat-icon>
+        Fotografía / Imagen de la Prenda
+      </label>
+
+      <input
+        #fileInput
+        type="file"
+        (change)="onFileSelected($event)"
+        accept="image/jpeg,image/png,image/webp,image/jpg"
+        style="display: none;"
+      />
+
+      <!-- Previsualización si hay imagen seleccionada -->
+      <div *ngIf="previewUrl" class="image-preview-card">
+        <div class="preview-img-container">
+          <img [src]="previewUrl" alt="Previsualización" class="preview-img" />
+        </div>
+        <div class="preview-info">
+          <span class="preview-name" [title]="previewFileName">{{ previewFileName || 'Imagen seleccionada' }}</span>
+          <span *ngIf="previewFileSize" class="preview-size">{{ previewFileSize }}</span>
+          <div class="preview-actions">
+            <button mat-stroked-button type="button" (click)="fileInput.click()" class="btn-change">
+              <mat-icon>cached</mat-icon> Cambiar
+            </button>
+            <button mat-button color="warn" type="button" (click)="quitarImagen(fileInput)" class="btn-remove">
+              <mat-icon>delete_outline</mat-icon> Quitar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zona de arrastre/clic para subir si no hay imagen -->
+      <div *ngIf="!previewUrl" class="upload-dropzone" (click)="fileInput.click()">
+        <div class="dropzone-content">
+          <div class="icon-circle">
+            <mat-icon>cloud_upload</mat-icon>
+          </div>
+          <span class="dropzone-title">Subir imagen desde tu dispositivo</span>
+          <span class="dropzone-subtitle">Haz clic para buscar (JPG, PNG, WebP • Máx 15MB)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campo Nombre -->
     <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Nombre</mat-label>
-      <input matInput formControlName="nombre" placeholder="Ej: Sofa 3 plazas, Mesa de comedor" />
+      <mat-label>Nombre de la Prenda</mat-label>
+      <input matInput formControlName="nombre" placeholder="Ej: Vestido Gala Haute Couture, Blazer Oversize" />
+      <mat-icon matPrefix style="margin-right: 8px; color: #64748b;">style</mat-icon>
       <mat-error *ngIf="form.get('nombre')?.hasError('required')">
         El nombre es requerido
       </mat-error>
@@ -15,31 +65,42 @@
       </mat-error>
     </mat-form-field>
 
+    <!-- Campo Descripción -->
     <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Descripción</mat-label>
-      <textarea matInput formControlName="descripcion" placeholder="Descripción del producto" rows="3"></textarea>
+      <mat-label>Descripción / Detalles</mat-label>
+      <textarea matInput formControlName="descripcion" placeholder="Detalles de corte, tela, confección o temporada" rows="2"></textarea>
+      <mat-icon matPrefix style="margin-right: 8px; color: #64748b;">notes</mat-icon>
     </mat-form-field>
 
-    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-      <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
+    <!-- Precio Base, Categoría y Marca -->
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 140px;">
+        <mat-label>Precio Base ($)</mat-label>
+        <input matInput type="number" formControlName="precio" min="0" placeholder="150.00" />
+        <mat-icon matPrefix style="margin-right: 8px; color: #64748b;">attach_money</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 160px;">
         <mat-label>Categoría</mat-label>
         <mat-select formControlName="categoria_id">
           <mat-option *ngFor="let cat of categorias" [value]="cat.id">
             {{ cat.nombre }}
           </mat-option>
         </mat-select>
+        <mat-icon matPrefix style="margin-right: 8px; color: #64748b;">category</mat-icon>
         <mat-error *ngIf="form.get('categoria_id')?.hasError('required')">
           La categoría es requerida
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
-        <mat-label>Marca</mat-label>
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 160px;">
+        <mat-label>Marca / Colección</mat-label>
         <mat-select formControlName="marca_id">
           <mat-option *ngFor="let mar of marcas" [value]="mar.id">
             {{ mar.nombre }}
           </mat-option>
         </mat-select>
+        <mat-icon matPrefix style="margin-right: 8px; color: #64748b;">loyalty</mat-icon>
         <mat-error *ngIf="form.get('marca_id')?.hasError('required')">
           La marca es requerida
         </mat-error>
@@ -47,19 +108,20 @@
     </div>
 
     <mat-checkbox formControlName="activo" color="primary">
-      Producto activo
+      Prenda activa en catálogo visible
     </mat-checkbox>
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancelar()">Cancelar</button>
-  <button mat-raised-button color="primary" (click)="guardar()" [disabled]="isSaving || !form.valid">
-    <span *ngIf="!isSaving">
-      {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+<mat-dialog-actions align="end" style="padding: 16px 24px;">
+  <button mat-button (click)="cancelar()" [disabled]="isSaving">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="guardar()" [disabled]="isSaving || !form.valid" style="min-width: 140px; height: 42px;">
+    <span *ngIf="!isSaving" style="display: flex; align-items: center; gap: 6px;">
+      <mat-icon>{{ isEditMode ? 'save' : 'add_circle' }}</mat-icon>
+      {{ isEditMode ? 'Actualizar' : 'Guardar Prenda' }}
     </span>
     <span *ngIf="isSaving" style="display: flex; align-items: center; gap: 8px;">
-      <mat-spinner diameter="16"></mat-spinner>
+      <mat-spinner diameter="18"></mat-spinner>
       {{ isEditMode ? 'Actualizando...' : 'Guardando...' }}
     </span>
   </button>

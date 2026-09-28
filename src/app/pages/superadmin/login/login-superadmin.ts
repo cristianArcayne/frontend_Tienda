@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -24,6 +25,7 @@ import { AuthService } from '../../../services/auth.service';
     MatIconModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatCheckboxModule,
   ],
   templateUrl: './login-superadmin.html',
 })
@@ -34,6 +36,7 @@ export class LoginSuperadmin {
   form = new FormGroup({
     username: new FormControl('', [Validators.required]),
     password: new FormControl('', [Validators.required]),
+    rememberMe: new FormControl(false),
   });
 
   constructor(
@@ -49,11 +52,12 @@ export class LoginSuperadmin {
     }
 
     this.isLoading = true;
+    const rememberMe = !!this.form.value.rememberMe;
     this.authService
       .login({
         username: this.form.value.username!,
         password: this.form.value.password!,
-      })
+      }, rememberMe)
       .subscribe({
         next: (res) => {
           this.isLoading = false;
