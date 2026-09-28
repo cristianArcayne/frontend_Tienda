@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { DevolucionesService, Devolucion } from '../../../services/devoluciones.service';
@@ -29,9 +29,13 @@ import { DevolucionesService, Devolucion } from '../../../services/devoluciones.
     MatFormFieldModule,
     MatInputModule
   ],
-  templateUrl: './gestion-devoluciones.component.html'
+  templateUrl: './gestion-devoluciones.component.html',
+  styleUrls: ['./gestion-devoluciones.component.scss']
 })
 export class GestionDevolucionesComponent implements OnInit {
+  @ViewChild('responderDialog') responderDialog!: TemplateRef<any>;
+  private dialogRef?: MatDialogRef<any>;
+
   displayedColumns: string[] = [
     'venta_id',
     'cliente',
@@ -51,7 +55,8 @@ export class GestionDevolucionesComponent implements OnInit {
   constructor(
     private devolucionesService: DevolucionesService,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {}
 
   formatearFecha(fechaStr?: string): string {
@@ -101,10 +106,26 @@ export class GestionDevolucionesComponent implements OnInit {
 
   abrirResponderModal(dev: Devolucion): void {
     this.selectedDevolucion = dev;
-    this.observacionAdmin = '';
+    this.observacionAdmin = dev.observacion_admin || dev.respuesta_admin || '';
+    if (this.responderDialog) {
+      this.dialogRef = this.dialog.open(this.responderDialog, {
+        width: '760px',
+        maxWidth: '95vw',
+        autoFocus: false,
+        panelClass: 'modal-devolucion-panel'
+      });
+      this.dialogRef.afterClosed().subscribe(() => {
+        this.selectedDevolucion = null;
+        this.observacionAdmin = '';
+      });
+    }
   }
 
   cerrarModal(): void {
+    if (this.dialogRef) {
+      this.dialogRef.close();
+    }
+    this.dialog.closeAll();
     this.selectedDevolucion = null;
     this.observacionAdmin = '';
   }
@@ -134,18 +155,18 @@ export class GestionDevolucionesComponent implements OnInit {
   }
 
   getEstadoClass(estado: string): string {
-    switch ((estado || '').toUpperCase()) {
+    const st = (estado || '').toUpperCase();
+    switch (st) {
       case 'APROBADA':
-        return 'badge bg-success text-white px-2 py-1';
+        return 'status-pill status-aprobada';
       case 'RECHAZADA':
-        return 'badge bg-danger text-white px-2 py-1';
+        return 'status-pill status-rechazada';
       case 'PENDIENTE':
       case 'SOLICITADA':
       case 'EN_REVISION':
-        return 'badge bg-warning text-dark px-2 py-1';
+        return 'status-pill status-solicitada';
       default:
-        return 'badge bg-secondary text-white px-2 py-1';
+        return 'status-pill';
     }
   }
 }
-

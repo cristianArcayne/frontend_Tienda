@@ -1,12 +1,12 @@
-<div class="container-fluid p-4">
+<div class="container-fluid p-4 devoluciones-container">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h3 class="fw-bold mb-1">
-        <i class="solars-icon solar--restart-square-line-duotone me-2 text-primary"></i>
+      <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <mat-icon color="primary" style="font-size: 28px; width: 28px; height: 28px;">replay</mat-icon>
         Gestión de Devoluciones y Reembolsos (24 horas)
       </h3>
       <p class="text-muted mb-0">
-        Administración de solicitudes de reembolso online dentro de las 24 horas posteriores a la compra.
+        Administración y resolución de solicitudes de reembolso online dentro de las 24 horas posteriores a la compra.
       </p>
     </div>
     <button mat-flat-button color="primary" (click)="cargarDevoluciones()">
@@ -14,24 +14,26 @@
     </button>
   </div>
 
-  <mat-card class="shadow-sm border-0">
+  <mat-card class="shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
     <mat-card-content class="p-0">
       <div *ngIf="isLoading" class="d-flex justify-content-center p-5">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
 
       <div *ngIf="!isLoading && devoluciones.length === 0" class="text-center p-5">
-        <mat-icon class="text-muted" style="font-size: 48px; width: 48px; height: 48px;">assignment_return</mat-icon>
+        <mat-icon class="text-muted" style="font-size: 56px; width: 56px; height: 56px;">assignment_return</mat-icon>
         <h5 class="mt-3 text-muted">No hay solicitudes de devolución registradas</h5>
       </div>
 
       <div class="table-responsive" *ngIf="!isLoading && devoluciones.length > 0">
         <table mat-table [dataSource]="devoluciones" class="w-100 align-middle">
-          <!-- Venta ID -->
+          <!-- Venta Original -->
           <ng-container matColumnDef="venta_id">
             <th mat-header-cell *matHeaderCellDef class="fw-bold">Venta Original</th>
             <td mat-cell *matCellDef="let d">
-              <span class="badge bg-light text-dark border">Venta #{{ d.venta_id }}</span>
+              <span class="badge bg-light text-dark border px-2 py-1" style="font-weight: 600;">
+                Pedido #{{ d.venta_id }}
+              </span>
             </td>
           </ng-container>
 
@@ -39,9 +41,10 @@
           <ng-container matColumnDef="cliente">
             <th mat-header-cell *matHeaderCellDef class="fw-bold">Cliente</th>
             <td mat-cell *matCellDef="let d">
-              <strong>{{ d.cliente_nombre || 'Cliente CI ' + d.cliente_id }}</strong>
+              <div class="fw-semibold text-dark">{{ d.cliente_nombre || 'Cliente CI ' + d.cliente_id }}</div>
               <div class="small text-muted" *ngIf="d.cuenta_bancaria_qr">
-                <i class="bi bi-qr-code"></i> Cuenta / QR: {{ d.cuenta_bancaria_qr }}
+                <mat-icon style="font-size: 13px; width: 13px; height: 13px; vertical-align: middle;">qr_code</mat-icon>
+                QR / Cuenta: {{ d.cuenta_bancaria_qr }}
               </div>
             </td>
           </ng-container>
@@ -60,17 +63,17 @@
           <!-- Motivo -->
           <ng-container matColumnDef="motivo">
             <th mat-header-cell *matHeaderCellDef class="fw-bold">Motivo</th>
-            <td mat-cell *matCellDef="let d" style="max-width: 320px;">
+            <td mat-cell *matCellDef="let d" style="max-width: 300px;">
               <div
                 class="p-2 rounded border bg-light d-flex align-items-center justify-content-between"
-                style="cursor: pointer; transition: all 0.2s ease;"
+                style="cursor: pointer; transition: all 0.2s ease; background-color: #f8fafc;"
                 (click)="abrirResponderModal(d)"
-                title="Haga clic para ver el motivo completo y aceptar o rechazar"
+                title="Haga clic para ver el motivo completo y responder la solicitud"
               >
-                <span class="text-truncate text-secondary small me-2" style="max-width: 210px;">
+                <span class="text-truncate text-secondary small me-2" style="max-width: 200px;">
                   {{ d.motivo_completo || d.motivo }}
                 </span>
-                <span class="badge bg-primary text-white d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 11px; padding: 4px 8px;">
+                <span class="badge bg-primary text-white d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;">
                   <mat-icon style="font-size: 13px; width: 13px; height: 13px;">visibility</mat-icon>
                   Ver
                 </span>
@@ -82,7 +85,9 @@
           <ng-container matColumnDef="monto_reembolso">
             <th mat-header-cell *matHeaderCellDef class="fw-bold">Monto Reembolso</th>
             <td mat-cell *matCellDef="let d">
-              <span class="fw-bold text-success">Bs. {{ d.monto_reembolso | number:'1.2-2' }}</span>
+              <span class="fw-bold text-success" style="font-size: 0.95rem;">
+                Bs. {{ d.monto_reembolso | number:'1.2-2' }}
+              </span>
             </td>
           </ng-container>
 
@@ -91,7 +96,7 @@
             <th mat-header-cell *matHeaderCellDef class="fw-bold">Estado</th>
             <td mat-cell *matCellDef="let d">
               <span [class]="getEstadoClass(d.estado)">{{ d.estado }}</span>
-              <div *ngIf="d.observacion_admin" class="small text-muted mt-1">
+              <div *ngIf="d.observacion_admin" class="small text-muted mt-1" style="max-width: 180px;">
                 <em>"{{ d.observacion_admin }}"</em>
               </div>
             </td>
@@ -105,19 +110,17 @@
                 *ngIf="esEstadoPendiente(d.estado)"
                 mat-stroked-button
                 color="primary"
-                size="small"
                 (click)="abrirResponderModal(d)"
               >
-                <mat-icon size="16">edit</mat-icon> Responder
+                <mat-icon style="font-size: 16px; width: 16px; height: 16px;">edit</mat-icon> Responder
               </button>
               <button
                 *ngIf="!esEstadoPendiente(d.estado)"
                 mat-button
                 color="accent"
-                size="small"
                 (click)="abrirResponderModal(d)"
               >
-                <mat-icon size="16">visibility</mat-icon> Ver Detalle
+                <mat-icon style="font-size: 16px; width: 16px; height: 16px;">visibility</mat-icon> Ver Detalle
               </button>
             </td>
           </ng-container>
@@ -130,114 +133,138 @@
   </mat-card>
 </div>
 
-<!-- Modal Responder Solicitud -->
-<div
-  class="modal fade show d-block"
-  tabindex="-1"
-  style="background-color: rgba(0,0,0,0.5);"
-  *ngIf="selectedDevolucion"
->
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content shadow-lg border-0">
-      <div class="modal-header bg-light">
-        <h5 class="modal-title fw-bold">
-          <i class="bi bi-arrow-repeat text-primary me-2"></i>
-          Solicitud de Reembolso - Pedido #{{ selectedDevolucion.venta_id }}
-        </h5>
-        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+<!-- Modal Elegante Angular Material Dialog -->
+<ng-template #responderDialog>
+  <div class="modal-header-custom">
+    <div class="header-title-box">
+      <div class="icon-wrapper">
+        <mat-icon>assignment_return</mat-icon>
       </div>
-      <div class="modal-body p-4">
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <p class="mb-1"><strong>Venta Original:</strong> <span class="badge bg-light text-dark border">Pedido #{{ selectedDevolucion.venta_id }}</span></p>
-            <p class="mb-1"><strong>Cliente:</strong> {{ selectedDevolucion.cliente_nombre || 'CI ' + selectedDevolucion.cliente_id }}</p>
-            <p class="mb-1 text-muted small" *ngIf="selectedDevolucion.fecha_solicitud">
-              <mat-icon style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;">calendar_today</mat-icon>
-              Fecha Solicitud: <strong>{{ formatearFecha(selectedDevolucion.fecha_solicitud) }}</strong>
-            </p>
-          </div>
-          <div class="col-md-6 text-md-end">
-            <p class="mb-1"><strong>Monto a Reembolsar:</strong> <span class="text-success fs-5 fw-bold">Bs. {{ selectedDevolucion.monto_reembolso | number:'1.2-2' }}</span></p>
-            <p class="mb-1"><strong>Estado Actual:</strong> <span [class]="getEstadoClass(selectedDevolucion.estado)">{{ selectedDevolucion.estado }}</span></p>
-          </div>
-        </div>
-
-        <!-- Tarjeta de Motivo Completo -->
-        <div class="card border border-primary-subtle bg-light mb-3">
-          <div class="card-body p-3">
-            <div class="d-flex align-items-center text-primary fw-bold mb-2">
-              <mat-icon class="me-1" style="font-size: 18px; width: 18px; height: 18px;">chat</mat-icon>
-              Motivo detallado indicado por el cliente:
-            </div>
-            <div class="p-3 bg-white rounded border fs-6 text-dark" style="white-space: pre-wrap; line-height: 1.5;">
-              {{ selectedDevolucion.motivo_completo || selectedDevolucion.motivo }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Cuenta / QR de destino -->
-        <div *ngIf="selectedDevolucion.cuenta_bancaria_qr" class="alert alert-info py-2 mb-3">
-          <i class="bi bi-wallet2 me-1"></i>
-          <strong>Datos de Abono / Cuenta / QR:</strong> {{ selectedDevolucion.cuenta_bancaria_qr }}
-        </div>
-
-        <!-- Tabla de Prendas de la Venta -->
-        <div *ngIf="selectedDevolucion.items && selectedDevolucion.items.length > 0" class="mb-3">
-          <label class="form-label fw-bold mb-1">Prendas Involucradas en la Venta:</label>
-          <div class="table-responsive border rounded">
-            <table class="table table-sm table-striped mb-0" style="font-size: 13px;">
-              <thead class="table-light">
-                <tr>
-                  <th>Prenda</th>
-                  <th>Talla</th>
-                  <th>Color</th>
-                  <th class="text-center">Cant.</th>
-                  <th class="text-end">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let it of selectedDevolucion.items">
-                  <td><strong>{{ it.prenda_nombre }}</strong></td>
-                  <td><span class="badge bg-light text-dark border">{{ it.talla }}</span></td>
-                  <td>{{ it.color }}</td>
-                  <td class="text-center">{{ it.cantidad }}</td>
-                  <td class="text-end fw-bold text-success">Bs. {{ it.subtotal | number:'1.2-2' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Observación del Administrador -->
-        <div class="mb-2">
-          <label class="form-label fw-bold">Observación / Nota del Administrador (Resolución):</label>
-          <textarea
-            class="form-control"
-            rows="3"
-            [(ngModel)]="observacionAdmin"
-            [disabled]="!esEstadoPendiente(selectedDevolucion.estado)"
-            placeholder="Ej. Reembolso transferido mediante QR / Aprobado según políticas de compra."
-          ></textarea>
-        </div>
-      </div>
-      <!-- Footer con Aceptar / Rechazar -->
-      <div class="modal-footer d-flex justify-content-between" *ngIf="esEstadoPendiente(selectedDevolucion.estado)">
-        <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center" (click)="responder('RECHAZADA')">
-          <mat-icon class="me-1" style="font-size: 18px; width: 18px; height: 18px;">close</mat-icon>
-          Rechazar Devolución
-        </button>
-        <div>
-          <button type="button" class="btn btn-secondary me-2" (click)="cerrarModal()">Cancelar</button>
-          <button type="button" class="btn btn-success d-inline-flex align-items-center" (click)="responder('APROBADA')">
-            <mat-icon class="me-1" style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
-            Aceptar y Aprobar Reembolso
-          </button>
-        </div>
-      </div>
-      <div class="modal-footer d-flex justify-content-end" *ngIf="!esEstadoPendiente(selectedDevolucion.estado)">
-        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      <div>
+        <h4>Solicitud de Reembolso</h4>
+        <p class="subtitle" *ngIf="selectedDevolucion">
+          Pedido #{{ selectedDevolucion.venta_id }} &bull; Cliente: {{ selectedDevolucion.cliente_nombre || 'CI ' + selectedDevolucion.cliente_id }}
+        </p>
       </div>
     </div>
+    <button mat-icon-button class="btn-close-custom" (click)="cerrarModal()" title="Cerrar ventana">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
-</div>
 
+  <div class="modal-body-custom" *ngIf="selectedDevolucion">
+    <!-- Grid de Resumen -->
+    <div class="info-summary-grid">
+      <div class="info-card">
+        <div class="info-row">
+          <span class="label">Venta Original:</span>
+          <span class="badge-order">Pedido #{{ selectedDevolucion.venta_id }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Cliente:</span>
+          <span class="value">{{ selectedDevolucion.cliente_nombre || 'CI ' + selectedDevolucion.cliente_id }}</span>
+        </div>
+        <div class="info-row" *ngIf="selectedDevolucion.fecha_solicitud">
+          <span class="label">Fecha Solicitud:</span>
+          <span class="value">{{ formatearFecha(selectedDevolucion.fecha_solicitud) }}</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-row">
+          <span class="label">Monto a Reembolsar:</span>
+          <span class="refund-amount">Bs. {{ selectedDevolucion.monto_reembolso | number:'1.2-2' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Estado Actual:</span>
+          <span [class]="getEstadoClass(selectedDevolucion.estado)">{{ selectedDevolucion.estado }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta de Motivo Detallado -->
+    <div class="motivo-box">
+      <div class="motivo-header">
+        <mat-icon>chat_bubble_outline</mat-icon>
+        <span>Motivo detallado indicado por el cliente:</span>
+      </div>
+      <div class="motivo-content">
+        {{ selectedDevolucion.motivo_completo || selectedDevolucion.motivo }}
+      </div>
+    </div>
+
+    <!-- Datos de Abono / Cuenta / QR -->
+    <div *ngIf="selectedDevolucion.cuenta_bancaria_qr" class="qr-info-box">
+      <mat-icon>account_balance_wallet</mat-icon>
+      <div>
+        <div class="qr-label">Datos de Abono / Cuenta / QR Destino:</div>
+        <div class="qr-value">{{ selectedDevolucion.cuenta_bancaria_qr }}</div>
+      </div>
+    </div>
+
+    <!-- Tabla de Prendas de la Venta -->
+    <div *ngIf="selectedDevolucion.items && selectedDevolucion.items.length > 0" class="items-table-wrapper">
+      <div class="section-label">
+        <mat-icon>checkroom</mat-icon>
+        <span>Prendas Involucradas en la Venta:</span>
+      </div>
+      <table class="custom-items-table">
+        <thead>
+          <tr>
+            <th>Prenda</th>
+            <th>Talla</th>
+            <th>Color</th>
+            <th style="text-align: center;">Cant.</th>
+            <th style="text-align: right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let it of selectedDevolucion.items">
+            <td><strong>{{ it.prenda_nombre }}</strong></td>
+            <td><span class="badge-talla">{{ it.talla }}</span></td>
+            <td><span class="badge-color">{{ it.color }}</span></td>
+            <td style="text-align: center; font-weight: 600;">{{ it.cantidad }}</td>
+            <td style="text-align: right;" class="item-subtotal">Bs. {{ it.subtotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Observación / Resolución del Administrador -->
+    <div class="admin-resolution-wrapper">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Observación / Nota del Administrador (Resolución)</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          [(ngModel)]="observacionAdmin"
+          [disabled]="!esEstadoPendiente(selectedDevolucion.estado)"
+          placeholder="Ej. Reembolso transferido mediante QR / Aprobado según políticas de compra."
+        ></textarea>
+        <mat-hint *ngIf="esEstadoPendiente(selectedDevolucion.estado)">
+          Esta nota quedará guardada como resolución oficial y será visible para el cliente.
+        </mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Footer con Aceptar / Rechazar -->
+  <div class="modal-actions-custom" *ngIf="selectedDevolucion">
+    <ng-container *ngIf="esEstadoPendiente(selectedDevolucion.estado)">
+      <button mat-stroked-button class="btn-reject" (click)="responder('RECHAZADA')">
+        <mat-icon>close</mat-icon> Rechazar Devolución
+      </button>
+      <div class="d-flex align-items-center gap-2">
+        <button mat-button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+        <button mat-flat-button class="btn-approve" (click)="responder('APROBADA')">
+          <mat-icon>check_circle</mat-icon> Aceptar y Aprobar Reembolso
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="!esEstadoPendiente(selectedDevolucion.estado)">
+      <div></div>
+      <button mat-flat-button color="primary" (click)="cerrarModal()">Cerrar</button>
+    </ng-container>
+  </div>
+</ng-template>
