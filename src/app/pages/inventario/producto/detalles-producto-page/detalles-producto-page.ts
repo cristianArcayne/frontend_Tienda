@@ -81,8 +81,8 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   imagenSeleccionadaIndex = -1;
   tipoMultimedia: 'imagen' | 'video' | 'realidad_aumentada' = 'imagen';
 
-  private readonly columnasVarianteBase: string[] = ['sku', 'precio', 'cantidad'];
-  private readonly columnasVarianteAdmin: string[] = ['costo_ponderado', 'limite_cantidad'];
+  private readonly columnasVarianteBase: string[] = ['nombre', 'color', 'precio', 'cantidad'];
+  private readonly columnasVarianteAdmin: string[] = ['costo_ponderado'];
   private readonly columnasVarianteAcciones: string[] = ['acciones'];
 
   private productoId: number;

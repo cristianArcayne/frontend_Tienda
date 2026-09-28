@@ -36,6 +36,20 @@
       <strong>Producto:</strong>
       <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.producto_nombre }}</p>
     </div>
+
+    <div *ngIf="data.variante.color_nombre || data.variante.color?.nombre" style="display: flex; gap: 24px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 150px;">
+        <strong>Color:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+          <span [style.background-color]="data.variante.color_hex || data.variante.color?.codigo_hex || '#4f46e5'" style="width: 16px; height: 16px; border-radius: 50%; display: inline-block; border: 1px solid #ccc;"></span>
+          {{ data.variante.color_nombre || data.variante.color?.nombre }}
+        </p>
+      </div>
+      <div *ngIf="data.variante.talla_nombre || data.variante.talla?.nombre" style="flex: 1; min-width: 150px;">
+        <strong>Talla:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.talla_nombre || data.variante.talla?.nombre }}</p>
+      </div>
+    </div>
   </div>
 </mat-dialog-content>
 

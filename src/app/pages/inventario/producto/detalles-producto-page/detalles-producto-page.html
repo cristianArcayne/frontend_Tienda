@@ -243,9 +243,30 @@
 
         <div *ngIf="!isLoadingVariantes && permisosService.puedeVerVariante() && variantes.length > 0" class="table-responsive">
           <table mat-table [dataSource]="variantes" class="w-full">
-            <ng-container matColumnDef="sku">
-              <th mat-header-cell *matHeaderCellDef>SKU</th>
-              <td mat-cell *matCellDef="let element">{{ element.sku }}</td>
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef class="fw-bold">Nombre</th>
+              <td mat-cell *matCellDef="let element">
+                <div class="fw-semibold text-dark">{{ element.producto_nombre || (producto ? producto.nombre : '') }}</div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="color">
+              <th mat-header-cell *matHeaderCellDef class="fw-bold">Variante en Color</th>
+              <td mat-cell *matCellDef="let element">
+                <div class="d-flex align-items-center gap-2">
+                  <span
+                    class="rounded-circle border shadow-xs d-inline-block flex-shrink-0"
+                    [style.background-color]="element.color_hex || element.color?.codigo_hex || '#4f46e5'"
+                    style="width: 16px; height: 16px; border: 1px solid rgba(0,0,0,0.15);"
+                  ></span>
+                  <span class="fw-medium text-dark">
+                    {{ element.color_nombre || element.color?.nombre || 'Color Estándar' }}
+                  </span>
+                  <span *ngIf="element.talla_nombre || element.talla?.nombre" class="badge bg-light text-secondary border ms-1" style="font-size: 11px; padding: 2px 6px;">
+                    {{ element.talla_nombre || element.talla?.nombre }}
+                  </span>
+                </div>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="precio">
@@ -261,11 +282,6 @@
             <ng-container matColumnDef="costo_ponderado">
               <th mat-header-cell *matHeaderCellDef>Costo Prom.</th>
               <td mat-cell *matCellDef="let element">{{ element.costo_ponderado | currency:'USD' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="limite_cantidad">
-              <th mat-header-cell *matHeaderCellDef>Límite</th>
-              <td mat-cell *matCellDef="let element">{{ element.limite_cantidad }}</td>
             </ng-container>
 
             <ng-container matColumnDef="acciones">
