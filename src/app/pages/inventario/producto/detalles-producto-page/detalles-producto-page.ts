@@ -81,7 +81,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   imagenSeleccionadaIndex = -1;
   tipoMultimedia: 'imagen' | 'video' | 'realidad_aumentada' = 'imagen';
 
-  private readonly columnasVarianteBase: string[] = ['nombre', 'color', 'precio', 'cantidad'];
+  private readonly columnasVarianteBase: string[] = ['foto', 'nombre', 'color', 'precio', 'cantidad'];
   private readonly columnasVarianteAdmin: string[] = ['costo_ponderado'];
   private readonly columnasVarianteAcciones: string[] = ['acciones'];
 
@@ -503,6 +503,54 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
           this.cargarVariantes();
         }
       });
+  }
+
+  varianteParaSubirFoto: VarianteProducto | null = null;
+  subiendoFotoVariante = false;
+
+  abrirSubirFotoVariante(variante: VarianteProducto, fileInput: HTMLInputElement): void {
+    this.varianteParaSubirFoto = variante;
+    fileInput.value = '';
+    fileInput.click();
+  }
+
+  onFotoVarianteSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0 || !this.varianteParaSubirFoto) return;
+
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    this.subiendoFotoVariante = true;
+    const url = `${this.variantesUrl}${this.varianteParaSubirFoto.id}/imagen/`;
+    this.snackBar.open('Subiendo foto de la variante...', '', { duration: 2000 });
+
+    this.http.post<any>(url, formData).subscribe({
+      next: () => {
+        this.subiendoFotoVariante = false;
+        this.snackBar.open('¡Foto de la variante subida correctamente!', 'Cerrar', { duration: 3500 });
+        this.cargarVariantes();
+      },
+      error: (err) => {
+        this.subiendoFotoVariante = false;
+        console.error('Error al subir foto de variante:', err);
+        this.snackBar.open('Error al subir la foto de la variante', 'Cerrar', { duration: 4000 });
+      }
+    });
+  }
+
+  abrirEnVestidor(variante: VarianteProducto): void {
+    const imgUrl = variante.imagen_url || this.getImagenPrincipalUrl() || '';
+    const colorNombre = variante.color_nombre || (variante.color ? (variante.color as any).nombre : '');
+    const nombre = `${this.producto?.nombre || 'Prenda'} ${colorNombre ? '(' + colorNombre + ')' : ''}`;
+    this.router.navigate(['/extra/vestidor'], {
+      queryParams: {
+        ropa_id: this.productoId,
+        nombre: nombre,
+        imagen_uri: imgUrl
+      }
+    });
   }
   
   toggleFavorito(): void {

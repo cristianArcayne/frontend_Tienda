@@ -243,6 +243,29 @@
 
         <div *ngIf="!isLoadingVariantes && permisosService.puedeVerVariante() && variantes.length > 0" class="table-responsive">
           <table mat-table [dataSource]="variantes" class="w-full">
+            <!-- Foto de Variante -->
+            <ng-container matColumnDef="foto">
+              <th mat-header-cell *matHeaderCellDef class="fw-bold" style="width: 65px;">Foto</th>
+              <td mat-cell *matCellDef="let element">
+                <div style="position: relative; width: 44px; height: 44px;">
+                  <img *ngIf="element.imagen_url"
+                       [src]="formatImgUrl(element.imagen_url)"
+                       [alt]="element.producto_nombre"
+                       class="rounded border shadow-xs"
+                       style="width: 44px; height: 44px; object-fit: cover; cursor: pointer;"
+                       (click)="verVariante(element)"
+                       matTooltip="Ver foto ampliada de la variante">
+                  <div *ngIf="!element.imagen_url"
+                       class="rounded border bg-light d-flex align-items-center justify-content-center"
+                       style="width: 44px; height: 44px; cursor: pointer;"
+                       (click)="abrirSubirFotoVariante(element, fileInputVariante)"
+                       matTooltip="Subir foto para esta variante">
+                    <mat-icon style="font-size: 22px; width: 22px; height: 22px; color: #94a3b8;">add_photo_alternate</mat-icon>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
             <ng-container matColumnDef="nombre">
               <th mat-header-cell *matHeaderCellDef class="fw-bold">Nombre</th>
               <td mat-cell *matCellDef="let element">
@@ -290,7 +313,13 @@
                 <button mat-icon-button color="primary" matTooltip="Agregar al carrito" (click)="agregarAlCarrito(element)" [disabled]="element.cantidad <= 0">
                   <mat-icon>add_shopping_cart</mat-icon>
                 </button>
-                <button mat-icon-button matTooltip="Ver" (click)="verVariante(element)" color="accent">
+                <button *ngIf="!isCliente" mat-icon-button color="primary" matTooltip="Subir / Cambiar foto de esta variante" (click)="abrirSubirFotoVariante(element, fileInputVariante)">
+                  <mat-icon>add_a_photo</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" matTooltip="Probar esta variante en el Vestidor Virtual" (click)="abrirEnVestidor(element)">
+                  <mat-icon>auto_awesome</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Ver detalle y foto" (click)="verVariante(element)" color="accent">
                   <mat-icon>visibility</mat-icon>
                 </button>
                 <button *ngIf="permisosService.puedeEditarVariante()" mat-icon-button matTooltip="Editar" (click)="editarVariante(element)" color="primary">
@@ -305,6 +334,8 @@
             <tr mat-header-row *matHeaderRowDef="displayedColumnsVariante; sticky: true"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumnsVariante;"></tr>
           </table>
+
+          <input type="file" #fileInputVariante (change)="onFotoVarianteSeleccionada($event)" accept="image/*" style="display: none;">
         </div>
 
         <div *ngIf="!isLoadingVariantes && permisosService.puedeVerVariante() && variantes.length === 0" class="empty-state">

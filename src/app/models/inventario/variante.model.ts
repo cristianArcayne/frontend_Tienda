@@ -14,6 +14,7 @@ export interface VarianteProducto {
   color_hex?: string;
   color?: { id: number; nombre: string; codigo_hex?: string };
   talla?: { id: number; nombre: string };
+  imagen_url?: string;
 }
 
 export interface CrearVariante {
@@ -25,4 +26,5 @@ export interface CrearVariante {
   producto_id: number;
   talla_id?: number;
   color_id?: number;
+  imagen_url?: string;
 }

@@ -4,6 +4,7 @@ import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { VarianteProducto } from '../../../../models/inventario/variante.model';
+import { ConfigService } from '../../../../services/config.service';
 
 @Component({
   selector: 'app-detalles-variante',
@@ -20,8 +21,13 @@ import { VarianteProducto } from '../../../../models/inventario/variante.model';
 export class DetallesVarianteComponent {
   constructor(
     public dialogRef: MatDialogRef<DetallesVarianteComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { variante: VarianteProducto; ocultarCostos?: boolean }
+    @Inject(MAT_DIALOG_DATA) public data: { variante: VarianteProducto; ocultarCostos?: boolean },
+    private configService: ConfigService
   ) {}
+
+  formatImgUrl(url: string | null | undefined): string {
+    return this.configService.formatImageUrl(url);
+  }
 
   cerrar(): void {
     this.dialogRef.close();

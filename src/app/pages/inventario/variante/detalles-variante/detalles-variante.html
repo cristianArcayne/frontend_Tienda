@@ -1,19 +1,40 @@
 <h2 mat-dialog-title>
-  <mat-icon style="vertical-align: middle; margin-right: 8px;">info</mat-icon>
-  Detalles de Variante
+  <mat-icon style="vertical-align: middle; margin-right: 8px;">checkroom</mat-icon>
+  Detalles de la Variante
 </h2>
 
 <mat-dialog-content>
+  <!-- Foto de la Variante -->
+  <div *ngIf="data.variante.imagen_url" style="text-align: center; margin: 8px 0 16px 0;">
+    <img [src]="formatImgUrl(data.variante.imagen_url)"
+         [alt]="data.variante.producto_nombre"
+         style="max-height: 240px; max-width: 100%; border-radius: 12px; object-fit: contain; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+  </div>
+
   <div style="display: grid; gap: 16px; margin-top: 12px;">
     <div>
-      <strong>SKU:</strong>
-      <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.sku }}</p>
+      <strong>Prenda / Producto:</strong>
+      <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 600;">{{ data.variante.producto_nombre }}</p>
+    </div>
+
+    <div *ngIf="data.variante.color_nombre || data.variante.color?.nombre" style="display: flex; gap: 24px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 150px;">
+        <strong>Variante en Color:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+          <span [style.background-color]="data.variante.color_hex || data.variante.color?.codigo_hex || '#4f46e5'" style="width: 18px; height: 18px; border-radius: 50%; display: inline-block; border: 1px solid #ccc;"></span>
+          {{ data.variante.color_nombre || data.variante.color?.nombre }}
+        </p>
+      </div>
+      <div *ngIf="data.variante.talla_nombre || data.variante.talla?.nombre" style="flex: 1; min-width: 150px;">
+        <strong>Talla:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 600;">{{ data.variante.talla_nombre || data.variante.talla?.nombre }}</p>
+      </div>
     </div>
 
     <div style="display: flex; gap: 24px; flex-wrap: wrap;">
       <div style="flex: 1; min-width: 150px;">
         <strong>Precio:</strong>
-        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.precio | currency:'USD' }}</p>
+        <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700; color: #10b981;">{{ data.variante.precio | currency:'USD' }}</p>
       </div>
       <div *ngIf="!data.ocultarCostos" style="flex: 1; min-width: 150px;">
         <strong>Costo Ponderado:</strong>
@@ -23,31 +44,12 @@
 
     <div style="display: flex; gap: 24px; flex-wrap: wrap;">
       <div style="flex: 1; min-width: 150px;">
-        <strong>Cantidad:</strong>
-        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.cantidad }}</p>
+        <strong>Stock Físico Disponible:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 600;">{{ data.variante.cantidad }} unidades</p>
       </div>
-      <div *ngIf="!data.ocultarCostos" style="flex: 1; min-width: 150px;">
-        <strong>Límite de Cantidad:</strong>
-        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.limite_cantidad }}</p>
-      </div>
-    </div>
-
-    <div>
-      <strong>Producto:</strong>
-      <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.producto_nombre }}</p>
-    </div>
-
-    <div *ngIf="data.variante.color_nombre || data.variante.color?.nombre" style="display: flex; gap: 24px; flex-wrap: wrap;">
       <div style="flex: 1; min-width: 150px;">
-        <strong>Color:</strong>
-        <p style="margin: 4px 0 0 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-          <span [style.background-color]="data.variante.color_hex || data.variante.color?.codigo_hex || '#4f46e5'" style="width: 16px; height: 16px; border-radius: 50%; display: inline-block; border: 1px solid #ccc;"></span>
-          {{ data.variante.color_nombre || data.variante.color?.nombre }}
-        </p>
-      </div>
-      <div *ngIf="data.variante.talla_nombre || data.variante.talla?.nombre" style="flex: 1; min-width: 150px;">
-        <strong>Talla:</strong>
-        <p style="margin: 4px 0 0 0; font-size: 16px;">{{ data.variante.talla_nombre || data.variante.talla?.nombre }}</p>
+        <strong>Identificador / SKU:</strong>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">{{ data.variante.sku }}</p>
       </div>
     </div>
   </div>
