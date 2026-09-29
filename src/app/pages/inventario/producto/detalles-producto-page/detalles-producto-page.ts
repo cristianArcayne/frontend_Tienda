@@ -604,10 +604,18 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     this.resenasService.listarPorProducto(this.productoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.resenas = data.results;
-          const username = this.authService.getCurrentAuthState().username;
-          this.miResena = this.resenas.find(r => r.usuario_username === username) || null;
+        next: (data: any) => {
+          this.resenas = Array.isArray(data) ? data : (data?.results || []);
+          const authState = this.authService.getCurrentAuthState();
+          const username = authState?.username?.toLowerCase();
+          const userId = (authState as any)?.userId?.toString();
+          this.miResena = this.resenas.find(r => {
+            const rUser = r.usuario_username?.toLowerCase();
+            const rCi = r.cliente_ci?.toString().toLowerCase();
+            const rCliNom = r.cliente_nombre?.toLowerCase();
+            return (username && (rUser === username || rCi === username || rCliNom?.includes(username))) ||
+                   (userId && (r.usuario?.toString() === userId || rCi === userId));
+          }) || null;
           this.isLoadingResenas = false;
         },
         error: () => { this.isLoadingResenas = false; }
@@ -710,8 +718,8 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   }
 
   get calificacionPromedio(): number | null {
-    if (this.resenas.length === 0) return null;
-    const sum = this.resenas.reduce((acc, r) => acc + r.calificacion, 0);
+    if (!this.resenas || this.resenas.length === 0) return null;
+    const sum = this.resenas.reduce((acc, r) => acc + (r.calificacion || r.puntuacion_estrellas || 0), 0);
     return Math.round((sum / this.resenas.length) * 10) / 10;
   }
 }

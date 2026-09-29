@@ -1,38 +1,133 @@
-<mat-card *ngIf="resultados">
-  <mat-card-header>
-    <mat-card-title>Resultados de la Consulta</mat-card-title>
-    <mat-card-subtitle *ngIf="resultados.paginacion">
-      <strong>{{ resultados.paginacion.total_registros }}</strong> registros encontrados
-      <span *ngIf="queryInterpretada?.periodo"> &bull; <strong>Período:</strong> {{ queryInterpretada?.periodo }}</span>
-      <span *ngIf="queryInterpretada?.intencion"> &bull; {{ queryInterpretada?.intencion }}</span>
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div *ngIf="!resultados.datos || !resultados.datos.length" class="empty-state p-24 text-center" style="padding: 32px 16px; text-align: center;">
-      <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #f59e0b; margin-bottom: 8px;">info_outline</mat-icon>
-      <h3 style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 8px 0 4px;">Sin registros en la base de datos</h3>
-      <p class="empty-text" style="color: #64748b; max-width: 600px; margin: 0 auto; line-height: 1.5; font-size: 14px;">
-        {{ queryInterpretada?.mensaje || 'No se encontraron datos en la base de datos de FashionStore para la fecha o los criterios solicitados.' }}
-      </p>
+<div *ngIf="resultados" class="reporte-resultados-wrapper">
+  <!-- KPIs Resumen Cards -->
+  <div *ngIf="kpis" class="kpis-grid mb-4">
+    <!-- Total Registros -->
+    <div class="kpi-card card-registros">
+      <div class="kpi-icon-box bg-primary-subtle text-primary">
+        <mat-icon>format_list_numbered</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Registros</span>
+        <h3 class="kpi-value">{{ kpis.totalRegistros }}</h3>
+        <span class="kpi-hint">Ítems encontrados</span>
+      </div>
     </div>
 
-    <div *ngIf="resultados.datos && resultados.datos.length" class="table-responsive">
-      <table mat-table [dataSource]="resultados.datos" class="w-full">
-        <ng-container *ngFor="let col of columnas" [matColumnDef]="col">
-          <th mat-header-cell *matHeaderCellDef>{{ col }}</th>
-          <td mat-cell *matCellDef="let element">{{ element[col] }}</td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-      </table>
+    <!-- Total Monto / Ventas (si aplica) -->
+    <div *ngIf="kpis.tieneMonto" class="kpi-card card-monto">
+      <div class="kpi-icon-box bg-success-subtle text-success">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Volumen Facturado</span>
+        <h3 class="kpi-value">{{ kpis.totalMonto | currency:'BOB':'symbol':'1.2-2' }}</h3>
+        <span class="kpi-hint">Suma acumulada</span>
+      </div>
     </div>
 
-    <mat-paginator
-      *ngIf="resultados.paginacion"
-      [length]="resultados.paginacion.total_registros"
-      [pageSize]="resultados.paginacion.total_paginas > 1 ? 50 : resultados.datos.length"
-      [pageIndex]="resultados.paginacion.pagina_actual - 1"
-      hidePageSize="true">
-    </mat-paginator>
-  </mat-card-content>
-</mat-card>
+    <!-- Promedio Monto (si aplica) -->
+    <div *ngIf="kpis.tieneMonto" class="kpi-card card-promedio">
+      <div class="kpi-icon-box bg-info-subtle text-info">
+        <mat-icon>analytics</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Promedio por Registro</span>
+        <h3 class="kpi-value">{{ kpis.promedioMonto | currency:'BOB':'symbol':'1.2-2' }}</h3>
+        <span class="kpi-hint">Ticket promedio</span>
+      </div>
+    </div>
+
+    <!-- Total Unidades / Cantidad (si aplica) -->
+    <div *ngIf="kpis.tieneCantidad" class="kpi-card card-cantidad">
+      <div class="kpi-icon-box bg-warning-subtle text-warning">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Unidades</span>
+        <h3 class="kpi-value">{{ kpis.totalCantidad | number:'1.0-0' }}</h3>
+        <span class="kpi-hint">Unidades físicas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjeta Principal de Resultados -->
+  <mat-card class="cardWithShadow resultados-card">
+    <mat-card-header class="p-24 pb-0">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-12 w-full">
+        <div>
+          <mat-card-title class="m-0 fs-5 font-weight-bold d-flex align-items-center gap-8">
+            <mat-icon class="text-primary fs-5">table_chart</mat-icon>
+            Resultados de la Consulta
+          </mat-card-title>
+          <mat-card-subtitle *ngIf="resultados.paginacion" class="mt-1 fs-2 text-muted">
+            Mostrando <strong>{{ datosFiltrados.length }}</strong> de <strong>{{ resultados.paginacion.total_registros }}</strong> registros
+            <span *ngIf="queryInterpretada?.periodo"> &bull; <strong>Período:</strong> {{ queryInterpretada?.periodo }}</span>
+            <span *ngIf="queryInterpretada?.intencion"> &bull; {{ queryInterpretada?.intencion }}</span>
+          </mat-card-subtitle>
+        </div>
+
+        <!-- Buscador rápido en tabla -->
+        <div *ngIf="resultados.datos && resultados.datos.length > 0" class="search-box">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Filtrar registros..."
+            [value]="filtroBusqueda"
+            (input)="onFilter($event)">
+        </div>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content class="p-24">
+      <!-- Empty State -->
+      <div *ngIf="!resultados.datos || !resultados.datos.length" class="empty-state p-32 text-center">
+        <mat-icon style="font-size: 56px; height: 56px; width: 56px; color: #94a3b8; margin-bottom: 12px;">receipt_long</mat-icon>
+        <h3 style="font-size: 17px; font-weight: 700; color: #1e293b; margin: 8px 0 4px;">Sin registros para los criterios seleccionados</h3>
+        <p style="color: #64748b; max-width: 500px; margin: 0 auto; line-height: 1.5; font-size: 13px;">
+          {{ queryInterpretada?.mensaje || 'No se encontraron registros en la base de datos de FashionStore para este reporte. Intenta con otro período o consulta.' }}
+        </p>
+      </div>
+
+      <!-- Tabla Estilizada -->
+      <div *ngIf="datosFiltrados && datosFiltrados.length > 0" class="table-responsive rounded border mt-2">
+        <table mat-table [dataSource]="datosPaginados" class="w-full tabla-reportes">
+          <ng-container *ngFor="let col of columnas" [matColumnDef]="col">
+            <th mat-header-cell *matHeaderCellDef class="th-col" [class.text-end]="isCurrencyCol(col)">
+              {{ col.replace('_', ' ') | uppercase }}
+            </th>
+            <td mat-cell *matCellDef="let element" class="td-col" [class.text-end]="isCurrencyCol(col)">
+              <!-- Montos monetarios -->
+              <span *ngIf="isCurrencyCol(col)" class="font-weight-semibold text-dark">
+                {{ element[col] | currency:'BOB':'symbol':'1.2-2' }}
+              </span>
+
+              <!-- Badges de estado -->
+              <span *ngIf="isBadgeCol(col)" class="badge-status" [ngClass]="getBadgeClass(element[col])">
+                {{ element[col] }}
+              </span>
+
+              <!-- Textos normales -->
+              <span *ngIf="!isCurrencyCol(col) && !isBadgeCol(col)">
+                {{ element[col] !== null && element[col] !== undefined ? element[col] : '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas; sticky: true" class="bg-light"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas;" class="table-row-hover"></tr>
+        </table>
+      </div>
+
+      <!-- Paginador -->
+      <mat-paginator
+        *ngIf="datosFiltrados.length > pageSize"
+        [length]="datosFiltrados.length"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        (page)="onPageChange($event)"
+        [pageSizeOptions]="[10, 15, 25, 50]">
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>
