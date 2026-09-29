@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -79,6 +79,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   previewFileName: string | null = null;
   previewIsAr = false;
   imagenSeleccionadaIndex = -1;
+  overrideImageUrl: string | null = null;
   tipoMultimedia: 'imagen' | 'video' | 'realidad_aumentada' = 'imagen';
 
   private readonly columnasVarianteBase: string[] = ['foto', 'nombre', 'color', 'precio', 'cantidad'];
@@ -121,6 +122,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
         this.resenas = [];
         this.miResena = null;
         this.imagenSeleccionadaIndex = -1;
+  overrideImageUrl: string | null = null;
         this.cargarProducto();
         this.cargarVariantes();
         this.cargarResenas();
@@ -232,6 +234,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   }
 
   getImagenSeleccionadaUrl(): string | null {
+    if (this.overrideImageUrl) return this.configService.formatImageUrl(this.overrideImageUrl);
     let rawUrl: string | null | undefined = null;
     if (this.producto?.imagenes?.length && this.imagenSeleccionadaIndex >= 0) {
       rawUrl = this.producto.imagenes[this.imagenSeleccionadaIndex]?.archivo_url;
@@ -250,6 +253,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     if (!this.producto?.imagenes?.length) return;
     if (index < 0 || index >= this.producto.imagenes.length) return;
     this.imagenSeleccionadaIndex = index;
+    this.overrideImageUrl = null;
   }
 
   abrirLightbox(index: number = 0): void {
@@ -307,17 +311,20 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   siguienteImagen(): void {
     if (!this.producto?.imagenes?.length) return;
     this.imagenSeleccionadaIndex = (this.imagenSeleccionadaIndex + 1) % this.producto.imagenes.length;
+    this.overrideImageUrl = null;
   }
 
   anteriorImagen(): void {
     if (!this.producto?.imagenes?.length) return;
     const total = this.producto.imagenes.length;
     this.imagenSeleccionadaIndex = (this.imagenSeleccionadaIndex - 1 + total) % total;
+    this.overrideImageUrl = null;
   }
 
   private establecerImagenSeleccionada(): void {
     if (!this.producto?.imagenes?.length) {
       this.imagenSeleccionadaIndex = -1;
+  overrideImageUrl: string | null = null;
       return;
     }
 
@@ -464,6 +471,12 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  seleccionarVarianteVisual(variante: VarianteProducto): void {
+    if (variante.imagen_url) {
+      this.overrideImageUrl = variante.imagen_url;
+    }
+  }
+
   verVariante(variante: VarianteProducto): void {
     this.dialog.open(DetallesVarianteComponent, {
       width: '500px',
@@ -529,7 +542,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     this.http.post<any>(url, formData).subscribe({
       next: () => {
         this.subiendoFotoVariante = false;
-        this.snackBar.open('¡Foto de la variante subida correctamente!', 'Cerrar', { duration: 3500 });
+        this.snackBar.open('Â¡Foto de la variante subida correctamente!', 'Cerrar', { duration: 3500 });
         this.cargarVariantes();
       },
       error: (err) => {
@@ -571,7 +584,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   agregarAlCarrito(variante: VarianteProducto): void {
     this.cartService.agregarProducto(variante.id, 1).subscribe({
       next: () => {
-        this.snackBar.open('¡Producto añadido al carrito!', 'Ver Carrito', {
+        this.snackBar.open('Â¡Producto aÃ±adido al carrito!', 'Ver Carrito', {
           duration: 3000,
           horizontalPosition: 'right',
           verticalPosition: 'top'
@@ -580,7 +593,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
         });
       },
       error: (err) => {
-        const msg = err.error?.error || 'No se pudo añadir al carrito';
+        const msg = err.error?.error || 'No se pudo aÃ±adir al carrito';
         this.snackBar.open(msg, 'Cerrar', { duration: 3000 });
       }
     });
@@ -611,7 +624,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
 
   enviarResena(): void {
     if (this.nuevaCalificacion < 1) {
-      this.snackBar.open('Selecciona una calificación', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('Selecciona una calificaciÃ³n', 'Cerrar', { duration: 3000 });
       return;
     }
     this.guardandoResena = true;
@@ -624,12 +637,12 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
         this.guardandoResena = false;
         this.nuevaCalificacion = 0;
         this.nuevoComentario = '';
-        this.snackBar.open('Reseña enviada', 'OK', { duration: 3000 });
+        this.snackBar.open('ReseÃ±a enviada', 'OK', { duration: 3000 });
         this.cargarResenas();
       },
       error: (err) => {
         this.guardandoResena = false;
-        this.snackBar.open(err.error?.detail || 'Error al enviar reseña', 'Cerrar', { duration: 4000 });
+        this.snackBar.open(err.error?.detail || 'Error al enviar reseÃ±a', 'Cerrar', { duration: 4000 });
       }
     });
   }
@@ -655,12 +668,12 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
       next: () => {
         this.guardandoResena = false;
         this.editandoResena = false;
-        this.snackBar.open('Reseña actualizada', 'OK', { duration: 3000 });
+        this.snackBar.open('ReseÃ±a actualizada', 'OK', { duration: 3000 });
         this.cargarResenas();
       },
       error: (err) => {
         this.guardandoResena = false;
-        this.snackBar.open(err.error?.detail || 'Error al actualizar reseña', 'Cerrar', { duration: 4000 });
+        this.snackBar.open(err.error?.detail || 'Error al actualizar reseÃ±a', 'Cerrar', { duration: 4000 });
       }
     });
   }
@@ -672,12 +685,12 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$)).subscribe({
         next: () => {
           this.guardandoResena = false;
-          this.snackBar.open('Reseña eliminada', 'OK', { duration: 3000 });
+          this.snackBar.open('ReseÃ±a eliminada', 'OK', { duration: 3000 });
           this.cargarResenas();
         },
         error: () => {
           this.guardandoResena = false;
-          this.snackBar.open('Error al eliminar reseña', 'Cerrar', { duration: 3000 });
+          this.snackBar.open('Error al eliminar reseÃ±a', 'Cerrar', { duration: 3000 });
         }
       });
   }
@@ -702,4 +715,5 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     return Math.round((sum / this.resenas.length) * 10) / 10;
   }
 }
+
 

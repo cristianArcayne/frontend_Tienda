@@ -332,7 +332,7 @@
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumnsVariante; sticky: true"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumnsVariante;"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnsVariante;" (click)="seleccionarVarianteVisual(row)" style="cursor: pointer;"></tr>
           </table>
 
           <input type="file" #fileInputVariante (change)="onFotoVarianteSeleccionada($event)" accept="image/*" style="display: none;">
