@@ -122,7 +122,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
         this.resenas = [];
         this.miResena = null;
         this.imagenSeleccionadaIndex = -1;
-  overrideImageUrl: string | null = null;
+      this.overrideImageUrl = null;
         this.cargarProducto();
         this.cargarVariantes();
         this.cargarResenas();
@@ -324,7 +324,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
   private establecerImagenSeleccionada(): void {
     if (!this.producto?.imagenes?.length) {
       this.imagenSeleccionadaIndex = -1;
-  overrideImageUrl: string | null = null;
+      this.overrideImageUrl = null;
       return;
     }
 
