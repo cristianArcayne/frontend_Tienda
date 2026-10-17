@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -24,7 +25,8 @@ import { AuthService } from '../../../../services/auth.service';
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatSelectModule
   ],
   templateUrl: './crear-variante.html',
   styleUrl: './crear-variante.scss'
@@ -33,6 +35,7 @@ export class CrearVarianteComponent implements OnInit, OnDestroy {
   form: FormGroup;
   isSaving = false;
   isEditMode = false;
+  colores: any[] = [];
   private isClienteRole = false;
 
   private destroy$ = new Subject<void>();
@@ -50,7 +53,9 @@ export class CrearVarianteComponent implements OnInit, OnDestroy {
     this.isClienteRole = this.calcularEsCliente();
 
     this.form = this.formBuilder.group({
-      sku: [data?.variante?.sku || '', [Validators.required, Validators.maxLength(100)]],
+      sku: [data?.variante?.sku || ''],
+      nombre_variante: [data?.variante?.sku || '', [Validators.required, Validators.maxLength(100)]],
+      color_id: [data?.variante?.color_id || '', [Validators.required]],
       precio: [data?.variante?.precio || '', [Validators.required, Validators.min(0)]],
       cantidad: [data?.variante?.cantidad || 0, [Validators.required, Validators.min(0)]],
       costo_ponderado: [data?.variante?.costo_ponderado || '', [Validators.required, Validators.min(0)]],
@@ -62,7 +67,15 @@ export class CrearVarianteComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.apiService.getAll<any>(this.configService.getApiUrl('colores'))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data: any) => {
+          this.colores = Array.isArray(data) ? data : data?.results || [];
+        }
+      });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -114,7 +127,8 @@ export class CrearVarianteComponent implements OnInit, OnDestroy {
     const url = this.configService.getApiUrl('variantes');
 
     const varianteData = {
-      sku: formValues.sku,
+      sku: formValues.nombre_variante,
+      color_id: Number(formValues.color_id),
       precio: Number(formValues.precio),
       cantidad: Number(formValues.cantidad),
       costo_ponderado: Number(formValues.costo_ponderado),
@@ -159,3 +173,6 @@ export class CrearVarianteComponent implements OnInit, OnDestroy {
     this.dialogRef.close();
   }
 }
+
+
+

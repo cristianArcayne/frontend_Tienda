@@ -74,11 +74,11 @@ export class RecomendadorIaComponent implements OnInit {
   mensajeInput: string = '';
   enviandoMensaje: boolean = false;
   sugerenciasChat: string[] = [
-    '¿Qué outfit me recomiendas para una fiesta elegante?',
-    '¿Qué prendas deportivas tienen disponibles?',
-    '¿Tienen promociones o descuentos activos hoy?',
-    '¿Cuánto cuesta la polera pixel?',
-    'Sugiéreme un conjunto casual de fin de semana'
+    '�Qu� outfit me recomiendas para una fiesta elegante?',
+    '�Qu� prendas deportivas tienen disponibles?',
+    '�Tienen promociones o descuentos activos hoy?',
+    '�Cu�nto cuesta la polera pixel?',
+    'Sugi�reme un conjunto casual de fin de semana'
   ];
 
   constructor(
@@ -110,7 +110,7 @@ export class RecomendadorIaComponent implements OnInit {
     this.mensajesChat = [
       {
         emisor: 'ia',
-        texto: '¡Hola! Soy tu Personal Shopper con Inteligencia Artificial de FashionStore. ¿Para qué ocasión estás buscando vestir hoy o qué prenda te gustaría combinar?',
+        texto: '�Hola! Soy tu Personal Shopper con Inteligencia Artificial de FashionStore. �Para qu� ocasi�n est�s buscando vestir hoy o qu� prenda te gustar�a combinar?',
         hora: this.getHoraActual()
       }
     ];
@@ -135,7 +135,7 @@ export class RecomendadorIaComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoOutfit = false;
-        const msg = err.error?.detail || 'No se pudo generar la recomendación en este momento.';
+        const msg = err.error?.detail || 'No se pudo generar la recomendaci�n en este momento.';
         this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
       }
     });
@@ -160,7 +160,7 @@ export class RecomendadorIaComponent implements OnInit {
       next: (res) => {
         this.agregandoAlCarrito = false;
         this.cartService.cargarCarrito();
-        this.snackBar.open(`¡Outfit añadido! ${res.items_agregados || ropaIds.length} prendas agregadas al carrito con 10% de descuento combo`, 'Ir al Carrito', { duration: 5000 });
+        this.snackBar.open(`�Outfit a�adido! ${res.items_agregados || ropaIds.length} prendas agregadas al carrito con 10% de descuento combo`, 'Ir al Carrito', { duration: 5000 });
       },
       error: () => {
         this.agregandoAlCarrito = false;
@@ -181,7 +181,7 @@ export class RecomendadorIaComponent implements OnInit {
     this.http.post(url, payload).subscribe({
       next: () => {
         this.feedbackEnviado = true;
-        this.snackBar.open(aceptada ? '¡Gracias! Usaremos esto para sugerirte mejores estilos.' : 'Entendido, refinaremos tus preferencias.', 'OK', { duration: 3000 });
+        this.snackBar.open(aceptada ? '�Gracias! Usaremos esto para sugerirte mejores estilos.' : 'Entendido, refinaremos tus preferencias.', 'OK', { duration: 3000 });
       },
       error: () => {}
     });
@@ -210,7 +210,7 @@ export class RecomendadorIaComponent implements OnInit {
         this.enviandoMensaje = false;
         this.mensajesChat.push({
           emisor: 'ia',
-          texto: res.respuesta_texto || 'Aquí tienes mi recomendación de estilo:',
+          texto: res.respuesta_texto || 'Aqu� tienes mi recomendaci�n de estilo:',
           hora: this.getHoraActual(),
           outfit: res.outfit_recomendado || undefined
         });
@@ -219,7 +219,7 @@ export class RecomendadorIaComponent implements OnInit {
         this.enviandoMensaje = false;
         this.mensajesChat.push({
           emisor: 'ia',
-          texto: 'Disculpa, tuve un problema al procesar tu consulta. Por favor inténtalo nuevamente.',
+          texto: 'Disculpa, tuve un problema al procesar tu consulta. Por favor int�ntalo nuevamente.',
           hora: this.getHoraActual()
         });
       }
@@ -238,7 +238,6 @@ export class RecomendadorIaComponent implements OnInit {
 
   getImagenUrl(uri?: string): string {
     if (!uri) return 'assets/images/products/placeholder.jpg';
-    if (uri.startsWith('http')) return uri;
-    return `${this.configService.getApiBaseUrl()}/${uri.replace(/^\//, '')}`;
+    return this.configService.formatImageUrl(uri);
   }
 }
