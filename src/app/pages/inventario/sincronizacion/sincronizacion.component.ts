@@ -461,3 +461,4 @@ export class SincronizacionComponent implements OnInit, OnDestroy {
     this.cola = this.syncService.getCola();
   }
 }
+
