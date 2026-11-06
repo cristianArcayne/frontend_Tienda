@@ -1,27 +1,272 @@
 <mat-card class="bitacora-card">
+  <!-- Cabecera Principal con Identificador CU-17 -->
   <mat-card-header>
     <div class="page-header">
       <div class="header-titles">
-        <div class="header-icon-box">
-          <mat-icon class="header-icon">history_toggle_off</mat-icon>
+        <div class="header-icon-box" [ngClass]="{'vault-active': isDevUnlocked}">
+          <mat-icon class="header-icon">{{ isDevUnlocked ? 'security' : 'shield' }}</mat-icon>
         </div>
         <div>
-          <mat-card-title class="title-text">Bitácora de Auditoría</mat-card-title>
-          <mat-card-subtitle class="subtitle-text">Registro de eventos y trazabilidad del sistema</mat-card-subtitle>
+          <div class="cu-tag">[CU-17] Auditoría Forense y Bitácora Confidencial</div>
+          <mat-card-title class="title-text">
+            {{ isDevUnlocked ? 'Bitácora Confidencial del Sistema (Llave Dev Activa)' : 'Bitácora de Auditoría Operacional' }}
+          </mat-card-title>
+          <mat-card-subtitle class="subtitle-text">
+            {{ isDevUnlocked ? 'Trazabilidad forense completa, integridad inmutable con firma SHA-256 y descarga forense .log' : 'Registro de eventos estándar y control de operaciones de la plataforma' }}
+          </mat-card-subtitle>
         </div>
       </div>
-      <button mat-flat-button color="primary" class="btn-refresh" (click)="actualizar()">
-        <mat-icon class="m-r-4">refresh</mat-icon>
-        Actualizar
-      </button>
+      <div class="header-actions">
+        <button mat-flat-button color="primary" class="btn-refresh" (click)="actualizar()" [disabled]="isLoading || isDevLoading">
+          <mat-icon class="m-r-4">refresh</mat-icon>
+          Actualizar
+        </button>
+      </div>
     </div>
   </mat-card-header>
 
   <mat-card-content class="p-t-16">
-    <!-- Barra de Filtros -->
+
+    <!-- SECCIÓN 1: ACCESO Y BÓVEDA CON LLAVE DE DESARROLLADOR (CU-17) -->
+    <div class="dev-vault-container" [ngClass]="{'vault-unlocked': isDevUnlocked}">
+      
+      <!-- Si NO está desbloqueado: Formulario de Autenticación con Llave Dev -->
+      <div *ngIf="!isDevUnlocked" class="vault-locked-box">
+        <div class="vault-info">
+          <div class="vault-badge-pill">
+            <mat-icon class="badge-icon">lock</mat-icon>
+            ACCESO CONFIDENCIAL RESTRINGIDO
+          </div>
+          <h3 class="vault-title">Bóveda Criptográfica Forense (Llave de Desarrollador)</h3>
+          <p class="vault-desc">
+            Para inspeccionar la bitácora forense de bajo nivel, direcciones IP privadas, tablas internas y obtener el archivo <code>.log</code> con firma <strong>SHA-256</strong>, debe autenticarse con la Llave Oficial de Desarrollador.
+          </p>
+        </div>
+
+        <div class="vault-auth-bar">
+          <mat-form-field appearance="outline" class="vault-key-field">
+            <mat-label>Llave del Desarrollador</mat-label>
+            <input
+              matInput
+              [type]="hideDevKey ? 'password' : 'text'"
+              [(ngModel)]="developerKeyInput"
+              placeholder="Ingrese DEV-KEY-..."
+              (keyup.enter)="desbloquearConLlaveDev()"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hideDevKey = !hideDevKey"
+              [attr.aria-label]="'Ocultar llave'"
+              [matTooltip]="hideDevKey ? 'Mostrar Llave' : 'Ocultar Llave'"
+            >
+              <mat-icon>{{ hideDevKey ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <div class="vault-buttons">
+            <button
+              mat-flat-button
+              class="btn-unlock-dev"
+              (click)="desbloquearConLlaveDev()"
+              [disabled]="isDevLoading"
+            >
+              <mat-icon *ngIf="!isDevLoading" class="m-r-6">key</mat-icon>
+              <mat-spinner *ngIf="isDevLoading" diameter="18" class="m-r-6"></mat-spinner>
+              <span>{{ isDevLoading ? 'Verificando...' : 'Desbloquear Bóveda Forense' }}</span>
+            </button>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="btn-use-official"
+              (click)="usarLlaveOficial()"
+              matTooltip="Cargar llave predeterminada para evaluación"
+            >
+              <mat-icon class="m-r-4">vpn_key</mat-icon>
+              Usar Llave Oficial
+            </button>
+          </div>
+        </div>
+
+        <!-- Alerta de Error de Llave (403) -->
+        <div *ngIf="devErrorMsg" class="vault-error-banner">
+          <mat-icon class="error-icon">gpp_bad</mat-icon>
+          <span>{{ devErrorMsg }}</span>
+        </div>
+      </div>
+
+      <!-- Si ESTÁ desbloqueado: Panel de Control Forense y Sello SHA-256 -->
+      <div *ngIf="isDevUnlocked" class="vault-unlocked-box">
+        <div class="unlocked-header-row">
+          <div class="unlocked-status">
+            <span class="status-indicator-dot pulse"></span>
+            <span class="status-text">BÓVEDA CONFIDENCIAL DESBLOQUEADA &bull; MODO DESARROLLADOR ACTIVO</span>
+            <span class="auth-pill">AUTORIZADO: LLAVE OFICIAL</span>
+          </div>
+
+          <div class="unlocked-actions">
+            <button
+              mat-flat-button
+              class="btn-download-log"
+              (click)="descargarLogCifrado()"
+              [disabled]="isDownloadingLog"
+              matTooltip="Descargar archivo forense con firma SHA-256 al pie para no repudio"
+            >
+              <mat-icon *ngIf="!isDownloadingLog" class="m-r-6">download</mat-icon>
+              <mat-spinner *ngIf="isDownloadingLog" diameter="18" class="m-r-6"></mat-spinner>
+              <span>Descargar Log Forense (.log)</span>
+            </button>
+
+            <button
+              mat-stroked-button
+              class="btn-toggle-sim"
+              (click)="mostrarSimulador = !mostrarSimulador"
+            >
+              <mat-icon class="m-r-4">{{ mostrarSimulador ? 'visibility_off' : 'add_circle' }}</mat-icon>
+              <span>{{ mostrarSimulador ? 'Cerrar Simulador' : 'Inyectar Evento Forense' }}</span>
+            </button>
+
+            <button
+              mat-stroked-button
+              color="warn"
+              class="btn-lock"
+              (click)="bloquearModoDev()"
+            >
+              <mat-icon class="m-r-4">lock</mat-icon>
+              Bloquear Acceso
+            </button>
+          </div>
+        </div>
+
+        <!-- Sello Criptográfico SHA-256 Inmutable -->
+        <div class="crypto-seal-box" *ngIf="sha256Hash">
+          <div class="seal-icon-box">
+            <mat-icon class="seal-icon">verified_user</mat-icon>
+          </div>
+          <div class="seal-content">
+            <div class="seal-label">
+              <span>SELLO CRIPTOGRÁFICO SHA-256 DE INTEGRIDAD (INMUTABLE - NO REPUDIO)</span>
+              <span class="seal-state-badge">100% ÍNTEGRO</span>
+            </div>
+            <div class="seal-hash-code">
+              <code>{{ sha256Hash }}</code>
+              <button
+                mat-icon-button
+                class="btn-copy-hash"
+                (click)="copiarHashSha256()"
+                matTooltip="Copiar Hash SHA-256"
+              >
+                <mat-icon>{{ copiadoHash ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 KPIs Forenses Confidenciales -->
+        <div class="kpi-forense-grid" *ngIf="devEstadisticas">
+          <div class="kpi-forense-card">
+            <div class="kpi-icon-wrap bg-blue">
+              <mat-icon>storage</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-value">{{ devEstadisticas.total_eventos_sistema | number }}</span>
+              <span class="kpi-title">Eventos Totales en DB</span>
+            </div>
+          </div>
+
+          <div class="kpi-forense-card">
+            <div class="kpi-icon-wrap bg-purple">
+              <mat-icon>lan</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-value">{{ devEstadisticas.ips_auditadas_unicas }}</span>
+              <span class="kpi-title">IPs Origen Rastreadas</span>
+            </div>
+          </div>
+
+          <div class="kpi-forense-card">
+            <div class="kpi-icon-wrap bg-indigo">
+              <mat-icon>admin_panel_settings</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-value">{{ devEstadisticas.usuarios_activos_auditados }}</span>
+              <span class="kpi-title">Cuentas Auditadas</span>
+            </div>
+          </div>
+
+          <div class="kpi-forense-card">
+            <div class="kpi-icon-wrap bg-emerald">
+              <mat-icon>verified</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-value text-emerald">Válido</span>
+              <span class="kpi-title">Firma Criptográfica</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulador de Inyección Forense en Vivo -->
+        <div *ngIf="mostrarSimulador" class="simulador-card animate-fade-in">
+          <div class="simulador-header">
+            <mat-icon class="sim-icon">bolt</mat-icon>
+            <div>
+              <h4 class="sim-title">Simulador de Inyección de Eventos Críticos</h4>
+              <p class="sim-subtitle">Registra una operación en vivo en la base de datos y verifica la actualización inmediata del sello SHA-256.</p>
+            </div>
+          </div>
+
+          <div class="simulador-form-grid">
+            <mat-form-field appearance="outline" class="sim-field">
+              <mat-label>Acción</mat-label>
+              <mat-select [(ngModel)]="inyeccionFormAccion">
+                <mat-option value="UPDATE">UPDATE (Actualización Crítica)</mat-option>
+                <mat-option value="INSERT">INSERT (Creación de Registro)</mat-option>
+                <mat-option value="DELETE">DELETE (Eliminación Segura)</mat-option>
+                <mat-option value="LOGIN">LOGIN (Auditoría de Acceso)</mat-option>
+                <mat-option value="PRIVILEGE_ELEVATION">ELEVACIÓN DE PRIVILEGIOS</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="sim-field">
+              <mat-label>Tabla Afectada</mat-label>
+              <input matInput [(ngModel)]="inyeccionFormTabla" placeholder="Ej: seguridad_privilegios" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="sim-field-sm">
+              <mat-label>ID Registro</mat-label>
+              <input matInput type="number" [(ngModel)]="inyeccionFormRegistroId" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="sim-field-lg">
+              <mat-label>Detalle Técnico del Evento</mat-label>
+              <input matInput [(ngModel)]="inyeccionFormDetalle" placeholder="Detalle técnico para trazabilidad" />
+            </mat-form-field>
+
+            <div class="sim-action-btn">
+              <button
+                mat-flat-button
+                class="btn-execute-injection"
+                (click)="ejecutarInyeccionForense()"
+                [disabled]="simulandoInyeccion"
+              >
+                <mat-icon *ngIf="!simulandoInyeccion" class="m-r-6">send</mat-icon>
+                <mat-spinner *ngIf="simulandoInyeccion" diameter="18" class="m-r-6"></mat-spinner>
+                <span>{{ simulandoInyeccion ? 'Inyectando...' : 'Registrar y Recalcular SHA-256' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Barra de Filtros Estándar -->
     <form class="filtros-grid" [formGroup]="filtrosForm" (ngSubmit)="consultar()">
       <mat-form-field appearance="outline" class="filtro-field">
-        <mat-label>Filtrar por Acción</mat-label>
+        <mat-label>Filtrar por Acción Operativa</mat-label>
         <mat-select formControlName="accion">
           <mat-option value="">Todas las acciones</mat-option>
           <mat-option *ngFor="let accion of acciones" [value]="accion.value">
@@ -42,13 +287,14 @@
     </form>
 
     <!-- Estado de carga -->
-    <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
+    <div *ngIf="isLoading || isDevLoading" class="d-flex justify-content-center p-y-40">
       <mat-spinner diameter="46"></mat-spinner>
     </div>
 
-    <!-- Tabla de Bitácora -->
-    <div *ngIf="!isLoading && dataSource.length > 0" class="table-container">
+    <!-- Tabla de Bitácora Forense / Operacional -->
+    <div *ngIf="!isLoading && !isDevLoading && dataSource.length > 0" class="table-container">
       <table mat-table [dataSource]="dataSource" class="w-full bitacora-table">
+        
         <!-- Fecha -->
         <ng-container matColumnDef="fecha">
           <th mat-header-cell *matHeaderCellDef class="th-fecha">Fecha</th>
@@ -97,7 +343,23 @@
           </td>
         </ng-container>
 
-        <!-- IP -->
+        <!-- Tabla Afectada (Modo Dev Forense) -->
+        <ng-container matColumnDef="tabla_afectada" *ngIf="isDevUnlocked">
+          <th mat-header-cell *matHeaderCellDef class="th-tabla">Tabla</th>
+          <td mat-cell *matCellDef="let element" class="td-tabla">
+            <span class="tabla-chip">{{ getTablaAfectada(element) }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Registro ID (Modo Dev Forense) -->
+        <ng-container matColumnDef="registro_id" *ngIf="isDevUnlocked">
+          <th mat-header-cell *matHeaderCellDef class="th-reg-id">ID</th>
+          <td mat-cell *matCellDef="let element" class="td-reg-id">
+            <span class="reg-id-text">{{ getRegistroId(element) }}</span>
+          </td>
+        </ng-container>
+
+        <!-- IP Origen -->
         <ng-container matColumnDef="ip_cliente">
           <th mat-header-cell *matHeaderCellDef class="th-ip">Dirección IP</th>
           <td mat-cell *matCellDef="let element" class="td-ip">
@@ -107,7 +369,7 @@
 
         <!-- Detalles / CU -->
         <ng-container matColumnDef="detalles">
-          <th mat-header-cell *matHeaderCellDef class="th-detalles">Detalles del Evento</th>
+          <th mat-header-cell *matHeaderCellDef class="th-detalles">Detalles Técnicos</th>
           <td mat-cell *matCellDef="let element" class="td-detalles">
             <div class="detalles-wrapper">
               <span *ngIf="getCuBadge(element)" class="cu-badge-pill">
@@ -124,7 +386,7 @@
     </div>
 
     <!-- Empty state -->
-    <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state">
+    <div *ngIf="!isLoading && !isDevLoading && dataSource.length === 0" class="empty-state">
       <mat-icon class="empty-icon">history_toggle_off</mat-icon>
       <p class="empty-text">No hay registros de auditoría disponibles</p>
       <span class="empty-subtext">Los eventos de seguridad y operaciones aparecerán aquí en tiempo real.</span>
@@ -132,11 +394,17 @@
 
     <!-- Paginador -->
     <mat-paginator
-      *ngIf="dataSource.length > 0"
+      *ngIf="dataSource.length > 0 && !isDevUnlocked"
       [length]="totalItems"
       [pageSize]="pageSize"
       hidePageSize="true"
       (page)="onPageChange($event)">
     </mat-paginator>
+
+    <div *ngIf="isDevUnlocked && dataSource.length > 0" class="forensic-footer-bar">
+      <span>Mostrando los {{ dataSource.length }} eventos más recientes auditados en modo confidencial.</span>
+      <span class="inmutable-indicator">&bull; Registro Inmutable Protegido con Llave Dev</span>
+    </div>
+
   </mat-card-content>
 </mat-card>
