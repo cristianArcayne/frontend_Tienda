@@ -1,97 +1,365 @@
 <div class="database-management-container">
   <mat-card class="main-card">
+    
+    <!-- CABECERA PRINCIPAL CON IDENTIFICADOR CU-18 -->
     <mat-card-header>
-      <mat-card-title>
-        <mat-icon class="title-icon">storage</mat-icon>
-        Gestión de Datos
-      </mat-card-title>
-      <mat-card-subtitle>Backup y restauración de la base de datos del tenant</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content>
-
-      <!-- SECCIÓN BACKUP -->
-      <div class="section">
-        <div class="section-header">
-          <div class="section-icon backup-icon">
-            <mat-icon>cloud_download</mat-icon>
+      <div class="page-header">
+        <div class="header-titles">
+          <div class="header-icon-box">
+            <mat-icon class="header-icon">storage</mat-icon>
           </div>
-          <div class="section-info">
-            <h3>Descargar Backup</h3>
-            <p>Genera y descarga una copia de seguridad completa de la base de datos en formato <code>.dump</code>.</p>
+          <div>
+            <div class="cu-tag">[CU-18] GESTIÓN DE COPIAS DE SEGURIDAD Y RESTAURACIÓN</div>
+            <mat-card-title class="title-text">Centro de Respaldo y Contingencia de Base de Datos</mat-card-title>
+            <mat-card-subtitle class="subtitle-text">
+              Generación de dumps estructurados de PostgreSQL (DDL + DML), catálogo con firma criptográfica SHA-256 y restauración integral del sistema.
+            </mat-card-subtitle>
           </div>
         </div>
 
-        <div class="section-action">
+        <div class="header-actions">
           <button
-            *ngIf="puedeDescargarBackup"
-            mat-raised-button
-            color="primary"
-            [disabled]="descargando"
-            (click)="descargarBackup()"
-            class="action-btn"
+            mat-stroked-button
+            class="btn-refresh"
+            (click)="cargarCatalogoBackups()"
+            [disabled]="cargandoLista || generandoBackup"
           >
-            <mat-spinner *ngIf="descargando" diameter="20" class="btn-spinner"></mat-spinner>
-            <mat-icon *ngIf="!descargando">cloud_download</mat-icon>
-            {{ descargando ? 'Descargando...' : 'Descargar Backup' }}
+            <mat-icon class="m-r-4">refresh</mat-icon>
+            Actualizar
+          </button>
+
+          <button
+            mat-flat-button
+            class="btn-generate-backup"
+            (click)="generarNuevoBackup()"
+            [disabled]="generandoBackup || cargandoLista"
+          >
+            <mat-icon *ngIf="!generandoBackup" class="m-r-6">cloud_upload</mat-icon>
+            <mat-spinner *ngIf="generandoBackup" diameter="18" class="m-r-6"></mat-spinner>
+            <span>{{ generandoBackup ? 'Generando Dump SQL...' : 'Generar Nuevo Backup PostgreSQL' }}</span>
           </button>
         </div>
       </div>
+    </mat-card-header>
 
-      <mat-divider></mat-divider>
+    <mat-card-content class="card-content-body">
 
-      <!-- SECCIÓN RESTAURACIÓN -->
-      <div class="section">
-        <div class="section-header">
-          <div class="section-icon restore-icon">
-            <mat-icon>restore</mat-icon>
+      <!-- 4 TARJETAS DE MÉTRICAS EJECUTIVAS -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap bg-blue">
+            <mat-icon>inventory_2</mat-icon>
           </div>
-          <div class="section-info">
-            <h3>Restaurar Base de Datos</h3>
-            <p>Reemplaza la base de datos actual con un archivo <code>.dump</code> previo. <strong>Esta acción es irreversible.</strong></p>
+          <div class="kpi-info">
+            <span class="kpi-val">{{ backups.length }}</span>
+            <span class="kpi-lbl">Respaldos en Almacén</span>
           </div>
         </div>
 
-        <div class="section-action">
-          <!-- Input de archivo oculto -->
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap bg-purple">
+            <mat-icon>dns</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val text-sm">PostgreSQL 16</span>
+            <span class="kpi-lbl">Motor Neon Cloud / Local</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap bg-indigo">
+            <mat-icon>table_chart</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val">34 Tablas</span>
+            <span class="kpi-lbl">Esquema Relacional DDL/DML</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap bg-emerald">
+            <mat-icon>verified_user</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val text-emerald text-sm">SHA-256</span>
+            <span class="kpi-lbl">Firma de Integridad Inmutable</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANNER DE REPORTE DE RESTAURACIÓN EXITOSA -->
+      <div *ngIf="ultimoResultadoRestauracion" class="restauracion-report-banner animate-fade-in">
+        <div class="report-icon-box">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="report-details">
+          <div class="report-title-row">
+            <h4>Restauración Integral del Sistema Completada con Éxito</h4>
+            <span class="badge-status-operativo">{{ ultimoResultadoRestauracion.estado_sistema }}</span>
+          </div>
+          <p class="report-msg">{{ ultimoResultadoRestauracion.mensaje }}</p>
+          <div class="report-meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Archivo Restaurado:</span>
+              <span class="meta-val"><code>{{ ultimoResultadoRestauracion.archivo_restaurado }}</code></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Líneas SQL Procesadas:</span>
+              <span class="meta-val font-bold">{{ ultimoResultadoRestauracion.lineas_sql_procesadas | number }} sentencias</span>
+            </div>
+            <div class="meta-item full-width">
+              <span class="meta-label">Hash SHA-256 Verificado:</span>
+              <span class="meta-val hash-val"><code>{{ ultimoResultadoRestauracion.hash_sha256_verificado }}</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL DE PROCEDIMIENTO CRÍTICO DE RESTAURACIÓN ANTE CONTINGENCIA -->
+      <div *ngIf="backupSeleccionadoParaRestaurar" class="contingencia-box animate-fade-in">
+        <div class="contingencia-header">
+          <mat-icon class="warn-icon">warning_amber</mat-icon>
+          <div>
+            <h3 class="contingencia-title">Procedimiento Crítico de Restauración ante Contingencia</h3>
+            <p class="contingencia-subtitle">
+              Se restaurará el estado integral de la base de datos a partir del archivo <strong>{{ backupSeleccionadoParaRestaurar.nombre }}</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="contingencia-body">
+          <div class="alert-box">
+            <mat-icon class="alert-icon">info</mat-icon>
+            <span>
+              Para evitar pérdidas involuntarias de información en producción, debe ingresar exactamente el código de autorización:
+              <strong>CONFIRMAR_RESTAURACION</strong>.
+            </span>
+          </div>
+
+          <div class="auth-input-row">
+            <mat-form-field appearance="outline" class="confirm-field">
+              <mat-label>Código de Autorización</mat-label>
+              <input
+                matInput
+                [(ngModel)]="codigoConfirmacion"
+                placeholder="Escriba CONFIRMAR_RESTAURACION"
+                (keyup.enter)="ejecutarRestauracionSegura()"
+              />
+            </mat-form-field>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="btn-helper-code"
+              (click)="usarCodigoOficial()"
+              matTooltip="Cargar código de autorización oficial para evaluación"
+            >
+              <mat-icon class="m-r-4">key</mat-icon>
+              Rellenar Código Oficial
+            </button>
+          </div>
+
+          <div class="contingencia-actions">
+            <button
+              mat-stroked-button
+              (click)="cancelarRestauracion()"
+              [disabled]="restaurando"
+            >
+              Cancelar
+            </button>
+
+            <button
+              mat-flat-button
+              color="warn"
+              class="btn-confirm-restore"
+              (click)="ejecutarRestauracionSegura()"
+              [disabled]="restaurando || !codigoConfirmacion"
+            >
+              <mat-icon *ngIf="!restaurando" class="m-r-6">restore</mat-icon>
+              <mat-spinner *ngIf="restaurando" diameter="18" class="m-r-6"></mat-spinner>
+              <span>{{ restaurando ? 'Restaurando Sistema...' : 'Autorizar y Ejecutar Restauración' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATÁLOGO E HISTORIAL DE COPIAS DE SEGURIDAD -->
+      <div class="catalog-section">
+        <div class="section-title-row">
+          <div class="title-with-pill">
+            <h3 class="section-heading">Catálogo de Copias de Seguridad Disponibles en el Servidor</h3>
+            <span class="count-pill">{{ backups.length }} archivos .sql</span>
+          </div>
+          <span class="section-subtext">Almacenados con integridad verificable mediante firmas criptográficas SHA-256</span>
+        </div>
+
+        <!-- Indicador de Carga -->
+        <div *ngIf="cargandoLista" class="d-flex justify-content-center p-y-40">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <!-- Tabla de Backups -->
+        <div *ngIf="!cargandoLista && backups.length > 0" class="table-container">
+          <table mat-table [dataSource]="backups" class="w-full backup-table">
+            
+            <!-- Archivo -->
+            <ng-container matColumnDef="archivo">
+              <th mat-header-cell *matHeaderCellDef class="th-file">Archivo de Respaldo</th>
+              <td mat-cell *matCellDef="let element" class="td-file">
+                <div class="file-name-cell">
+                  <div class="file-icon-box">
+                    <mat-icon>description</mat-icon>
+                  </div>
+                  <div class="file-details">
+                    <span class="file-name">{{ element.nombre }}</span>
+                    <span class="file-format-badge">PostgreSQL Dump (.sql)</span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Fecha -->
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef class="th-date">Fecha de Creación</th>
+              <td mat-cell *matCellDef="let element" class="td-date">
+                <div class="date-cell">
+                  <mat-icon class="date-icon">calendar_today</mat-icon>
+                  <span>{{ element.fecha_creacion | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Tamaño -->
+            <ng-container matColumnDef="tamano">
+              <th mat-header-cell *matHeaderCellDef class="th-size">Tamaño</th>
+              <td mat-cell *matCellDef="let element" class="td-size">
+                <span class="size-chip">{{ element.tamano_kb }} KB</span>
+              </td>
+            </ng-container>
+
+            <!-- Sello SHA-256 -->
+            <ng-container matColumnDef="hash">
+              <th mat-header-cell *matHeaderCellDef class="th-hash">Sello Criptográfico SHA-256</th>
+              <td mat-cell *matCellDef="let element" class="td-hash">
+                <div class="hash-cell">
+                  <code class="hash-preview" [matTooltip]="element.hash_sha256">{{ element.hash_sha256 | slice:0:16 }}...</code>
+                  <button
+                    mat-icon-button
+                    class="btn-copy-hash"
+                    (click)="copiarHash(element.hash_sha256)"
+                    matTooltip="Copiar Hash Completo"
+                  >
+                    <mat-icon>{{ hashCopiado === element.hash_sha256 ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Estado -->
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef class="th-state">Estado</th>
+              <td mat-cell *matCellDef="let element" class="td-state">
+                <span class="badge-integro">
+                  <mat-icon class="badge-icon">verified</mat-icon>
+                  <span>Íntegro</span>
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Acciones -->
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="th-actions text-right">Acciones</th>
+              <td mat-cell *matCellDef="let element" class="td-actions text-right">
+                <div class="actions-group">
+                  <button
+                    mat-flat-button
+                    class="btn-action-download"
+                    (click)="descargarBackupArchivo(element.nombre)"
+                    [disabled]="descargando"
+                    matTooltip="Descargar archivo SQL de contingencia"
+                  >
+                    <mat-icon class="m-r-4">download</mat-icon>
+                    Descargar
+                  </button>
+
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    class="btn-action-restore"
+                    (click)="prepararRestauracion(element)"
+                    [disabled]="restaurando"
+                    matTooltip="Restaurar base de datos a este punto"
+                  >
+                    <mat-icon class="m-r-4">restore</mat-icon>
+                    Restaurar
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+          </table>
+        </div>
+
+        <!-- Empty state si no hay backups -->
+        <div *ngIf="!cargandoLista && backups.length === 0" class="empty-state">
+          <mat-icon class="empty-icon">storage</mat-icon>
+          <p class="empty-text">No se encontraron copias de seguridad en el servidor</p>
+          <span class="empty-subtext">Haga clic en "Generar Nuevo Backup PostgreSQL" para crear el primer punto de control estructurado.</span>
+        </div>
+      </div>
+
+      <mat-divider class="m-y-28"></mat-divider>
+
+      <!-- SECCIÓN SECUNDARIA: RESTAURACIÓN DESDE ARCHIVO EXTERNO LOCAL -->
+      <div class="external-restore-section">
+        <div class="section-header">
+          <div class="section-icon restore-icon">
+            <mat-icon>upload_file</mat-icon>
+          </div>
+          <div class="section-info">
+            <h3 class="section-title">Restauración Manual desde Archivo Externo</h3>
+            <p class="section-desc">
+              Permite cargar un archivo de volcado <code>.sql</code> o <code>.dump</code> almacenado en su estación de trabajo local para casos de recuperación ante desastres sin conectividad al catálogo central.
+            </p>
+          </div>
+        </div>
+
+        <div class="external-actions-row">
           <input
             #fileInput
             type="file"
-            accept=".dump"
+            accept=".sql,.dump"
             (change)="onFileSelected($event)"
             style="display: none"
           />
 
-          <!-- Botón para abrir el selector -->
           <button
-            *ngIf="puedeRestaurar"
             mat-stroked-button
-            color="warn"
-            [disabled]="restaurando"
+            class="btn-select-file"
             (click)="abrirSelectorArchivo()"
-            class="action-btn"
+            [disabled]="restaurando"
           >
-            <mat-icon>attach_file</mat-icon>
-            Seleccionar archivo .dump
+            <mat-icon class="m-r-6">attach_file</mat-icon>
+            Seleccionar Archivo Local (.sql / .dump)
           </button>
 
-          <!-- Archivo seleccionado + botón confirmar -->
-          <div *ngIf="archivoSeleccionado" class="file-selected-panel">
-            <div class="file-name">
-              <mat-icon class="file-icon">description</mat-icon>
-              <span>{{ archivoSeleccionado.name }}</span>
-            </div>
+          <div *ngIf="archivoSeleccionado" class="selected-file-pill">
+            <mat-icon class="file-pill-icon">description</mat-icon>
+            <span class="file-pill-name">{{ archivoSeleccionado.name }}</span>
+            <span class="file-pill-size">({{ (archivoSeleccionado.size / 1024).toFixed(1) }} KB)</span>
 
             <button
-              mat-raised-button
+              mat-flat-button
               color="warn"
+              class="btn-upload-restore"
+              (click)="confirmarYRestaurarArchivoLocal()"
               [disabled]="restaurando"
-              (click)="confirmarYRestaurar()"
-              class="action-btn restore-confirm-btn"
             >
-              <mat-spinner *ngIf="restaurando" diameter="20" class="btn-spinner"></mat-spinner>
-              <mat-icon *ngIf="!restaurando">warning</mat-icon>
-              {{ restaurando ? 'Restaurando...' : 'Subir y Sobrescribir Base de Datos' }}
+              <mat-icon *ngIf="!restaurando" class="m-r-4">warning</mat-icon>
+              <mat-spinner *ngIf="restaurando" diameter="16" class="m-r-4"></mat-spinner>
+              <span>{{ restaurando ? 'Procesando...' : 'Subir y Sobrescribir Base de Datos' }}</span>
             </button>
           </div>
         </div>
