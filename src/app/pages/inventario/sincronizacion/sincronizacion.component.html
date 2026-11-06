@@ -1,0 +1,474 @@
+<div class="sincronizacion-container">
+
+  <!-- ========================================================================= -->
+  <!-- ENCABEZADO Y ESTADO DE CONECTIVIDAD (ICONIX CU-14)                        -->
+  <!-- ========================================================================= -->
+  <div class="header-card">
+    <div class="header-content">
+      <div class="title-group">
+        <div class="badge-header">
+          <span class="badge-tag">MÓDULO DE RESILIENCIA OFFLINE-FIRST</span>
+          <span class="badge-cu">[CU-14]</span>
+        </div>
+        <h1 class="main-title">Consola Técnica del Demonio de Sincronización</h1>
+        <p class="subtitle">
+          Supervisión de cola Outbox local (<code>pending_sync</code>), algoritmo de Backoff Exponencial (2ⁿ),
+          consolidación idempotente en PostgreSQL Neon y barrido de reservas caducadas (>48h).
+        </p>
+      </div>
+
+      <!-- Barra de Estado de Red & Demonio -->
+      <div class="network-status-box" [class.offline]="!isOnline || isSimulatingOffline">
+        <div class="status-indicator">
+          <span class="pulse-dot" [class.dot-offline]="!isOnline || isSimulatingOffline"></span>
+          <div class="status-texts">
+            <span class="status-label">
+              {{ (!isOnline || isSimulatingOffline) ? '🔴 MODO OFFLINE / CONTINGENCIA' : '🟢 ENLACE TCP ACTIVO (ONLINE)' }}
+            </span>
+            <span class="status-sub">
+              {{ (!isOnline || isSimulatingOffline) ? 'Las ventas se encolan en pending_sync' : ('Latencia API: ' + latencyMs + ' ms | Último ping: ' + (lastPingTime || 'En curso')) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="network-actions">
+          <button
+            mat-stroked-button
+            class="btn-toggle-network"
+            [class.btn-network-offline]="isSimulatingOffline"
+            (click)="toggleSimulacionCorteRed()"
+          >
+            <mat-icon>{{ isSimulatingOffline ? 'wifi' : 'wifi_off' }}</mat-icon>
+            {{ isSimulatingOffline ? 'Restablecer Conexión' : 'Simular Corte de Red' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- BARRA DE CONTROL DEL DEMONIO BACKGROUND                                   -->
+  <!-- ========================================================================= -->
+  <mat-card class="daemon-control-card">
+    <div class="daemon-controls">
+      <div class="daemon-state">
+        <mat-slide-toggle
+          [checked]="daemonRunning"
+          (change)="toggleDaemon()"
+          color="primary"
+        >
+          <span class="toggle-text">
+            <strong>Demonio Background:</strong>
+            <span [class.text-success]="daemonRunning" [class.text-muted]="!daemonRunning">
+              {{ daemonRunning ? 'EJECUTÁNDOSE' : 'PAUSADO' }}
+            </span>
+          </span>
+        </mat-slide-toggle>
+
+        <div class="timer-pill" *ngIf="daemonRunning">
+          <mat-icon class="timer-icon">timelapse</mat-icon>
+          <span>Próximo barrido en: <strong>{{ countdownSeconds }}s</strong> (Backoff: 2^{{ backoffExponent }})</span>
+        </div>
+      </div>
+
+      <div class="daemon-actions">
+        <mat-form-field appearance="outline" class="interval-field" subscriptSizing="dynamic">
+          <mat-label>Frecuencia de Sondeo</mat-label>
+          <mat-select [value]="pollingIntervalSeconds" (selectionChange)="cambiarIntervalo($event.value)">
+            <mat-option [value]="5">Cada 5 segundos</mat-option>
+            <mat-option [value]="15">Cada 15 segundos (Estándar)</mat-option>
+            <mat-option [value]="30">Cada 30 segundos</mat-option>
+            <mat-option [value]="60">Cada 60 segundos</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          color="primary"
+          class="btn-action-primary"
+          (click)="sincronizarLoteAhora()"
+          [disabled]="isSyncingBatch || (!isOnline && !isSimulatingOffline)"
+        >
+          <mat-icon *ngIf="!isSyncingBatch">sync</mat-icon>
+          <mat-spinner *ngIf="isSyncingBatch" diameter="18" class="m-r-8"></mat-spinner>
+          <span>{{ isSyncingBatch ? 'Consolidando Lote...' : 'Sincronizar Lote Ahora' }}</span>
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn-action-sweep"
+          (click)="ejecutarDemonioReservas()"
+          [disabled]="isSweepingReservations"
+          matTooltip="Ejecuta el barrido central de reservas no pagadas en 48 horas y restituye prendas a almacén"
+        >
+          <mat-icon *ngIf="!isSweepingReservations">cleaning_services</mat-icon>
+          <mat-spinner *ngIf="isSweepingReservations" diameter="18" class="m-r-8"></mat-spinner>
+          <span>Expirar Reservas (>48h)</span>
+        </button>
+
+        <button
+          mat-raised-button
+          class="btn-test-generator"
+          (click)="generarVentaOfflinePrueba()"
+        >
+          <mat-icon>add_shopping_cart</mat-icon>
+          <span>Generar Venta Offline</span>
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- ========================================================================= -->
+  <!-- 4 TARJETAS KPI DE RENDIMIENTO Y RESILIENCIA                              -->
+  <!-- ========================================================================= -->
+  <div class="kpi-grid">
+    <div class="kpi-card pending-card">
+      <div class="kpi-header">
+        <span class="kpi-title">En Cola 'pending_sync'</span>
+        <div class="kpi-icon-wrapper pending-icon">
+          <mat-icon>queue</mat-icon>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <h2 class="kpi-value">{{ cola.length }}</h2>
+        <span class="kpi-subtext">Transacciones locales offline</span>
+      </div>
+      <div class="kpi-footer">
+        <span class="status-chip" [class.chip-warning]="cola.length > 0" [class.chip-neutral]="cola.length === 0">
+          {{ cola.length > 0 ? 'Pendiente de consolidación' : 'Cola vacía (Al día)' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-card success-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Consolidadas Hoy</span>
+        <div class="kpi-icon-wrapper success-icon">
+          <mat-icon>cloud_done</mat-icon>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <h2 class="kpi-value">{{ metricas.sincronizadasHoy }}</h2>
+        <span class="kpi-subtext">Con Factura Fiscal e Idempotencia</span>
+      </div>
+      <div class="kpi-footer">
+        <span class="status-chip chip-success">ACID 100% en Neon PostgreSQL</span>
+      </div>
+    </div>
+
+    <div class="kpi-card retry-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Reintentos & Backoff</span>
+        <div class="kpi-icon-wrapper retry-icon">
+          <mat-icon>published_with_changes</mat-icon>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <h2 class="kpi-value">{{ metricas.reintentosTotales }}</h2>
+        <span class="kpi-subtext">Factor actual: 2^{{ backoffExponent }}</span>
+      </div>
+      <div class="kpi-footer">
+        <span class="status-chip chip-info">Algoritmo con retroceso exponencial</span>
+      </div>
+    </div>
+
+    <div class="kpi-card conflict-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Conflictos Resueltos</span>
+        <div class="kpi-icon-wrapper conflict-icon">
+          <mat-icon>rule</mat-icon>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <h2 class="kpi-value">{{ metricas.conflictosHoy }}</h2>
+        <span class="kpi-subtext">Regla 'First-Write-Wins'</span>
+      </div>
+      <div class="kpi-footer">
+        <span class="status-chip chip-purple">Bitácora de contingencia activa</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- PESTAÑAS PRINCIPALES: COLA OUTBOX, RESOLUCIÓN CONFLICTOS, BITÁCORA         -->
+  <!-- ========================================================================= -->
+  <mat-card class="main-content-card">
+    <mat-tab-group animationDuration="200ms" class="luxury-tabs">
+
+      <!-- PESTAÑA 1: COLA OUTBOX LOCAL (pending_sync) -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">table_rows</mat-icon>
+          <span>Cola Outbox Local ({{ cola.length }})</span>
+        </ng-template>
+
+        <div class="tab-body">
+          <div class="table-top-toolbar">
+            <div class="toolbar-info">
+              <h3>Transacciones Registradas en Modo Desconectado</h3>
+              <p>Cada registro contiene un identificador único (UUIDv4) garantizando que no se dupliquen ventas ni consumos de stock al sincronizar.</p>
+            </div>
+            <div class="toolbar-buttons" *ngIf="cola.length > 0">
+              <button mat-stroked-button color="warn" (click)="purgarCola()">
+                <mat-icon>delete_sweep</mat-icon>
+                <span>Purgar Cola</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive" *ngIf="cola.length > 0; else emptyQueueTemplate">
+            <table mat-table [dataSource]="cola" class="modern-table">
+
+              <!-- Columna Tipo -->
+              <ng-container matColumnDef="tipo">
+                <th mat-header-cell *matHeaderCellDef>Tipo Transacción</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="badge-tipo-trx" [ngClass]="row.tipo_transaccion?.toLowerCase()">
+                    <mat-icon class="tipo-icon">
+                      {{ row.tipo_transaccion === 'VENTA_POS' ? 'point_of_sale' : (row.tipo_transaccion === 'RESERVA' ? 'bookmark' : 'assignment_return') }}
+                    </mat-icon>
+                    {{ row.tipo_transaccion || 'VENTA_POS' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Columna UUID -->
+              <ng-container matColumnDef="uuid">
+                <th mat-header-cell *matHeaderCellDef>UUID Offline</th>
+                <td mat-cell *matCellDef="let row">
+                  <div class="uuid-cell">
+                    <span class="uuid-text">{{ row.offline_uuid }}</span>
+                    <span class="client-text" *ngIf="row.cliente_nombre">
+                      Cliente: {{ row.cliente_nombre }} (NIT: {{ row.nit_cliente || '0' }})
+                    </span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Columna Fecha -->
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Fecha Local</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="date-text">{{ row.fecha_registro_local | date:'short' }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Columna Items -->
+              <ng-container matColumnDef="items">
+                <th mat-header-cell *matHeaderCellDef>Detalle Prendas</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="items-count-badge">
+                    {{ row.items?.length || 0 }} {{ (row.items?.length === 1) ? 'prenda' : 'prendas' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Columna Total -->
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef>Total Bs.</th>
+                <td mat-cell *matCellDef="let row">
+                  <strong class="total-amount">Bs. {{ (row.total || 0) | number:'1.2-2' }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- Columna Reintentos -->
+              <ng-container matColumnDef="reintentos">
+                <th mat-header-cell *matHeaderCellDef>Reintentos</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="badge-retry" [class.has-retries]="row.reintentos > 0">
+                    {{ row.reintentos || 0 }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Columna Estado -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="badge-status" [ngClass]="row.estado?.toLowerCase()">
+                    <mat-icon class="status-dot-icon">
+                      {{ row.estado === 'SINCRONIZADA' ? 'check_circle' : (row.estado === 'REINTENTANDO' ? 'update' : (row.estado === 'CONFLICTO' ? 'error' : 'hourglass_top')) }}
+                    </mat-icon>
+                    {{ row.estado }}
+                  </span>
+                  <div class="factura-sub" *ngIf="row.nro_factura">
+                    {{ row.nro_factura }}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Columna Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Acciones</th>
+                <td mat-cell *matCellDef="let row" class="text-right">
+                  <button mat-icon-button color="primary" matTooltip="Inspeccionar Payload JSON" (click)="verDetalles(row)">
+                    <mat-icon>code</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    color="accent"
+                    matTooltip="Probar Idempotencia (Reenviar UUID)"
+                    (click)="probarIdempotencia(row)"
+                  >
+                    <mat-icon>verified_user</mat-icon>
+                  </button>
+
+                  <button mat-icon-button color="warn" matTooltip="Eliminar de la cola local" (click)="eliminarItem(row)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.row-synced]="row.estado === 'SINCRONIZADA'"></tr>
+            </table>
+          </div>
+
+          <ng-template #emptyQueueTemplate>
+            <div class="empty-state">
+              <div class="empty-icon-circle">
+                <mat-icon>done_all</mat-icon>
+              </div>
+              <h3>Cola Outbox Sincronizada</h3>
+              <p>No existen transacciones locales pendientes en <code>pending_sync</code>. Todas las ventas físicas de caja han sido consolidadas en PostgreSQL.</p>
+              <button mat-raised-button color="primary" class="m-t-16" (click)="generarVentaOfflinePrueba()">
+                <mat-icon>add</mat-icon>
+                <span>Generar Venta Offline de Demostración</span>
+              </button>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+      <!-- PESTAÑA 2: MOTOR DE RESOLUCIÓN DE CONFLICTOS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">alt_route</mat-icon>
+          <span>Resolución de Conflictos & Arquitectura</span>
+        </ng-template>
+
+        <div class="tab-body">
+          <div class="conflict-explainer-grid">
+            <div class="explainer-card">
+              <div class="explainer-header">
+                <mat-icon class="icon-concept">offline_pin</mat-icon>
+                <h4>1. Outbox Pattern & UUIDv4 Idempotente</h4>
+              </div>
+              <p>
+                Durante caídas de red, el punto de venta (POS) sigue operando ininterrumpidamente guardando
+                la transacción en la cola local <code>pending_sync</code> asignándole un identificador universal único (UUIDv4).
+                Al regresar la conexión, el servidor aplica <strong>idempotencia estricta</strong>: si el UUID ya existe, retorna el registro existente sin duplicar el cobro ni descontar stock dos veces.
+              </p>
+            </div>
+
+            <div class="explainer-card">
+              <div class="explainer-header">
+                <mat-icon class="icon-concept">published_with_changes</mat-icon>
+                <h4>2. Resiliencia con Backoff Exponencial (2ⁿ)</h4>
+              </div>
+              <p>
+                Si la API central responde con errores 5xx o timeout por micro-cortes, el demonio background no satura el enlace.
+                Calcula el próximo intento como <code>delay = base × 2ⁿ</code>, espaciando los reintentos (15s, 30s, 60s) hasta estabilizar el canal de transmisión.
+              </p>
+            </div>
+
+            <div class="explainer-card">
+              <div class="explainer-header">
+                <mat-icon class="icon-concept">gavel</mat-icon>
+                <h4>3. Regla 'First-Write-Wins' para Stock Concurrente</h4>
+              </div>
+              <p>
+                Si una venta física offline vendió la última prenda de un perchero que simultáneamente fue comprada en línea por un cliente e-commerce, el sistema central prioriza la primera transacción asentada en base central y genera una <strong>alerta de contingencia operativa</strong> en la bitácora para reposición inmediata.
+              </p>
+            </div>
+
+            <div class="explainer-card">
+              <div class="explainer-header">
+                <mat-icon class="icon-concept">schedule</mat-icon>
+                <h4>4. Demonio de Mantenimiento de Reservas (>48h)</h4>
+              </div>
+              <p>
+                Un demonio background inspecciona periódicamente la tabla de reservas en la sucursal. Toda prenda apartada sin pago por más de 48 horas caduca automáticamente, cambiando su estado a <code>EXPIRADA</code> y restituyendo las existencias al stock físico para la venta en piso.
+              </p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- PESTAÑA 3: BITÁCORA EN VIVO DEL DEMONIO (AUDIT STREAM) -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">terminal</mat-icon>
+          <span>Bitácora del Demonio ({{ logs.length }})</span>
+        </ng-template>
+
+        <div class="tab-body">
+          <div class="log-toolbar">
+            <span class="log-count">{{ logs.length }} eventos registrados</span>
+            <button mat-button color="warn" (click)="limpiarLogs()" [disabled]="logs.length === 0">
+              <mat-icon>clear_all</mat-icon>
+              <span>Limpiar Registro</span>
+            </button>
+          </div>
+
+          <div class="log-console" *ngIf="logs.length > 0; else emptyLogsTemplate">
+            <div class="log-entry" *ngFor="let l of logs" [ngClass]="'log-' + l.tipo.toLowerCase()">
+              <span class="log-timestamp">[{{ l.timestamp }}]</span>
+              <span class="log-tag">{{ l.tipo }}</span>
+              <span class="log-message">{{ l.mensaje }}</span>
+            </div>
+          </div>
+
+          <ng-template #emptyLogsTemplate>
+            <div class="empty-state-mini">
+              <mat-icon>history</mat-icon>
+              <p>No hay eventos registrados en la sesión actual del demonio.</p>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </mat-card>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL / VISOR DE PAYLOAD JSON                                             -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" *ngIf="selectedTransaction" (click)="cerrarDetalles()">
+    <div class="modal-payload-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <mat-icon>code</mat-icon>
+          <h3>Inspección de Payload Outbox ({{ selectedTransaction.offline_uuid }})</h3>
+        </div>
+        <button mat-icon-button (click)="cerrarDetalles()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-info-row">
+          <span><strong>Sucursal:</strong> {{ selectedTransaction.sucursal_nombre || 'Sucursal Central' }} (#{{ selectedTransaction.sucursal_id }})</span>
+          <span><strong>Total:</strong> Bs. {{ selectedTransaction.total | number:'1.2-2' }}</span>
+          <span><strong>Estado:</strong> {{ selectedTransaction.estado }}</span>
+        </div>
+
+        <pre class="json-viewer">{{ selectedTransaction | json }}</pre>
+      </div>
+
+      <div class="modal-footer">
+        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="probarIdempotencia(selectedTransaction); cerrarDetalles()"
+        >
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Sincronizar Esta Transacción</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
