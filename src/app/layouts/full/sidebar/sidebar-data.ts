@@ -157,8 +157,8 @@ export const navItems: NavItem[] = [
       {
         displayName: '[CU-16] Tablero Ejecutivo (KPIs) y Predictiva ML',
         iconName: 'solar:chart-square-line-duotone',
-        route: '/ia/alertas',
-        permiso: PermisosService.IA_VIEW_ALERTA,
+        route: '/dashboard',
+        permiso: PermisosService.SEGURIDAD_VIEW_DASHBOARD,
       },
       {
         displayName: '[CU-17] Auditoría de Operaciones y Bitácora (Llave Dev)',
