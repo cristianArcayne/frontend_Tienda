@@ -1,0 +1,109 @@
+<div class="modal-header-banner">
+  <div class="d-flex align-items-center gap-12">
+    <div class="icon-wrap">
+      <mat-icon>business</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title class="m-0 font-weight-bold" style="color: #1e293b; font-size: 20px;">
+        Editar Datos de la Empresa
+      </h2>
+      <p class="text-muted m-0" style="font-size: 13px;">
+        Modifica la razón social, NIT, subdominio y datos de contacto de {{ empresa.nombre }}
+      </p>
+    </div>
+  </div>
+  <button mat-icon-button (click)="cancelar()" [disabled]="isSubmitting">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="modal-content-custom">
+  <form [formGroup]="form">
+
+    <!-- Sección 1: Información Corporativa y Fiscal -->
+    <div class="section-title">
+      <span class="step-num">1</span>
+      <span>Información Corporativa y Fiscal</span>
+    </div>
+
+    <div class="row-fields">
+      <mat-form-field appearance="outline" class="flex-2">
+        <mat-label>Nombre / Razón Social</mat-label>
+        <input matInput formControlName="nombre" placeholder="Ej: FashionStore S.A." required />
+        <mat-icon matPrefix class="field-icon">storefront</mat-icon>
+        <mat-error *ngIf="form.get('nombre')?.hasError('required')">El nombre es requerido</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>NIT / Identificador Fiscal</mat-label>
+        <input matInput formControlName="nit" placeholder="Ej: 1029384021" />
+        <mat-icon matPrefix class="field-icon">badge</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <div class="row-fields">
+      <mat-form-field appearance="outline" class="flex-full">
+        <mat-label>Subdominio / Slug</mat-label>
+        <input matInput formControlName="subdominio" placeholder="ej: fashionstore" required />
+        <span matPrefix style="color: #64748b; margin-right: 6px; font-family: monospace; font-size: 13px;">https://</span>
+        <span matSuffix style="color: #64748b; margin-left: 6px; font-family: monospace; font-size: 13px;">.fashionstore.bo</span>
+        <mat-error *ngIf="form.get('subdominio')?.hasError('required')">El subdominio es obligatorio</mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Sección 2: Contacto y Ubicación -->
+    <div class="section-title m-t-20">
+      <span class="step-num">2</span>
+      <span>Datos de Contacto y Ubicación</span>
+    </div>
+
+    <div class="row-fields">
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Correo de Contacto</mat-label>
+        <input matInput type="email" formControlName="correo" placeholder="contacto@fashionstore.com" required />
+        <mat-icon matPrefix class="field-icon">email</mat-icon>
+        <mat-error *ngIf="form.get('correo')?.hasError('required')">El correo es obligatorio</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Teléfono de Contacto</mat-label>
+        <input matInput formControlName="telefono" placeholder="+591 70011223" />
+        <mat-icon matPrefix class="field-icon">phone</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <div class="row-fields">
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Ciudad Sede</mat-label>
+        <mat-select formControlName="ciudad">
+          <mat-option value="Santa Cruz">Santa Cruz</mat-option>
+          <mat-option value="La Paz">La Paz</mat-option>
+          <mat-option value="Cochabamba">Cochabamba</mat-option>
+          <mat-option value="Sucre">Sucre</mat-option>
+          <mat-option value="Tarija">Tarija</mat-option>
+          <mat-option value="Oruro">Oruro</mat-option>
+          <mat-option value="Potosí">Potosí</mat-option>
+          <mat-option value="Beni">Beni</mat-option>
+          <mat-option value="Pando">Pando</mat-option>
+        </mat-select>
+        <mat-icon matPrefix class="field-icon">location_city</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="flex-2">
+        <mat-label>Dirección Principal</mat-label>
+        <input matInput formControlName="direccion" placeholder="Ej: Av. San Martín #450, Equipetrol" />
+        <mat-icon matPrefix class="field-icon">place</mat-icon>
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="modal-actions-custom">
+  <button mat-button (click)="cancelar()" [disabled]="isSubmitting">Cancelar</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid || isSubmitting" (click)="guardar()" style="min-width: 170px; height: 42px; background: #4f46e5; color: white; font-weight: 600;">
+    <mat-icon *ngIf="!isSubmitting">save</mat-icon>
+    <mat-spinner *ngIf="isSubmitting" diameter="18" class="m-r-8"></mat-spinner>
+    {{ isSubmitting ? 'Guardando...' : 'Actualizar Empresa' }}
+  </button>
+</mat-dialog-actions>

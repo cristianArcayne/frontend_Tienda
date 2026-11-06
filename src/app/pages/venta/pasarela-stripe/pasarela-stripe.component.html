@@ -1,0 +1,409 @@
+<div class="stripe-pasarela-container p-24">
+  <!-- Encabezado de la Pantalla -->
+  <div class="m-b-24 d-flex align-items-center justify-content-between flex-wrap gap-12">
+    <div>
+      <div class="d-flex align-items-center gap-8 m-b-4">
+        <h2 class="m-0 font-weight-bold" style="color: #0f172a; font-size: 22px;">
+          [CU-10] Procesar Ventas Digitales con Pasarela Stripe
+        </h2>
+        <span class="badge-stripe-live">
+          <mat-icon style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;">verified</mat-icon>
+          {{ stripeConfig?.sandbox ? 'STRIPE SANDBOX ACTIVO' : 'STRIPE LIVE' }}
+        </span>
+      </div>
+      <p class="text-muted m-0" style="font-size: 13px;">
+        Terminal de Cobro Digital Omnicanal • Tokenización Segura de Tarjetas (PCI-DSS) • Facturación Electrónica en Tiempo Real
+      </p>
+    </div>
+
+    <div class="d-flex gap-8">
+      <button mat-stroked-button color="primary" (click)="irAListadoVentas()" style="border-radius: 8px;">
+        <mat-icon class="m-r-6">receipt_long</mat-icon>
+        Historial de Ventas
+      </button>
+      <button mat-flat-button color="primary" (click)="nuevaOrden()" style="border-radius: 8px; font-weight: 600;">
+        <mat-icon class="m-r-6">add_shopping_cart</mat-icon>
+        Nueva Orden Digital
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner de Éxito al Confirmar Pago -->
+  <mat-card *ngIf="pagoExitoso" class="m-b-24 bg-success-light border-success-card">
+    <mat-card-content class="p-20">
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-16">
+        <div class="d-flex align-items-center gap-16">
+          <div class="success-icon-badge">
+            <mat-icon style="font-size: 32px; width: 32px; height: 32px; color: #16a34a;">check_circle</mat-icon>
+          </div>
+          <div>
+            <h3 class="m-0 font-weight-bold" style="color: #14532d; font-size: 18px;">
+              ¡Transacción Digital Aprobada y Liquidada con Stripe!
+            </h3>
+            <p class="m-t-4 m-b-0" style="color: #166534; font-size: 13px;">
+              Venta Digital <strong>#{{ pagoExitoso.venta?.id }}</strong> • Pago de <strong>Bs. {{ pagoExitoso.total | number:'1.2-2' }}</strong> debitado de <strong>{{ pagoExitoso.tarjetaMask }}</strong> ({{ pagoExitoso.titular }})
+            </p>
+            <div class="d-flex gap-12 m-t-8 flex-wrap" style="font-size: 12px; color: #15803d;">
+              <span><strong>PaymentIntent:</strong> <code>{{ pagoExitoso.payment_intent_id }}</code></span>
+              <span><strong>Factura Fiscal:</strong> #{{ pagoExitoso.factura.nro_factura }}</span>
+              <span><strong>Código Control:</strong> {{ pagoExitoso.factura.codigo_control }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-8">
+          <button mat-raised-button color="primary" (click)="nuevaOrden()" style="border-radius: 8px;">
+            Emitir Otro Cobro
+          </button>
+          <button mat-stroked-button (click)="pagoExitoso = null" style="border-radius: 8px;">
+            Ocultar
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Grilla Principal: Izquierda Orden / Derecha Pasarela de Pago -->
+  <div class="row">
+    <!-- COLUMNA IZQUIERDA: Configuración y Selección de Prendas -->
+    <div class="col-12 col-lg-7 m-b-24">
+      <mat-card class="h-100 shadow-sm border-rounded-12">
+        <mat-card-header class="p-16 border-bottom">
+          <div class="d-flex align-items-center justify-content-between w-100">
+            <div class="d-flex align-items-center gap-8">
+              <mat-icon color="primary">shopping_bag</mat-icon>
+              <h3 class="m-0 font-weight-bold" style="font-size: 16px;">1. Detalle del Pedido Digital</h3>
+            </div>
+            <!-- Selector de Sucursal Despacho -->
+            <div style="min-width: 200px;">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100 dense-field">
+                <mat-label>Sucursal de Despacho</mat-label>
+                <mat-select [(ngModel)]="sucursalSeleccionadaId">
+                  <mat-option *ngFor="let s of sucursales" [value]="s.id">
+                    {{ s.nombre }} ({{ s.ciudad }})
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content class="p-16">
+          <!-- Agregar Prenda al Pedido -->
+          <div class="d-flex align-items-center gap-12 m-b-16 flex-wrap">
+            <div style="flex: 2; min-width: 240px;">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100 dense-field">
+                <mat-label>Seleccionar Prenda / Variante</mat-label>
+                <mat-select [(ngModel)]="varianteSeleccionadaId" placeholder="Elegir prenda del catálogo...">
+                  <mat-option *ngFor="let v of variantesDisponibles" [value]="v.id">
+                    {{ v.ropa_nombre || v.producto_nombre }} — {{ v.talla }} / {{ v.color }} (Bs. {{ v.precio || v.precio_base }})
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div style="width: 90px;">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100 dense-field">
+                <mat-label>Cant.</mat-label>
+                <input matInput type="number" [(ngModel)]="cantidadSeleccionada" min="1" max="20" />
+              </mat-form-field>
+            </div>
+
+            <button mat-flat-button color="primary" (click)="agregarPrendaSeleccionada()" [disabled]="!varianteSeleccionadaId" style="height: 40px; border-radius: 8px;">
+              <mat-icon class="m-r-4">add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <!-- Tabla de Prendas en la Orden -->
+          <div class="table-responsive rounded border m-b-16">
+            <table mat-table [dataSource]="itemsOrden" class="w-100 dense-table">
+              <!-- Prenda -->
+              <ng-container matColumnDef="prenda">
+                <th mat-header-cell *matHeaderCellDef>Prenda</th>
+                <td mat-cell *matCellDef="let item">
+                  <strong>{{ item.ropa_nombre }}</strong>
+                </td>
+              </ng-container>
+
+              <!-- SKU -->
+              <ng-container matColumnDef="sku">
+                <th mat-header-cell *matHeaderCellDef>SKU</th>
+                <td mat-cell *matCellDef="let item">
+                  <span class="badge-sku">{{ item.sku }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Talla / Color -->
+              <ng-container matColumnDef="talla_color">
+                <th mat-header-cell *matHeaderCellDef>Talla/Color</th>
+                <td mat-cell *matCellDef="let item">
+                  {{ item.talla }} • {{ item.color }}
+                </td>
+              </ng-container>
+
+              <!-- Precio -->
+              <ng-container matColumnDef="precio">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Precio</th>
+                <td mat-cell *matCellDef="let item" class="text-right">
+                  Bs. {{ item.precio_unitario | number:'1.2-2' }}
+                </td>
+              </ng-container>
+
+              <!-- Cantidad -->
+              <ng-container matColumnDef="cantidad">
+                <th mat-header-cell *matHeaderCellDef class="text-center">Cant.</th>
+                <td mat-cell *matCellDef="let item" class="text-center">
+                  {{ item.cantidad }}
+                </td>
+              </ng-container>
+
+              <!-- Subtotal -->
+              <ng-container matColumnDef="subtotal">
+                <th mat-header-cell *matHeaderCellDef class="text-right">Subtotal</th>
+                <td mat-cell *matCellDef="let item" class="text-right font-weight-bold" style="color: #0f172a;">
+                  Bs. {{ item.subtotal | number:'1.2-2' }}
+                </td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="text-center" style="width: 40px;"></th>
+                <td mat-cell *matCellDef="let item; let i = index;" class="text-center">
+                  <button mat-icon-button color="warn" (click)="quitarItem(i)" matTooltip="Quitar">
+                    <mat-icon style="font-size: 18px;">delete_outline</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasItems"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasItems;"></tr>
+            </table>
+
+            <div *ngIf="itemsOrden.length === 0" class="p-24 text-center text-muted">
+              <mat-icon style="font-size: 36px; height: 36px; width: 36px; color: #cbd5e1;">remove_shopping_cart</mat-icon>
+              <p class="m-t-8 m-0">No hay prendas en la orden digital. Seleccione una prenda arriba.</p>
+            </div>
+          </div>
+
+          <!-- Datos del Comprador y Factura -->
+          <h4 class="font-weight-bold m-b-12" style="color: #1e293b; font-size: 14px;">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px; vertical-align: text-bottom;" color="primary">badge</mat-icon>
+            Datos de Emisión de Factura Fiscal Electrónica
+          </h4>
+          <div class="row">
+            <div class="col-12 col-md-6 m-b-12">
+              <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+                <mat-label>Razón Social (Cliente)</mat-label>
+                <input matInput [(ngModel)]="factura.razonSocial" placeholder="Ej. Javier Pérez" />
+              </mat-form-field>
+            </div>
+            <div class="col-12 col-md-6 m-b-12">
+              <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+                <mat-label>NIT / CI</mat-label>
+                <input matInput [(ngModel)]="factura.nit" placeholder="Ej. 1029384021 o 0" />
+              </mat-form-field>
+            </div>
+            <div class="col-12 col-md-6 m-b-12">
+              <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+                <mat-label>Correo para Factura Digital</mat-label>
+                <input matInput [(ngModel)]="factura.correo" placeholder="cliente@correo.com" />
+              </mat-form-field>
+            </div>
+            <div class="col-12 col-md-6 m-b-12">
+              <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+                <mat-label>Dirección de Envío Domiciliario</mat-label>
+                <input matInput [(ngModel)]="factura.direccion" placeholder="Calle, Barrio, Ciudad" />
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- COLUMNA DERECHA: Pasarela de Pago Stripe -->
+    <div class="col-12 col-lg-5 m-b-24">
+      <mat-card class="h-100 shadow-sm border-rounded-12 bg-white">
+        <mat-card-header class="p-16 border-bottom">
+          <div class="d-flex align-items-center justify-content-between w-100">
+            <div class="d-flex align-items-center gap-8">
+              <mat-icon style="color: #6366f1;">credit_card</mat-icon>
+              <h3 class="m-0 font-weight-bold" style="font-size: 16px;">2. Pasarela Stripe Elements</h3>
+            </div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" style="height: 20px;" />
+          </div>
+        </mat-card-header>
+
+        <mat-card-content class="p-16">
+          <!-- Tarjeta Virtual Interactiva (Live Credit Card Preview) -->
+          <div class="credit-card-preview m-b-20" [ngClass]="tipoTarjeta">
+            <div class="d-flex justify-content-between align-items-center m-b-20">
+              <span class="chip-card"></span>
+              <span class="card-brand font-weight-bold">{{ tipoTarjeta.toUpperCase() }}</span>
+            </div>
+            <div class="card-number-display m-b-16">
+              {{ tarjeta.numero || '•••• •••• •••• ••••' }}
+            </div>
+            <div class="d-flex justify-content-between align-items-end">
+              <div>
+                <span class="card-label">TITULAR</span>
+                <div class="card-val font-weight-bold">{{ tarjeta.titular.toUpperCase() || 'NOMBRE DEL CLIENTE' }}</div>
+              </div>
+              <div class="text-right">
+                <span class="card-label">EXPIRA</span>
+                <div class="card-val font-weight-bold">{{ tarjeta.expiracion || 'MM/AA' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjetas Rápidas de Prueba -->
+          <div class="m-b-16 d-flex align-items-center gap-8 flex-wrap">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b;">CARGAR TARJETA TEST:</span>
+            <button mat-stroked-button (click)="usarTarjetaPrueba('visa')" class="btn-chip-card">
+              <mat-icon style="font-size: 14px; width: 14px; height: 14px; color: #2563eb;">done</mat-icon>
+              Visa Test
+            </button>
+            <button mat-stroked-button (click)="usarTarjetaPrueba('mastercard')" class="btn-chip-card">
+              <mat-icon style="font-size: 14px; width: 14px; height: 14px; color: #ea580c;">done</mat-icon>
+              Mastercard Test
+            </button>
+          </div>
+
+          <!-- Formulario de Tarjeta -->
+          <div class="m-b-12">
+            <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+              <mat-label>Nombre Completo del Titular</mat-label>
+              <mat-icon matPrefix class="text-muted m-r-4">person</mat-icon>
+              <input matInput [(ngModel)]="tarjeta.titular" placeholder="Tal como figura en la tarjeta" />
+            </mat-form-field>
+          </div>
+
+          <div class="m-b-12">
+            <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+              <mat-label>Número de Tarjeta</mat-label>
+              <mat-icon matPrefix class="text-muted m-r-4">credit_card</mat-icon>
+              <input matInput [(ngModel)]="tarjeta.numero" (ngModelChange)="formatearNumeroTarjeta()" placeholder="4242 4242 4242 4242" maxlength="19" />
+            </mat-form-field>
+          </div>
+
+          <div class="row m-b-16">
+            <div class="col-6">
+              <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+                <mat-label>Expiración (MM/AA)</mat-label>
+                <input matInput [(ngModel)]="tarjeta.expiracion" (ngModelChange)="formatearExpiracion()" placeholder="MM/AA" maxlength="5" />
+              </mat-form-field>
+            </div>
+            <div class="col-6">
+              <mat-form-field appearance="outline" class="w-100 dense-field" subscriptSizing="dynamic">
+                <mat-label>CVV / CVC</mat-label>
+                <input matInput [(ngModel)]="tarjeta.cvv" placeholder="123" maxlength="4" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Resumen de Totales y Liquidación -->
+          <div class="p-16 rounded m-b-20" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+            <div class="d-flex justify-content-between m-b-8" style="font-size: 13px;">
+              <span class="text-muted">Subtotal Prendas ({{ itemsOrden.length }} items):</span>
+              <span class="font-weight-bold">Bs. {{ totalOrden | number:'1.2-2' }}</span>
+            </div>
+            <div class="d-flex justify-content-between m-b-8" style="font-size: 13px;">
+              <span class="text-muted">Impuestos Fiscales (IVA 13% incluido):</span>
+              <span class="text-muted">Bs. {{ (totalOrden * 0.13) | number:'1.2-2' }}</span>
+            </div>
+            <div class="d-flex justify-content-between m-b-8" style="font-size: 13px;">
+              <span class="text-muted">Comisión Pasarela Stripe (Bonificada):</span>
+              <span class="text-success font-weight-bold">Bs. 0.00</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center p-t-8 border-top" style="font-size: 16px;">
+              <strong style="color: #0f172a;">Total a Cobrar:</strong>
+              <strong style="color: #6366f1; font-size: 22px;">Bs. {{ totalOrden | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+
+          <!-- Botón de Pago Principal con Stripe -->
+          <button
+            mat-raised-button
+            color="primary"
+            class="w-100 btn-pago-stripe"
+            [disabled]="procesandoPago || itemsOrden.length === 0 || totalOrden <= 0"
+            (click)="procesarPagoStripe()">
+            <mat-spinner *ngIf="procesandoPago" diameter="22" class="m-r-8 inline-spinner"></mat-spinner>
+            <mat-icon *ngIf="!procesandoPago" class="m-r-8">lock</mat-icon>
+            {{ procesandoPago ? 'Procesando en Stripe Gateway...' : ('Pagar Seguro Bs. ' + (totalOrden | number:'1.2-2')) }}
+          </button>
+
+          <div class="text-center m-t-12" style="font-size: 11px; color: #64748b;">
+            <mat-icon style="font-size: 13px; width: 13px; height: 13px; vertical-align: text-bottom;">shield</mat-icon>
+            Encriptación TLS 256-bit • Certificación PCI-DSS Nivel 1 • Sin almacenamiento de CVV
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- SECCIÓN HISTORIAL: Ventas Digitales Recientes -->
+  <mat-card class="m-t-20 shadow-sm border-rounded-12">
+    <mat-card-header class="p-16 border-bottom">
+      <div class="d-flex align-items-center gap-8">
+        <mat-icon color="primary">history</mat-icon>
+        <h3 class="m-0 font-weight-bold" style="font-size: 16px;">
+          Transacciones Digitales y Pagos con Tarjeta Recientes
+        </h3>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content class="p-16">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="ventasDigitales" class="w-100">
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef># Venta</th>
+            <td mat-cell *matCellDef="let v"><strong>#{{ v.id }}</strong></td>
+          </ng-container>
+
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let v">{{ (v.fecha_venta || v.fecha) | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="cliente">
+            <th mat-header-cell *matHeaderCellDef>Cliente / Razón Social</th>
+            <td mat-cell *matCellDef="let v">{{ v.razon_social || v.cliente_username || 'Cliente General' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="metodo">
+            <th mat-header-cell *matHeaderCellDef>Pasarela / Método</th>
+            <td mat-cell *matCellDef="let v">
+              <span class="badge-metodo">
+                <mat-icon style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;">credit_card</mat-icon>
+                {{ v.metodo_pago || 'TARJETA (STRIPE)' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Monto Total</th>
+            <td mat-cell *matCellDef="let v" class="text-right font-weight-bold" style="color: #0f172a;">
+              Bs. {{ (v.total || v.precio_total || 0) | number:'1.2-2' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Estado</th>
+            <td mat-cell *matCellDef="let v" class="text-center">
+              <span class="badge-status-ok">LIQUIDADA</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnasHistorial"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnasHistorial;"></tr>
+        </table>
+
+        <div *ngIf="ventasDigitales.length === 0" class="p-24 text-center text-muted">
+          No hay transacciones digitales registradas aún.
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+

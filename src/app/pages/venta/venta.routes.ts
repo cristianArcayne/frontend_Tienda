@@ -6,6 +6,8 @@ import { VentaListComponent } from './venta-list/venta-list';
 import { CrearVentaComponent } from './crear-venta/crear-venta';
 import { DetalleVentaComponent } from './detalle-venta/detalle-venta';
 import { GestionDevolucionesComponent } from './gestion-devoluciones/gestion-devoluciones.component';
+import { CobroQrComponent } from './cobro-qr/cobro-qr.component';
+import { PasarelaStripeComponent } from './pasarela-stripe/pasarela-stripe.component';
 
 const canAccessWithPermiso = (permiso: string) => {
   return () => {
@@ -33,6 +35,11 @@ export const VentaRoutes: Routes = [
     canActivate: [canAccessWithPermiso(PermisosService.VENTA_ADD_VENTA)]
   },
   {
+    path: 'cobro-qr',
+    component: CobroQrComponent,
+    canActivate: [canAccessWithPermiso(PermisosService.VENTA_VIEW_VENTA)]
+  },
+  {
     path: 'devoluciones/gestion',
     component: GestionDevolucionesComponent,
     canActivate: [canAccessWithPermiso(PermisosService.VENTA_VIEW_VENTA)]
@@ -40,6 +47,11 @@ export const VentaRoutes: Routes = [
   {
     path: 'devoluciones',
     component: GestionDevolucionesComponent,
+    canActivate: [canAccessWithPermiso(PermisosService.VENTA_VIEW_VENTA)]
+  },
+  {
+    path: 'pasarela',
+    component: PasarelaStripeComponent,
     canActivate: [canAccessWithPermiso(PermisosService.VENTA_VIEW_VENTA)]
   },
   {

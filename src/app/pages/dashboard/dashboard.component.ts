@@ -27,6 +27,7 @@ import {
   ApexAnnotations,
   ApexGrid
 } from 'ng-apexcharts';
+import { RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { ConfigService } from '../../services/config.service';
 import { AuthService } from '../../services/auth.service';
@@ -38,6 +39,7 @@ import { Subject, takeUntil } from 'rxjs';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     MatCardModule,
     MatButtonModule,
@@ -152,6 +154,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.reentrenarUrl = this.configService.getApiUrl('ia/reentrenar');
   }
 
+  bloqueadoPorPlan = signal(false);
+  mensajeBloqueo = signal('');
+
+  get currentEmpresaNombre(): string {
+    return this.authService.getEmpresaNombre() || 'Empresa Actual';
+  }
+
   ngOnInit(): void {
     this.isSuperuser = this.authService.isSuperuser();
     this.cargarDashboard();
@@ -164,6 +173,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   cargarDashboard(): void {
     this.cargando.set(true);
+    this.bloqueadoPorPlan.set(false);
+    this.mensajeBloqueo.set('');
     let params = new HttpParams().set('meses_historico', this.mesesHistorico().toString());
     const fecha = this.fechaHasta();
     if (fecha) params = params.set('fecha_hasta', this.formatearFecha(fecha));
@@ -172,6 +183,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
+          this.bloqueadoPorPlan.set(false);
           this.dashboardData.set(data);
           const cats = this.categorias();
           if (cats.length > 0 && !this.categoriaSeleccionada()) {
@@ -180,9 +192,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.actualizarGrafico();
           this.cargando.set(false);
         },
-        error: () => {
+        error: (err) => {
           this.cargando.set(false);
-          this.snackBar.open('Error al cargar el dashboard de IA', 'Cerrar', { duration: 3000 });
+          if (err.status === 403) {
+            this.bloqueadoPorPlan.set(true);
+            const detail = err.error?.detail || 'Este módulo de Inteligencia Artificial no está disponible para el plan actual de la empresa.';
+            this.mensajeBloqueo.set(detail);
+          } else {
+            this.snackBar.open('Error al cargar el dashboard de IA', 'Cerrar', { duration: 3000 });
+          }
         }
       });
   }

@@ -21,6 +21,8 @@ export interface LoginResponse {
   is_superuser: boolean;
   roles: string[];
   permisos: string[];
+  empresa_id?: number | null;
+  empresa_nombre?: string | null;
 }
 
 export interface AuthState {
@@ -33,6 +35,8 @@ export interface AuthState {
   is_superuser: boolean;
   roles: string[];
   permisos: string[];
+  empresa_id?: number | null;
+  empresa_nombre?: string | null;
 }
 
 /**
@@ -53,6 +57,8 @@ export class AuthService {
   private readonly ROLES_KEY = `${this.STORAGE_PREFIX}roles`;
   private readonly PERMISOS_KEY = `${this.STORAGE_PREFIX}permisos`;
   private readonly REMEMBER_ME_KEY = `${this.STORAGE_PREFIX}remember_me`;
+  private readonly EMPRESA_ID_KEY = `${this.STORAGE_PREFIX}empresa_id`;
+  private readonly EMPRESA_NOMBRE_KEY = `${this.STORAGE_PREFIX}empresa_nombre`;
 
   /** Tiempo de inactividad antes de cerrar sesión (10 minutos) */
   private readonly INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
@@ -121,17 +127,35 @@ export class AuthService {
     // Limpiar ambos almacenamientos previamente
     this.clearAuthData();
 
-    const storage = rememberMe ? localStorage : sessionStorage;
+    // Guardar en ambos storages para resiliencia total contra recargas
+    const storages = [sessionStorage, localStorage];
+    storages.forEach(storage => {
+      try {
+        storage.setItem(this.ACCESS_TOKEN_KEY, response.access);
+        storage.setItem(this.REFRESH_TOKEN_KEY, response.refresh);
+        storage.setItem(this.USUARIO_ID_KEY, response.usuario_id.toString());
+        storage.setItem(this.USERNAME_KEY, response.username);
+        storage.setItem(this.NOMBRE_COMPLETO_KEY, response.nombre_completo);
+        storage.setItem(this.IS_SUPERUSER_KEY, JSON.stringify(response.is_superuser));
+        storage.setItem(this.ROLES_KEY, JSON.stringify(response.roles));
+        storage.setItem(this.PERMISOS_KEY, JSON.stringify(response.permisos));
+        storage.setItem(this.REMEMBER_ME_KEY, JSON.stringify(rememberMe));
 
-    storage.setItem(this.ACCESS_TOKEN_KEY, response.access);
-    storage.setItem(this.REFRESH_TOKEN_KEY, response.refresh);
-    storage.setItem(this.USUARIO_ID_KEY, response.usuario_id.toString());
-    storage.setItem(this.USERNAME_KEY, response.username);
-    storage.setItem(this.NOMBRE_COMPLETO_KEY, response.nombre_completo);
-    storage.setItem(this.IS_SUPERUSER_KEY, JSON.stringify(response.is_superuser));
-    storage.setItem(this.ROLES_KEY, JSON.stringify(response.roles));
-    storage.setItem(this.PERMISOS_KEY, JSON.stringify(response.permisos));
-    storage.setItem(this.REMEMBER_ME_KEY, JSON.stringify(rememberMe));
+        if (response.empresa_id !== undefined && response.empresa_id !== null) {
+          storage.setItem(this.EMPRESA_ID_KEY, response.empresa_id.toString());
+        } else {
+          storage.removeItem(this.EMPRESA_ID_KEY);
+        }
+
+        if (response.empresa_nombre) {
+          storage.setItem(this.EMPRESA_NOMBRE_KEY, response.empresa_nombre);
+        } else {
+          storage.removeItem(this.EMPRESA_NOMBRE_KEY);
+        }
+      } catch (e) {
+        console.error('Error guardando en storage:', e);
+      }
+    });
 
     this.authState.next({
       isAuthenticated: true,
@@ -142,7 +166,9 @@ export class AuthService {
       refresh_token: response.refresh,
       is_superuser: response.is_superuser,
       roles: response.roles,
-      permisos: response.permisos
+      permisos: response.permisos,
+      empresa_id: response.empresa_id ?? null,
+      empresa_nombre: response.empresa_nombre ?? null
     });
 
     if (!rememberMe) {
@@ -153,22 +179,15 @@ export class AuthService {
   }
 
   /**
-   * Restaurar estado de autenticación
-   * Solo restaura de localStorage si rememberMe es explícitamente true
+   * Restaurar estado de autenticacion resiliente
    */
   private restoreAuthState(): void {
     let storage: Storage | null = null;
 
-    if (sessionStorage.getItem(this.ACCESS_TOKEN_KEY)) {
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(this.ACCESS_TOKEN_KEY)) {
       storage = sessionStorage;
-    } else if (localStorage.getItem(this.ACCESS_TOKEN_KEY)) {
-      const rememberVal = localStorage.getItem(this.REMEMBER_ME_KEY);
-      if (rememberVal === 'true' || rememberVal === JSON.stringify(true)) {
-        storage = localStorage;
-      } else {
-        // Limpiar tokens residuales no recordados
-        this.clearStorage(localStorage);
-      }
+    } else if (typeof localStorage !== 'undefined' && localStorage.getItem(this.ACCESS_TOKEN_KEY)) {
+      storage = localStorage;
     }
 
     if (!storage) {
@@ -185,18 +204,22 @@ export class AuthService {
     const roles = storage.getItem(this.ROLES_KEY);
     const permisos = storage.getItem(this.PERMISOS_KEY);
     const rememberMe = storage.getItem(this.REMEMBER_ME_KEY) === 'true';
+    const empresaIdStr = storage.getItem(this.EMPRESA_ID_KEY);
+    const empresaNombre = storage.getItem(this.EMPRESA_NOMBRE_KEY);
 
     if (accessToken && usuarioId) {
       this.authState.next({
         isAuthenticated: true,
-        usuario_id: parseInt(usuarioId),
+        usuario_id: parseInt(usuarioId, 10),
         username: username || null,
         nombre_completo: nombreCompleto || null,
         access_token: accessToken,
         refresh_token: refreshToken,
         is_superuser: isSuperuser ? JSON.parse(isSuperuser) : false,
         roles: roles ? JSON.parse(roles) : [],
-        permisos: permisos ? JSON.parse(permisos) : []
+        permisos: permisos ? JSON.parse(permisos) : [],
+        empresa_id: empresaIdStr ? parseInt(empresaIdStr, 10) : null,
+        empresa_nombre: empresaNombre || null
       });
 
       if (!rememberMe) {
@@ -206,7 +229,6 @@ export class AuthService {
       this.clearAuthData();
     }
   }
-
   /**
    * Inicia el temporizador y detector de inactividad del usuario
    */
@@ -300,6 +322,8 @@ export class AuthService {
     storage.removeItem(this.ROLES_KEY);
     storage.removeItem(this.PERMISOS_KEY);
     storage.removeItem(this.REMEMBER_ME_KEY);
+    storage.removeItem(this.EMPRESA_ID_KEY);
+    storage.removeItem(this.EMPRESA_NOMBRE_KEY);
   }
 
   /**
@@ -390,7 +414,17 @@ export class AuthService {
    * Obtener lista de permisos del usuario
    */
   getPermisos(): string[] {
-    return this.authState.value.permisos;
+    if (this.authState.value.permisos && this.authState.value.permisos.length > 0) {
+      return this.authState.value.permisos;
+    }
+    const val = this.getItem(this.PERMISOS_KEY);
+    if (!val) return [];
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return [val];
+    }
   }
 
   /**
@@ -409,17 +443,48 @@ export class AuthService {
   }
 
   /**
+   * Verificar si tiene todos los permisos especificados
+   */
+  hasAllPermisos(permisos: string[]): boolean {
+    return permisos.every(p => this.hasPermiso(p));
+  }
+
+  /**
    * Verificar si es superusuario
    */
   isSuperuser(): boolean {
-    return this.authState.value.is_superuser;
+    if (this.authState.value.is_superuser) return true;
+    const val = this.getItem(this.IS_SUPERUSER_KEY);
+    return val === 'true' || val === JSON.stringify(true);
+  }
+
+  /**
+   * Verificar si es Administrador (SuperAdmin o Administrador de Empresa)
+   */
+  isAdmin(): boolean {
+    if (this.isSuperuser()) return true;
+    const roles = this.getRoles() || [];
+    return roles.some(r => !!r && (
+      r.toLowerCase().includes('admin') || 
+      r.toLowerCase().includes('gerente')
+    ));
   }
 
   /**
    * Obtener lista de roles del usuario
    */
   getRoles(): string[] {
-    return this.authState.value.roles;
+    if (this.authState.value.roles && this.authState.value.roles.length > 0) {
+      return this.authState.value.roles;
+    }
+    const val = this.getItem(this.ROLES_KEY);
+    if (!val) return [];
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return [val];
+    }
   }
 
   /**
@@ -427,6 +492,48 @@ export class AuthService {
    */
   hasRol(rol: string): boolean {
     return this.authState.value.roles.includes(rol);
+  }
+
+  /**
+   * Obtener ID de la Empresa / Tenant actual
+   */
+  getEmpresaId(): number | null {
+    if (this.authState.value.empresa_id !== undefined && this.authState.value.empresa_id !== null) {
+      return this.authState.value.empresa_id;
+    }
+    const val = this.getItem(this.EMPRESA_ID_KEY);
+    return val ? parseInt(val, 10) : null;
+  }
+
+  /**
+   * Obtener Razón Social de la Empresa / Tenant actual
+   */
+  getEmpresaNombre(): string | null {
+    return this.authState.value.empresa_nombre || this.getItem(this.EMPRESA_NOMBRE_KEY);
+  }
+
+  /**
+   * Permite al SuperAdmin seleccionar o alternar entre tenants en tiempo real
+   */
+  setEmpresaActiva(id: number | null, nombre?: string | null): void {
+    const storage = this.getActiveStorage();
+    if (id !== null && id !== undefined) {
+      storage.setItem(this.EMPRESA_ID_KEY, id.toString());
+    } else {
+      storage.removeItem(this.EMPRESA_ID_KEY);
+    }
+
+    if (nombre) {
+      storage.setItem(this.EMPRESA_NOMBRE_KEY, nombre);
+    } else {
+      storage.removeItem(this.EMPRESA_NOMBRE_KEY);
+    }
+
+    this.authState.next({
+      ...this.authState.value,
+      empresa_id: id,
+      empresa_nombre: nombre || null
+    });
   }
 
   /**
@@ -442,7 +549,9 @@ export class AuthService {
       refresh_token: null,
       is_superuser: false,
       roles: [],
-      permisos: []
+      permisos: [],
+      empresa_id: null,
+      empresa_nombre: null
     };
   }
 }

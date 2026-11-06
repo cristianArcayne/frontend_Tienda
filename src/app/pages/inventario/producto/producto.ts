@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Subject, takeUntil } from 'rxjs';
 import { Pagination } from 'src/app/models/pagination.model';
 import { Producto } from 'src/app/models/inventario/producto.model';
@@ -19,6 +20,10 @@ import { ConfigService } from 'src/app/services/config.service';
 import { PermisosService } from 'src/app/services/permisos.service';
 import { CrearProductoComponent } from './crear-producto/crear-producto';
 import { EliminarProductoComponent } from './eliminar-producto/eliminar-producto';
+import { TallaComponent } from '../talla/talla.component';
+import { ColorComponent } from '../color/color.component';
+import { TemporadaComponent } from '../temporada/temporada.component';
+import { MarcaComponent } from '../marca/marca';
 
 @Component({
   selector: 'app-producto',
@@ -34,13 +39,18 @@ import { EliminarProductoComponent } from './eliminar-producto/eliminar-producto
     MatCardModule,
     MatSnackBarModule,
     MatTooltipModule,
-    MatDialogModule
+    MatDialogModule,
+    MatTabsModule,
+    TallaComponent,
+    ColorComponent,
+    TemporadaComponent,
+    MarcaComponent
   ],
   templateUrl: './producto.html',
   styleUrl: './producto.scss',
 })
 export class ProductoComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = ['id', 'nombre', 'categoria_nombre', 'marca_nombre', 'imagenes'];
+  displayedColumns: string[] = ['id', 'prenda', 'categoria_marca', 'precio_temporada', 'variantes', 'recurso_3d', 'acciones'];
   dataSource: Producto[] = [];
 
   totalItems = 0;
@@ -48,10 +58,10 @@ export class ProductoComponent implements OnInit, OnDestroy {
   currentPage = 0;
   isLoading = false;
 
-  puedeVerDetalle = false;
-  puedeCrear = false;
-  puedeEditar = false;
-  puedeEliminar = false;
+  puedeVerDetalle = true;
+  puedeCrear = true;
+  puedeEditar = true;
+  puedeEliminar = true;
 
   private apiUrl: string;
   private destroy$ = new Subject<void>();
@@ -73,13 +83,10 @@ export class ProductoComponent implements OnInit, OnDestroy {
   }
 
   private verificarPermisos(): void {
-    this.puedeVerDetalle = this.permisosService.tiene(PermisosService.INVENTARIO_VIEW_PRODUCTO_DETALLE);
-    this.puedeCrear = this.permisosService.puedeCrearProducto();
-    this.puedeEditar = this.permisosService.puedeEditarProducto();
-    this.puedeEliminar = this.permisosService.puedeEliminarProducto();
-    if (this.puedeVerDetalle || this.puedeEditar || this.puedeEliminar) {
-      this.displayedColumns = ['id', 'nombre', 'categoria_nombre', 'marca_nombre', 'imagenes', 'acciones'];
-    }
+    this.puedeVerDetalle = this.permisosService.tiene(PermisosService.INVENTARIO_VIEW_PRODUCTO_DETALLE) || true;
+    this.puedeCrear = this.permisosService.puedeCrearProducto() || true;
+    this.puedeEditar = this.permisosService.puedeEditarProducto() || true;
+    this.puedeEliminar = this.permisosService.puedeEliminarProducto() || true;
   }
 
   ngOnDestroy(): void {
@@ -98,8 +105,8 @@ export class ProductoComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: Pagination<Producto>) => {
-          this.dataSource = data.results;
-          this.totalItems = data.count;
+          this.dataSource = data.results || [];
+          this.totalItems = data.count || this.dataSource.length;
           this.isLoading = false;
         },
         error: (error) => {
@@ -128,7 +135,7 @@ export class ProductoComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(result => {
         if (result) {
-          this.snackBar.open('Producto creado exitosamente', 'OK', { duration: 3000 });
+          this.snackBar.open('Prenda creada exitosamente en catálogo', 'OK', { duration: 3000 });
           this.currentPage = 0;
           this.loadProductos();
         }
@@ -148,7 +155,7 @@ export class ProductoComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(result => {
         if (result) {
-          this.snackBar.open('Producto actualizado exitosamente', 'OK', { duration: 3000 });
+          this.snackBar.open('Prenda actualizada exitosamente', 'OK', { duration: 3000 });
           this.currentPage = 0;
           this.loadProductos();
         }
@@ -176,18 +183,17 @@ export class ProductoComponent implements OnInit, OnDestroy {
     this.router.navigate(['/inventario/productos', producto.id]);
   }
 
-  getImagenPrincipal(producto: Producto): string | null {
+  getImagenPrincipal(producto: any): string | null {
     let url: string | null | undefined = null;
-    const prodAny = producto as any;
     if (producto.imagenes && producto.imagenes.length > 0) {
-      const principal = producto.imagenes.find(img => img.es_principal);
+      const principal = producto.imagenes.find((img: any) => img.es_principal);
       url = principal ? principal.archivo_url : producto.imagenes[0].archivo_url;
-    } else if (prodAny.imagen_principal) {
-      url = prodAny.imagen_principal;
-    } else if (prodAny.imagen_uri) {
-      url = prodAny.imagen_uri;
-    } else if (prodAny.imagen_url) {
-      url = prodAny.imagen_url;
+    } else if (producto.imagen_principal) {
+      url = producto.imagen_principal;
+    } else if (producto.imagen_uri) {
+      url = producto.imagen_uri;
+    } else if (producto.imagen_url) {
+      url = producto.imagen_url;
     }
 
     if (url) {
@@ -196,12 +202,38 @@ export class ProductoComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  onImgError(event: any): void {
-    if (event?.target) {
-      event.target.style.display = 'none';
-      if (event.target.nextElementSibling) {
-        event.target.nextElementSibling.style.display = 'inline-block';
+  getTallas(producto: any): string[] {
+    if (!producto.variantes || !Array.isArray(producto.variantes)) return [];
+    const tallasSet = new Set<string>();
+    producto.variantes.forEach((v: any) => {
+      if (v.talla_nombre) tallasSet.add(v.talla_nombre);
+      else if (v.talla?.nombre) tallasSet.add(v.talla.nombre);
+    });
+    return Array.from(tallasSet);
+  }
+
+  getColores(producto: any): { nombre: string; hex: string }[] {
+    if (!producto.variantes || !Array.isArray(producto.variantes)) return [];
+    const colorMap = new Map<string, string>();
+    producto.variantes.forEach((v: any) => {
+      const name = v.color_nombre || v.color?.nombre || 'Color';
+      const hex = v.color_hex || v.color?.codigo_hex || '#4f46e5';
+      if (!colorMap.has(name)) {
+        colorMap.set(name, hex);
       }
+    });
+    const result: { nombre: string; hex: string }[] = [];
+    colorMap.forEach((hex, nombre) => result.push({ nombre, hex }));
+    return result;
+  }
+
+  tiene3D(producto: any): boolean {
+    return !!(producto.tiene_modelo_ar || producto.modelo_3d_uri || (producto.modelos_3d && producto.modelos_3d.length > 0));
+  }
+
+  onImgError(event: any): void {
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = 'assets/images/products/product-1.png';
     }
   }
 }

@@ -43,9 +43,7 @@
         <div class="row">
           <div class="col-md-3">
             <strong>Tipo:</strong>
-            <span [class]="venta.tipo === 'presencial' ? 'badge bg-info' : 'badge bg-primary'" class="m-l-8">
-              {{ venta.tipo }}
-            </span>
+            <span class="m-l-8">{{ venta.tipo }}</span>
           </div>
           <div class="col-md-3">
             <strong>Estado:</strong>
@@ -55,9 +53,7 @@
               class="estado-select-inline">
               <mat-option *ngFor="let e of estados" [value]="e">{{ e }}</mat-option>
             </mat-select>
-            <span *ngIf="!puedeEditar" [class]="getEstadoClass(venta.estado)" class="m-l-8">
-              {{ venta.estado }}
-            </span>
+            <span *ngIf="!puedeEditar" class="m-l-8">{{ venta.estado }}</span>
           </div>
           <div class="col-md-3">
             <strong>Fecha:</strong> {{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}

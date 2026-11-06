@@ -1,0 +1,41 @@
+.cobro-qr-container {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .header-card {
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .qr-frame-box {
+    .qr-wrapper {
+      display: inline-block;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .inline-spinner {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}

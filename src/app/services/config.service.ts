@@ -104,6 +104,12 @@ export class ConfigService {
     // Obtener la raíz del servidor backend eliminando el sufijo /api
     const serverBase = this.apiBaseUrl.replace(/\/api\/?$/, '');
 
+    // Si viene con dominio de onrender o remoto, redirigir al backend local/activo
+    if (cleanUrl.includes('onrender.com')) {
+      const pathPart = cleanUrl.replace(/^https?:\/\/[^\/]+/, '');
+      return `${serverBase}${pathPart.startsWith('/') ? '' : '/'}${pathPart}`;
+    }
+
     // Si viene con localhost:8000 o 127.0.0.1:8000 pero estamos en entorno remoto (Vercel)
     if (cleanUrl.includes('localhost:8000') || cleanUrl.includes('127.0.0.1:8000')) {
       const isRemote = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';

@@ -1,5 +1,25 @@
 import { Component, OnInit, OnDestroy, Inject, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatListModule, MatSelectionListChange } from '@angular/material/list';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { MatChipsModule } from '@angular/material/chips';
+
+import { Subject, takeUntil } from 'rxjs';
+
+import { ApiService } from '../../../../services/api.service';
+import { ConfigService } from '../../../../services/config.service';
+import { AuthService } from '../../../../services/auth.service';
+import { Rol } from '../../../../models/seguridad/rol.model';
+import { Pagination } from '../../../../models/pagination.model';
 
 function passwordSegura(control: AbstractControl): ValidationErrors | null {
   const v = control.value;
@@ -12,22 +32,6 @@ function passwordSegura(control: AbstractControl): ValidationErrors | null {
   if (!/[^a-zA-Z0-9]/.test(v))  errors['noSymbol']    = true;
   return Object.keys(errors).length ? errors : null;
 }
-import { CommonModule } from '@angular/common';
-import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatListModule, MatSelectionListChange } from '@angular/material/list';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatIconModule } from '@angular/material/icon';
-
-import { Subject, takeUntil } from 'rxjs';
-
-import { ApiService } from '../../../../services/api.service';
-import { ConfigService } from '../../../../services/config.service';
-import { Rol } from '../../../../models/seguridad/rol.model';
-import { Pagination } from '../../../../models/pagination.model';
 
 @Component({
   selector: 'app-crear-usuario',
@@ -42,7 +46,9 @@ import { Pagination } from '../../../../models/pagination.model';
     MatProgressSpinnerModule,
     MatListModule,
     MatSnackBarModule,
-    MatIconModule
+    MatIconModule,
+    MatSelectModule,
+    MatChipsModule
   ],
   templateUrl: './crear-usuario.html',
   styleUrl: './crear-usuario.scss'
@@ -51,21 +57,25 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
   form: FormGroup;
   roles: Rol[] = [];
   rolesSeleccionadosPorDefecto: number[] = [];
+  empresas: any[] = [];
+  sucursales: any[] = [];
+  
   isLoading = false;
   isSaving = false;
   isEditMode = false;
   
-  // Variables para paginación
-  rolesPageSize = 10;
+  isSuperuser = false;
+  empresaActualNombre: string | null = null;
+  empresaActualId: number | null = null;
+  
+  // Variables para paginación de roles
+  rolesPageSize = 20;
   rolesCurrentPage = 0;
   rolesTotalItems = 0;
   nextRolesUrl: string | null = null;
   previousRolesUrl: string | null = null;
   
-  // Guardar el grupo_id del usuario siendo editado
   grupoIdUsuario: number | null = null;
-  
-  // Exponer Math al template
   Math = Math;
   
   private destroy$ = new Subject<void>();
@@ -73,37 +83,60 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
 
   constructor(
     private formBuilder: FormBuilder,
+    private http: HttpClient,
     private apiService: ApiService,
     private configService: ConfigService,
+    private authService: AuthService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CrearUsuarioComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.isEditMode = !!data?.usuario;
-    // En edición, el backend solo envía nombres de grupos, buscaremos el ID en cargarRoles
-    // Por ahora, usamos el primer grupo si existe
-    this.grupoIdUsuario = null;
+    this.isSuperuser = this.authService.isSuperuser();
+    this.empresaActualNombre = this.authService.getEmpresaNombre();
+    this.empresaActualId = this.authService.getEmpresaId();
     
+    const usuarioEdit = data?.usuario;
+    const initialEmpresaId = usuarioEdit?.empresa_id || (this.isSuperuser ? 1 : this.empresaActualId);
+
     this.form = this.formBuilder.group({
       username: [
-        data?.usuario?.username || '',
+        usuarioEdit?.username || '',
         [Validators.required, Validators.minLength(3)]
       ],
+      nombre: [
+        usuarioEdit?.nombre || '',
+        [Validators.required]
+      ],
+      apellido: [
+        usuarioEdit?.apellido || '',
+        [Validators.required]
+      ],
       email: [
-        data?.usuario?.email || '',
+        usuarioEdit?.email || '',
         [Validators.email]
       ],
+      ci: [
+        usuarioEdit?.ci || ''
+      ],
+      telefono: [
+        usuarioEdit?.telefono || ''
+      ],
       password: [
-        data?.usuario?.password || '',
-        this.isEditMode
-          ? [passwordSegura]
-          : [Validators.required, passwordSegura]
+        usuarioEdit?.password || '',
+        this.isEditMode ? [passwordSegura] : [Validators.required, passwordSegura]
+      ],
+      empresa_id: [
+        initialEmpresaId,
+        Validators.required
+      ],
+      sucursal_id: [
+        usuarioEdit?.sucursal_id || null
       ],
       grupo_id: ['', Validators.required]
     });
 
-    // Deshabilitar username en modo edición
     if (this.isEditMode) {
       this.form.get('username')?.disable();
     }
@@ -122,6 +155,7 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarRoles();
+    this.cargarEmpresas();
   }
 
   ngOnDestroy(): void {
@@ -129,9 +163,51 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Cargar roles disponibles con paginación
-   */
+  cargarEmpresas(): void {
+    const base = this.configService.getApiBaseUrl().replace(/\/api\/?$/, '');
+    if (this.isSuperuser) {
+      this.http.get<any[]>(`${base}/api/v1/empresas/`)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (data) => {
+            this.empresas = Array.isArray(data) ? data : ((data as any)?.results || []);
+            const selectedEmp = this.form.get('empresa_id')?.value;
+            if (selectedEmp) {
+              this.cargarSucursales(selectedEmp);
+            }
+          },
+          error: (err) => console.error('Error cargando empresas:', err)
+        });
+    } else {
+      if (this.empresaActualId) {
+        this.cargarSucursales(this.empresaActualId);
+      }
+    }
+  }
+
+  onEmpresaSelected(empresaId: number): void {
+    this.form.patchValue({ sucursal_id: null });
+    this.cargarSucursales(empresaId);
+  }
+
+  cargarSucursales(empresaId: number): void {
+    if (!empresaId) {
+      this.sucursales = [];
+      return;
+    }
+    const base = this.configService.getApiBaseUrl().replace(/\/api\/?$/, '');
+    this.http.get<any>(`${base}/api/v1/sucursales/?empresa_id=${empresaId}&page_size=50`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.sucursales = Array.isArray(res) ? res : (res?.results || []);
+        },
+        error: () => {
+          this.sucursales = [];
+        }
+      });
+  }
+
   private cargarRoles(): void {
     this.isLoading = true;
     const url = this.configService.getApiUrl('roles');
@@ -150,15 +226,19 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
           this.previousRolesUrl = data.previous;
           this.isLoading = false;
           
-          // En edición: buscar el rol que coincida con los grupos del usuario
           if (this.isEditMode && this.data?.usuario?.grupos && this.data.usuario.grupos.length > 0) {
             const grupoNombre = this.data.usuario.grupos[0];
-            const rolEncontrado = this.roles.find(r => r.name === grupoNombre);
+            const rolEncontrado = this.roles.find(r => r.name === grupoNombre || r.nombre === grupoNombre);
             if (rolEncontrado) {
               this.grupoIdUsuario = rolEncontrado.id;
               this.rolesSeleccionadosPorDefecto = [rolEncontrado.id];
               this.form.patchValue({ grupo_id: rolEncontrado.id });
             }
+          } else if (this.roles.length > 0 && !this.form.get('grupo_id')?.value) {
+            // Preseleccionar por defecto Vendedor o el primero disponible
+            const defaultRol = this.roles.find(r => (r.name || r.nombre || '').toLowerCase().includes('vendedor')) || this.roles[0];
+            this.form.patchValue({ grupo_id: defaultRol.id });
+            this.rolesSeleccionadosPorDefecto = [defaultRol.id];
           }
           
           this.cdr.detectChanges();
@@ -171,12 +251,8 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Ir a la siguiente página de roles
-   */
   nextRolesPage(): void {
     if (!this.nextRolesUrl) return;
-
     this.isLoading = true;
     this.apiService.getNextPage<Rol>(this.nextRolesUrl)
       .pipe(takeUntil(this.destroy$))
@@ -188,35 +264,18 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
           this.previousRolesUrl = data.previous;
           this.rolesCurrentPage++;
           this.isLoading = false;
-          
-          // Pre-seleccionar el rol del usuario si está en edición y está en la nueva página
-          if (this.isEditMode && this.data?.usuario?.grupos && this.data.usuario.grupos.length > 0) {
-            const grupoNombre = this.data.usuario.grupos[0];
-            const rolEncontrado = this.roles.find(r => r.name === grupoNombre);
-            if (rolEncontrado) {
-              this.grupoIdUsuario = rolEncontrado.id;
-              this.rolesSeleccionadosPorDefecto = [rolEncontrado.id];
-            }
-          }
-          
           this.cdr.detectChanges();
         },
-        error: (error) => {
-          console.error('Error al cargar siguiente página de roles:', error);
-          this.snackBar.open('Error al cargar roles', 'Cerrar', { duration: 5000 });
+        error: () => {
           this.isLoading = false;
         }
       });
   }
 
-  /**
-   * Ir a la página anterior de roles
-   */
   previousRolesPage(): void {
     if (!this.previousRolesUrl) return;
-
     this.isLoading = true;
-    this.apiService.getPreviousPage<Rol>(this.previousRolesUrl)
+    this.apiService.getNextPage<Rol>(this.previousRolesUrl)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: Pagination<Rol>) => {
@@ -226,74 +285,50 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
           this.previousRolesUrl = data.previous;
           this.rolesCurrentPage--;
           this.isLoading = false;
-          
-          // Pre-seleccionar el rol del usuario si está en edición y está en la página anterior
-          if (this.isEditMode && this.data?.usuario?.grupos && this.data.usuario.grupos.length > 0) {
-            const grupoNombre = this.data.usuario.grupos[0];
-            const rolEncontrado = this.roles.find(r => r.name === grupoNombre);
-            if (rolEncontrado) {
-              this.grupoIdUsuario = rolEncontrado.id;
-              this.rolesSeleccionadosPorDefecto = [rolEncontrado.id];
-            }
-          }
-          
           this.cdr.detectChanges();
         },
-        error: (error) => {
-          console.error('Error al cargar página anterior de roles:', error);
-          this.snackBar.open('Error al cargar roles', 'Cerrar', { duration: 5000 });
+        error: () => {
           this.isLoading = false;
         }
       });
   }
 
-  /**
-   * Actualizar el valor del grupo_id cuando se selecciona un rol
-   */
   onRolSelected(event: MatSelectionListChange): void {
     if (event.options.length > 0) {
       const selectedRolId = event.options[0].value;
       this.form.patchValue({ grupo_id: selectedRolId });
+      this.rolesSeleccionadosPorDefecto = [selectedRolId];
     }
   }
 
-  /**
-   * Guardar usuario (crear o editar)
-   */
   guardar(): void {
     if (this.form.invalid) {
-      this.snackBar.open('Por favor completa todos los campos', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('Por favor completa los campos requeridos correctamente', 'Cerrar', { duration: 3000 });
       return;
     }
 
     this.isSaving = true;
-
-    // Usar getRawValue() para incluir campos deshabilitados (como username en edición)
     const formValues = this.form.getRawValue();
     
-    // En edición, no enviar password si está vacío
-    let datosUsuario: any = {
+    const datosUsuario: any = {
       username: formValues.username,
-      grupo_id: formValues.grupo_id
+      nombre: formValues.nombre,
+      apellido: formValues.apellido,
+      email: formValues.email || '',
+      ci: formValues.ci || '',
+      telefono: formValues.telefono || '',
+      grupo_id: formValues.grupo_id,
+      empresa_id: Number(formValues.empresa_id),
+      sucursal_id: formValues.sucursal_id ? Number(formValues.sucursal_id) : null
     };
 
-    // Email: en edición siempre se envía (permite también vaciarlo)
-    // En creación solo si tiene valor
-    if (this.isEditMode) {
-      datosUsuario.email = formValues.email || '';
-    } else if (formValues.email) {
-      datosUsuario.email = formValues.email;
-    }
-
-    // Solo incluir password si tiene contenido o si es creación
     if (!this.isEditMode || formValues.password) {
       datosUsuario.password = formValues.password;
     }
 
+    const url = this.configService.getApiUrl('usuarios');
+
     if (this.isEditMode) {
-      console.log('Datos a enviar para actualizar usuario:', datosUsuario);
-      // Editar usuario existente
-      const url = this.configService.getApiUrl('usuarios');
       this.apiService.update(url, this.data.usuario.id, datosUsuario)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -304,13 +339,11 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             this.isSaving = false;
-            console.error('Error al actualizar usuario:', error);
-            this.snackBar.open('Error al actualizar el usuario', 'Cerrar', { duration: 5000 });
+            const msg = error.error?.detail || error.error?.error || 'Error al actualizar usuario';
+            this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
           }
         });
     } else {
-      // Crear nuevo usuario
-      const url = this.configService.getApiUrl('usuarios');
       this.apiService.create(url, datosUsuario)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -321,16 +354,13 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             this.isSaving = false;
-            console.error('Error al crear usuario:', error);
-            this.snackBar.open('Error al crear el usuario', 'Cerrar', { duration: 5000 });
+            const msg = error.error?.detail || error.error?.error || 'Error al crear usuario';
+            this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
           }
         });
     }
   }
 
-  /**
-   * Cerrar modal sin guardar
-   */
   cancelar(): void {
     this.dialogRef.close();
   }

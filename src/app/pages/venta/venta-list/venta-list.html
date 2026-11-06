@@ -1,15 +1,28 @@
 <mat-card>
   <mat-card-header>
-    <div class="page-header">
-      <mat-card-title>Gestión de Ventas</mat-card-title>
-      <button
-        *ngIf="puedeCrear"
-        mat-raised-button
-        color="primary"
-        (click)="nuevaVenta()">
-        <mat-icon class="m-r-8">add</mat-icon>
-        Nueva Venta
-      </button>
+    <div class="page-header d-flex justify-content-between align-items-center w-100 flex-wrap gap-12">
+      <mat-card-title class="font-weight-bold" style="color: #1e293b; margin: 0;">
+        [CU-10] Procesar Ventas Digitales con Pasarela Stripe (Web / Móvil)
+      </mat-card-title>
+      <div class="d-flex gap-8">
+        <button
+          mat-raised-button
+          color="accent"
+          routerLink="/ventas/pasarela"
+          style="border-radius: 8px; font-weight: 600;">
+          <mat-icon class="m-r-6">credit_card</mat-icon>
+          Pasarela Stripe (CU-10)
+        </button>
+        <button
+          *ngIf="puedeCrear"
+          mat-raised-button
+          color="primary"
+          (click)="nuevaVenta()"
+          style="border-radius: 8px; font-weight: 600;">
+          <mat-icon class="m-r-6">add</mat-icon>
+          Nueva Venta POS (CU-09)
+        </button>
+      </div>
     </div>
   </mat-card-header>
 
@@ -37,16 +50,12 @@
 
         <ng-container matColumnDef="tipo">
           <th mat-header-cell *matHeaderCellDef>Tipo</th>
-          <td mat-cell *matCellDef="let element">
-            <span [class]="getTipoClass(element.tipo)">{{ element.tipo }}</span>
-          </td>
+          <td mat-cell *matCellDef="let element">{{ element.tipo }}</td>
         </ng-container>
 
         <ng-container matColumnDef="estado">
           <th mat-header-cell *matHeaderCellDef>Estado</th>
-          <td mat-cell *matCellDef="let element">
-            <span [class]="getEstadoClass(element.estado)">{{ element.estado }}</span>
-          </td>
+          <td mat-cell *matCellDef="let element">{{ element.estado }}</td>
         </ng-container>
 
         <ng-container matColumnDef="usuario">
@@ -56,7 +65,7 @@
 
         <ng-container matColumnDef="precio_total">
           <th mat-header-cell *matHeaderCellDef>Total</th>
-          <td mat-cell *matCellDef="let element">S/ {{ element.precio_total }}</td>
+          <td mat-cell *matCellDef="let element" class="font-weight-bold">Bs. {{ element.precio_total }}</td>
         </ng-container>
 
         <ng-container matColumnDef="acciones">
@@ -88,9 +97,16 @@
     <div *ngIf="puedeVer && !isLoading && dataSource.length === 0" class="empty-state">
       <mat-icon class="empty-icon">receipt</mat-icon>
       <p class="empty-text">No hay ventas registradas</p>
-      <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="nuevaVenta()">
-        Crear primera venta
-      </button>
+      <div class="d-flex gap-8 justify-content-center m-t-16">
+        <button mat-raised-button color="accent" routerLink="/ventas/pasarela">
+          <mat-icon class="m-r-6">credit_card</mat-icon>
+          Procesar con Pasarela Stripe
+        </button>
+        <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="nuevaVenta()">
+          <mat-icon class="m-r-6">add</mat-icon>
+          Crear venta POS
+        </button>
+      </div>
     </div>
 
     <mat-paginator

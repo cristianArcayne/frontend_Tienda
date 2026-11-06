@@ -1,0 +1,148 @@
+<div class="modal-header-banner">
+  <div class="d-flex align-items-center gap-12">
+    <div class="icon-wrap">
+      <mat-icon>add_business</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title class="m-0 font-weight-bold" style="color: #1e293b; font-size: 20px;">
+        Registrar Nueva Empresa & Suscripción SaaS
+      </h2>
+      <p class="text-muted m-0" style="font-size: 13px;">
+        Alta inmediata de tenant con aprovisionamiento de plan comercial y cobro Stripe
+      </p>
+    </div>
+  </div>
+  <button mat-icon-button mat-dialog-close class="close-btn" [disabled]="isSubmitting">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="modal-content-custom">
+  <form [formGroup]="form">
+    <!-- Paso 1: Selección de Plan Comercial -->
+    <div class="section-title">
+      <span class="step-num">1</span>
+      <span>Selecciona el Plan de Suscripción</span>
+    </div>
+
+    <div class="plan-cards-grid">
+      <div class="plan-card" [class.selected]="form.get('plan')?.value === 1" (click)="form.patchValue({ plan: 1 })">
+        <div class="d-flex justify-content-between align-items-center m-b-8">
+          <span class="plan-name">Plan Básico</span>
+          <span class="plan-badge basic">Bs. 99/mes</span>
+        </div>
+        <p class="plan-desc">Hasta 2 sucursales físicas, ventas POS mostrador y reservas offline.</p>
+        <div class="plan-feature">
+          <mat-icon class="check-icon">check</mat-icon>
+          <span>2 Sucursales máximo</span>
+        </div>
+        <div class="plan-feature disabled">
+          <mat-icon class="cross-icon">close</mat-icon>
+          <span>Sin IA Generativa</span>
+        </div>
+      </div>
+
+      <div class="plan-card pro" [class.selected]="form.get('plan')?.value === 2" (click)="form.patchValue({ plan: 2 })">
+        <div class="d-flex justify-content-between align-items-center m-b-8">
+          <span class="plan-name pro-name">Plan Profesional</span>
+          <span class="plan-badge pro">Bs. 299/mes</span>
+        </div>
+        <p class="plan-desc">Hasta 10 sucursales, Reportes por Voz con IA, Tablero Predictivo ML y Restore.</p>
+        <div class="plan-feature">
+          <mat-icon class="check-icon">check</mat-icon>
+          <span>10 Sucursales activas</span>
+        </div>
+        <div class="plan-feature">
+          <mat-icon class="check-icon">auto_awesome</mat-icon>
+          <span>IA Generativa + ML</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 2: Datos Corporativos de la Empresa -->
+    <div class="section-title m-t-20">
+      <span class="step-num">2</span>
+      <span>Datos de la Empresa (Tenant)</span>
+    </div>
+
+    <div class="row-fields">
+      <mat-form-field appearance="outline" class="flex-2">
+        <mat-label>Nombre / Razón Social</mat-label>
+        <input matInput formControlName="nombre" placeholder="Ej. Boutique Glamour S.R.L." required />
+        <mat-icon matPrefix class="field-icon">storefront</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="flex-2">
+        <mat-label>Correo Corporativo</mat-label>
+        <input matInput formControlName="correo" type="email" placeholder="contacto@glamour.com" required />
+        <mat-icon matPrefix class="field-icon">email</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <!-- Paso 3: Credenciales del Administrador de la Tienda -->
+    <div class="section-title m-t-16">
+      <span class="step-num">3</span>
+      <span>Usuario Administrador del Tenant</span>
+    </div>
+
+    <div class="row-fields">
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Usuario (Username)</mat-label>
+        <input matInput formControlName="username" placeholder="admin_glamour" required />
+        <mat-icon matPrefix class="field-icon">person</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Correo de Acceso</mat-label>
+        <input matInput formControlName="email" type="email" placeholder="admin@glamour.com" required />
+        <mat-icon matPrefix class="field-icon">alternate_email</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Contraseña</mat-label>
+        <input matInput formControlName="password" type="password" placeholder="Mínimo 6 caracteres" required />
+        <mat-icon matPrefix class="field-icon">lock</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <!-- Paso 4: Pago con Pasarela Stripe (Simulación de Cobro de Suscripción) -->
+    <div class="section-title m-t-16">
+      <span class="step-num">4</span>
+      <span>Pasarela Stripe (Cobro Automático de Suscripción)</span>
+    </div>
+
+    <div class="stripe-box">
+      <div class="d-flex justify-content-between align-items-center m-b-8">
+        <span style="font-weight: 600; font-size: 13px; color: #334155;">Tarjeta de Crédito / Débito (Stripe Test)</span>
+        <span class="badge-stripe">Test Card Ready</span>
+      </div>
+
+      <div class="row-fields">
+        <mat-form-field appearance="outline" class="flex-2">
+          <mat-label>Número de Tarjeta</mat-label>
+          <input matInput formControlName="tarjeta_numero" placeholder="4242 4242 4242 4242" />
+          <mat-icon matPrefix class="field-icon">credit_card</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="flex-1">
+          <mat-label>Vencimiento</mat-label>
+          <input matInput formControlName="tarjeta_exp" placeholder="MM/AA" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="flex-1">
+          <mat-label>CVC</mat-label>
+          <input matInput formControlName="tarjeta_cvc" placeholder="123" />
+        </mat-form-field>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="modal-actions-custom">
+  <button mat-button mat-dialog-close [disabled]="isSubmitting">Cancelar</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid || isSubmitting" (click)="registrarEmpresa()">
+    <mat-icon *ngIf="!isSubmitting">verified</mat-icon>
+    <mat-spinner *ngIf="isSubmitting" diameter="20" class="m-r-8"></mat-spinner>
+    {{ isSubmitting ? 'Procesando en Stripe...' : 'Registrar y Activar con Stripe' }}
+  </button>
+</mat-dialog-actions>

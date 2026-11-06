@@ -1,107 +1,304 @@
-<div style="min-height: 100vh; background: #f5f5f5;">
+<div class="superadmin-container">
 
-  <!-- Header -->
-  <div style="background: #1976d2; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <mat-icon>admin_panel_settings</mat-icon>
-      <span style="font-size: 18px; font-weight: 500;">Panel Superadmin</span>
+  <!-- Encabezado Principal de Página -->
+  <mat-card class="cardWithShadow m-b-24">
+    <mat-card-header class="d-flex justify-content-between align-items-center flex-wrap gap-16 p-24">
+      <div>
+        <div class="d-flex align-items-center gap-12">
+          <mat-icon color="primary" style="font-size: 28px; width: 28px; height: 28px;">admin_panel_settings</mat-icon>
+          <mat-card-title class="m-0" style="font-size: 20px; font-weight: 700;">
+            Gestión de Empresas & Suscripciones SaaS
+          </mat-card-title>
+        </div>
+        <mat-card-subtitle class="m-t-4" style="color: #64748b;">
+          Control centralizado de organizaciones (Tenants), vigencia de periodos, cuotas de recursos y planes comerciales.
+        </mat-card-subtitle>
+      </div>
+
+      <div class="header-actions">
+        <button mat-stroked-button color="primary" (click)="cargarEmpresas()" [disabled]="isLoading">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+
+        <button mat-flat-button color="accent" (click)="restablecerContextoGlobal()">
+          <mat-icon>public</mat-icon>
+          Ver Todas (Global)
+        </button>
+
+        <button mat-flat-button color="primary" (click)="abrirModalRegistro()">
+          <mat-icon>add_business</mat-icon>
+          Registrar Nueva Empresa
+        </button>
+      </div>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Tarjetas de Métricas Ejecutivas (KPIs de Ingeniería SaaS) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap blue">
+        <mat-icon>corporate_fare</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">Empresas Registradas</div>
+        <div class="kpi-value">{{ totalEmpresas }}</div>
+        <div class="kpi-sub">Tenants en base de datos</div>
+      </div>
     </div>
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <span style="font-size: 14px; opacity: 0.9;">{{ username }}</span>
-      <button mat-stroked-button style="color: white; border-color: rgba(255,255,255,0.6);" (click)="logout()">
-        <mat-icon>logout</mat-icon> Salir
-      </button>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap green">
+        <mat-icon>verified</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">Suscripciones Activas</div>
+        <div class="kpi-value">{{ totalActivas }}</div>
+        <div class="kpi-sub">Operando con plan vigente</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap purple">
+        <mat-icon>stars</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">Planes Profesionales</div>
+        <div class="kpi-value">{{ totalProfesionales }}</div>
+        <div class="kpi-sub">{{ totalBasicos }} en Plan Básico</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap amber">
+        <mat-icon>monetization_on</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">MRR Estimado</div>
+        <div class="kpi-value">Bs. {{ mrrTotal | number:'1.2-2' }}</div>
+        <div class="kpi-sub">Ingreso recurrente mensual</div>
+      </div>
     </div>
   </div>
 
-  <!-- Contenido -->
-  <div style="padding: 24px; max-width: 1100px; margin: 0 auto;">
+  <!-- Contenedor Principal: Filtros y Tabla -->
+  <mat-card class="cardWithShadow">
+    <mat-card-content class="p-24">
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h2 style="margin: 0; color: #333;">Empresas registradas</h2>
-      <span style="color: #666; font-size: 14px;">{{ totalEmpresas }} en total</span>
-    </div>
+      <!-- Barra de Filtros y Búsqueda -->
+      <div class="filter-bar">
+        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+          <mat-label>Buscar empresa, NIT, subdominio o correo...</mat-label>
+          <input matInput [(ngModel)]="searchTerm" (ngModelChange)="aplicarFiltros()" placeholder="Ej: CAMSA, fashionstore, 1029384021..." />
+          <mat-icon matPrefix class="m-r-8">search</mat-icon>
+          <button *ngIf="searchTerm" mat-icon-button matSuffix (click)="searchTerm = ''; aplicarFiltros()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
 
-    <!-- Spinner -->
-    <div *ngIf="isLoading" style="display: flex; justify-content: center; padding: 48px;">
-      <mat-spinner diameter="48"></mat-spinner>
-    </div>
+        <mat-form-field appearance="outline" class="filter-select" subscriptSizing="dynamic">
+          <mat-label>Estado</mat-label>
+          <mat-select [(ngModel)]="filtroEstado" (selectionChange)="aplicarFiltros()">
+            <mat-option value="TODOS">Todos los estados</mat-option>
+            <mat-option value="ACTIVA">Solo Activas</mat-option>
+            <mat-option value="INACTIVA">Solo Suspendidas</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-    <!-- Tabla -->
-    <mat-card *ngIf="!isLoading" style="padding: 0; overflow: hidden;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr style="background: #f0f4ff;">
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">#</th>
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Empresa</th>
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Subdominio</th>
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Correo</th>
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Estado</th>
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Plan</th>
-            <th style="padding: 12px 16px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e0e0e0;">Creada</th>
-            <th style="padding: 12px 16px; border-bottom: 1px solid #e0e0e0;"></th>
+        <mat-form-field appearance="outline" class="filter-select" subscriptSizing="dynamic">
+          <mat-label>Plan Comercial</mat-label>
+          <mat-select [(ngModel)]="filtroPlan" (selectionChange)="aplicarFiltros()">
+            <mat-option value="TODOS">Todos los planes</mat-option>
+            <mat-option value="PROFESIONAL">Plan Profesional</mat-option>
+            <mat-option value="BASICO">Plan Básico</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button color="warn" (click)="limpiarFiltros()" *ngIf="searchTerm || filtroEstado !== 'TODOS' || filtroPlan !== 'TODOS'">
+          <mat-icon>filter_alt_off</mat-icon>
+          Limpiar
+        </button>
+      </div>
+
+      <!-- Spinner de Carga -->
+      <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center p-48">
+        <mat-spinner diameter="48"></mat-spinner>
+      </div>
+
+      <!-- Tabla de Datos -->
+      <div *ngIf="!isLoading" class="table-container">
+        <table mat-table [dataSource]="empresasFiltradas" class="w-100">
+
+          <!-- Columna ID -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef style="width: 50px;">#</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="text-muted" style="font-weight: 600;">{{ e.id }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Columna Empresa / Tenant -->
+          <ng-container matColumnDef="empresa">
+            <th mat-header-cell *matHeaderCellDef>Empresa (Tenant)</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="empresa-info">
+                <div class="empresa-nombre">
+                  <span>{{ e.nombre }}</span>
+                </div>
+                <div class="empresa-meta">
+                  <span class="slug-tag">{{ e.subdominio }}</span>
+                  <span class="nit-text">NIT: {{ e.nit }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Contacto -->
+          <ng-container matColumnDef="contacto">
+            <th mat-header-cell *matHeaderCellDef>Contacto</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="contacto-info">
+                <div class="correo-text">{{ e.correo }}</div>
+                <div class="ciudad-text">{{ e.ciudad }} • {{ e.telefono }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Plan -->
+          <ng-container matColumnDef="plan">
+            <th mat-header-cell *matHeaderCellDef>Plan & Tarifa</th>
+            <td mat-cell *matCellDef="let e">
+              <div *ngIf="e.suscripcion_actual; else sinPlan">
+                <span class="badge-plan" [ngClass]="getPlanBadgeClass(e.suscripcion_actual.plan_nombre)">
+                  {{ e.suscripcion_actual.plan_nombre }}
+                </span>
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                  Bs. {{ e.suscripcion_actual.plan_precio | number:'1.2-2' }} / {{ e.suscripcion_actual.ciclo }}
+                </div>
+              </div>
+              <ng-template #sinPlan>
+                <span class="text-muted">Sin Plan</span>
+              </ng-template>
+            </td>
+          </ng-container>
+
+          <!-- Columna Periodo de Suscripción -->
+          <ng-container matColumnDef="periodo">
+            <th mat-header-cell *matHeaderCellDef>Periodo de Suscripción</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="periodo-info" *ngIf="e.suscripcion_actual; else sinPeriodo">
+                <span class="dias-badge"
+                      [ngClass]="{
+                        'ok': (e.suscripcion_actual.dias_restantes ?? 0) > 15,
+                        'warning': (e.suscripcion_actual.dias_restantes ?? 0) <= 15 && (e.suscripcion_actual.dias_restantes ?? 0) > 0,
+                        'danger': (e.suscripcion_actual.dias_restantes ?? 0) <= 0
+                      }">
+                  <span *ngIf="(e.suscripcion_actual.dias_restantes ?? 0) > 0">
+                    {{ e.suscripcion_actual.dias_restantes }} días restantes
+                  </span>
+                  <span *ngIf="(e.suscripcion_actual.dias_restantes ?? 0) <= 0">
+                    Vencida
+                  </span>
+                </span>
+                <div class="fechas-text">
+                  Vence: {{ e.suscripcion_actual.fecha_fin ? (e.suscripcion_actual.fecha_fin | date:'dd/MM/yyyy') : 'Indefinido' }}
+                </div>
+              </div>
+              <ng-template #sinPeriodo>
+                <span class="text-muted">—</span>
+              </ng-template>
+            </td>
+          </ng-container>
+
+          <!-- Columna Cuotas y Límites -->
+          <ng-container matColumnDef="cuotas">
+            <th mat-header-cell *matHeaderCellDef>Consumo / Límites</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="cuotas-info">
+                <div class="cuota-item" matTooltip="Usuarios usados vs permitidos">
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px;">people</mat-icon>
+                  <span>{{ e.usuarios_count || 0 }} / {{ e.suscripcion_actual?.limite_usuarios || 5 }} usuarios</span>
+                </div>
+                <div class="cuota-item" matTooltip="Sucursales activas vs permitidas">
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px;">store</mat-icon>
+                  <span>{{ e.sucursales_count || 0 }} / {{ e.suscripcion_actual?.limite_sucursales || 2 }} sucursales</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="status-indicator" [style.color]="getEstadoColor(e.suscripcion_actual?.estado || e.estado)">
+                <span class="dot" [style.background]="getEstadoColor(e.suscripcion_actual?.estado || e.estado)"></span>
+                <span style="text-transform: capitalize;">{{ e.suscripcion_actual?.estado || e.estado }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef style="text-align: right;">Acciones</th>
+            <td mat-cell *matCellDef="let e" style="text-align: right;">
+              <div class="action-buttons justify-content-end">
+
+                <!-- Editar Datos de la Empresa (Lápiz) -->
+                <button mat-icon-button color="primary" matTooltip="Editar Datos de la Empresa" (click)="abrirModalEditar(e)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <!-- Ver Ficha Técnica / Detalle Completo -->
+                <button mat-icon-button color="primary" matTooltip="Ficha Técnica & Suscripción" (click)="verSuscripcion(e)">
+                  <mat-icon>info_outline</mat-icon>
+                </button>
+
+                <!-- Entrar a Administrar Esta Empresa (Switch Tenant) -->
+                <button mat-icon-button color="accent" matTooltip="Entrar como esta empresa (Switch Tenant)" (click)="cambiarAEmpresa(e)">
+                  <mat-icon>login</mat-icon>
+                </button>
+
+                <!-- Menú de Opciones Adicionales -->
+                <button mat-icon-button [matMenuTriggerFor]="menuAcciones" matTooltip="Más opciones">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menuAcciones="matMenu">
+                  <button mat-menu-item (click)="abrirModalEditar(e)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Editar Datos de Empresa</span>
+                  </button>
+                  <button mat-menu-item (click)="abrirModificarPlan(e)">
+                    <mat-icon>edit_calendar</mat-icon>
+                    <span>Modificar Plan / Periodo</span>
+                  </button>
+                  <button mat-menu-item (click)="toggleEstado(e)">
+                    <mat-icon [color]="e.is_active ? 'warn' : 'primary'">
+                      {{ e.is_active ? 'pause_circle' : 'play_circle' }}
+                    </mat-icon>
+                    <span>{{ e.is_active ? 'Suspender Empresa' : 'Reactivar Empresa' }}</span>
+                  </button>
+                </mat-menu>
+
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+          <!-- Fila cuando no hay resultados -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="8" style="text-align: center; padding: 48px; color: #94a3b8;">
+              <mat-icon style="font-size: 40px; width: 40px; height: 40px; margin-bottom: 8px;">search_off</mat-icon>
+              <div>No se encontraron empresas con los criterios seleccionados.</div>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="empresas.length === 0">
-            <td colspan="8" style="padding: 32px; text-align: center; color: #999;">No hay empresas registradas.</td>
-          </tr>
-          <tr *ngFor="let e of empresas; let i = index"
-              style="border-bottom: 1px solid #f0f0f0;"
-              [style.background]="i % 2 === 0 ? 'white' : '#fafafa'">
-            <td style="padding: 12px 16px; font-size: 13px; color: #888;">
-              {{ (paginaActual - 1) * pageSize + i + 1 }}
-            </td>
-            <td style="padding: 12px 16px;">
-              <strong style="font-size: 14px;">{{ e.nombre }}</strong>
-              <div *ngIf="!e.is_active" style="font-size: 11px; color: #e53935;">Inactiva</div>
-            </td>
-            <td style="padding: 12px 16px; font-size: 13px; color: #555; font-family: monospace;">
-              {{ e.subdominio ?? '—' }}
-            </td>
-            <td style="padding: 12px 16px; font-size: 13px; color: #555;">
-              {{ e.correo ?? '—' }}
-            </td>
-            <td style="padding: 12px 16px;">
-              <span *ngIf="e.suscripcion_actual"
-                    [style.color]="getEstadoColor(e.suscripcion_actual.estado)"
-                    style="font-size: 13px; font-weight: 600; text-transform: capitalize;">
-                {{ e.suscripcion_actual.estado }}
-              </span>
-              <span *ngIf="!e.suscripcion_actual" style="color: #999; font-size: 13px;">—</span>
-            </td>
-            <td style="padding: 12px 16px; font-size: 13px; color: #555;">
-              {{ e.suscripcion_actual?.plan_nombre ?? '—' }}
-            </td>
-            <td style="padding: 12px 16px; font-size: 13px; color: #888;">
-              {{ e.fecha_creacion | date:'dd/MM/yyyy' }}
-            </td>
-            <td style="padding: 12px 16px;">
-              <button mat-icon-button
-                      color="primary"
-                      matTooltip="Ver suscripción"
-                      (click)="verSuscripcion(e)">
-                <mat-icon>info_outline</mat-icon>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </mat-card>
 
-    <!-- Paginación -->
-    <div *ngIf="!isLoading && totalPaginas > 1"
-         style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px;">
-      <button mat-icon-button [disabled]="paginaActual === 1" (click)="irPagina(paginaActual - 1)">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-      <span style="font-size: 14px; color: #555;">
-        Página {{ paginaActual }} de {{ totalPaginas }}
-      </span>
-      <button mat-icon-button [disabled]="paginaActual === totalPaginas" (click)="irPagina(paginaActual + 1)">
-        <mat-icon>chevron_right</mat-icon>
-      </button>
-    </div>
+        </table>
+      </div>
 
-  </div>
+    </mat-card-content>
+  </mat-card>
+
 </div>

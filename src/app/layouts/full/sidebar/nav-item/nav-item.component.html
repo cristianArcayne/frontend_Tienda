@@ -1,52 +1,55 @@
 @if(puedeVer) {
-  @if(item.navCap) { @if(item.divider) {
-  <span class="sidebar-divider"></span>
+  @if(item.navCap) {
+    @if(item.divider) {
+      <span class="sidebar-divider"></span>
+    }
+    <div class="nav-caption-badge-container">
+      <span class="nav-caption-badge" [class.p1-badge]="item.navCap.includes('PRIMER')">{{ item.navCap }}</span>
+    </div>
   }
-  <div mat-subheader class="nav-caption">
-    {{ item.navCap }}
-  </div>
-  } @if(!item.navCap && !item.external) {
+
+  @if(!item.navCap && !item.external) {
     <a mat-list-item (click)="onItemSelected(item)" [ngClass]="{
         activeMenu: item.route ? router.isActive(item.route, true) : false,
         expanded: expanded,
-        disabled: item.disabled
+        disabled: item.disabled,
+        'has-children': item.children && item.children.length,
+        'sub-nav-item': depth > 0
       }" class="menu-list-item">
       <span class="iconify routeIcon" matListItemIcon [attr.data-icon]="item.iconName"></span>
       <span class="hide-menu">{{ item.displayName }}</span>
       
       @if(item.children && item.children.length) {
-      <span class="arrow-icon" fxFlex>
-        <span fxFlex></span>
+      <span class="arrow-icon d-flex align-items-center" matListItemMeta>
         @if(item.chip) {
-          <span>
-            <span class="{{ item.chipClass }} p-x-8 p-y-4 item-chip f-w-500 rounded-pill ">{{ item.chipContent }}</span>
-          </span>
-          }
-        <mat-icon [@indicatorRotate]="expanded ? 'expanded' : 'collapsed'">
-          expand_more
+          <span class="{{ item.chipClass }} p-x-8 p-y-4 item-chip f-w-500 rounded-pill me-2">{{ item.chipContent }}</span>
+        }
+        <mat-icon class="expand-arrow">
+          {{ expanded ? 'expand_less' : 'expand_more' }}
         </mat-icon>
       </span>
       }
     </a>
-    }
+  }
 
-    <!-- external Link -->
-
+  <!-- External Link -->
   @if(!item.navCap && item.external) {
     <mat-list-item (click)="openExternalLink(item.route)" class="menu-list-item" target="_blank">
       <span class="iconify routeIcon" matListItemIcon [attr.data-icon]="item.iconName"></span>
-      <span class="hide-menu">{{ item.displayName }} </span>
+      <span class="hide-menu">{{ item.displayName }}</span>
       @if(item.chip) {
-      <span>
-        <span class="{{ item.chipClass }} p-x-8 p-y-4 item-chip f-w-500 rounded-pill ">{{ item.chipContent }}</span>
-      </span>
+        <span class="{{ item.chipClass }} p-x-8 p-y-4 item-chip f-w-500 rounded-pill ms-auto">{{ item.chipContent }}</span>
       }
     </mat-list-item>
-    }
-    
-    <!-- children -->
-    @if(expanded) { @for(child of item.children; track child) {
-    <app-nav-item [item]="child" (click)="onSubItemSelected(child)" [depth]="depth + 1">
-    </app-nav-item>
-    } }
+  }
+  
+  <!-- Children Accordion -->
+  @if(expanded && item.children && item.children.length) {
+    <div class="sub-menu-accordion">
+      @for(child of item.children; track child) {
+        <app-nav-item [item]="child" (notify)="notify.emit()" [depth]="depth + 1">
+        </app-nav-item>
+      }
+    </div>
+  }
 }

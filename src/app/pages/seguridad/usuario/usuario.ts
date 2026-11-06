@@ -16,6 +16,7 @@ import { Usuario } from 'src/app/models/seguridad/Usuario.model';
 import { ApiService } from 'src/app/services/api.service';
 import { ConfigService } from 'src/app/services/config.service';
 import { PermisosService } from 'src/app/services/permisos.service';
+import { AuthService } from 'src/app/services/auth.service';
 import { CrearUsuarioComponent } from './crear-usuario/crear-usuario';
 import { EliminarUsuarioComponent } from './eliminar-usuario/eliminar-usuario';
 
@@ -39,7 +40,7 @@ import { EliminarUsuarioComponent } from './eliminar-usuario/eliminar-usuario';
   styleUrl: './usuario.scss',
 })
 export class UsuarioComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = ['id', 'username', 'email', 'nombre', 'apellido', 'grupos'];
+  displayedColumns: string[] = ['id', 'username', 'nombre', 'apellido', 'email', 'grupos', 'acciones'];
   dataSource: Usuario[] = [];
 
   totalItems = 0;
@@ -50,6 +51,8 @@ export class UsuarioComponent implements OnInit, OnDestroy {
   puedeCrear = false;
   puedeEditar = false;
   puedeEliminar = false;
+  empresaNombre: string | null = null;
+  isSuperuser = false;
 
   private apiUrl: string;
   private destroy$ = new Subject<void>();
@@ -59,22 +62,29 @@ export class UsuarioComponent implements OnInit, OnDestroy {
     private configService: ConfigService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private permisosService: PermisosService
+    private permisosService: PermisosService,
+    public authService: AuthService
   ) {
     this.apiUrl = this.configService.getApiUrl('usuarios');
   }
 
   ngOnInit(): void {
+    this.empresaNombre = this.authService.getEmpresaNombre();
+    this.isSuperuser = this.authService.isSuperuser();
     this.verificarPermisos();
     this.loadUsuarios();
   }
 
   private verificarPermisos(): void {
-    this.puedeCrear = this.permisosService.puedeCrearUsuario();
-    this.puedeEditar = this.permisosService.puedeEditarUsuario();
-    this.puedeEliminar = this.permisosService.puedeEliminarUsuario();
-    if (this.puedeEditar || this.puedeEliminar) {
-      this.displayedColumns = ['id', 'username', 'email', 'nombre', 'apellido', 'grupos', 'acciones'];
+    const esAdmin = this.authService.isSuperuser() || this.authService.isAdmin();
+    this.puedeCrear = esAdmin || this.permisosService.puedeCrearUsuario();
+    this.puedeEditar = esAdmin || this.permisosService.puedeEditarUsuario();
+    this.puedeEliminar = esAdmin || this.permisosService.puedeEliminarUsuario();
+    
+    if (this.isSuperuser) {
+      this.displayedColumns = ['id', 'username', 'nombre', 'apellido', 'email', 'empresa', 'grupos', 'acciones'];
+    } else {
+      this.displayedColumns = ['id', 'username', 'nombre', 'apellido', 'email', 'grupos', 'acciones'];
     }
   }  
 
@@ -85,17 +95,23 @@ export class UsuarioComponent implements OnInit, OnDestroy {
 
   loadUsuarios(): void {
     this.isLoading = true;
+    const filters: Record<string, any> = {};
+    const empId = this.authService.getEmpresaId();
+    if (!this.isSuperuser && empId) {
+      filters['empresa_id'] = empId;
+    }
 
     this.apiService.getWithPagination<Usuario>(
       this.apiUrl,
       this.currentPage + 1,
-      this.pageSize
+      this.pageSize,
+      filters
     )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: Pagination<Usuario>) => {
-          this.dataSource = data.results;
-          this.totalItems = data.count;
+          this.dataSource = Array.isArray(data) ? data : (data?.results || []);
+          this.totalItems = data?.count || this.dataSource.length;
           this.isLoading = false;
         },
         error: (error) => {
@@ -112,13 +128,10 @@ export class UsuarioComponent implements OnInit, OnDestroy {
     this.loadUsuarios();
   }
 
-  /**
-   * Abrir modal para crear nuevo usuario
-   */
   crearUsuario(): void {
     const dialogRef = this.dialog.open(CrearUsuarioComponent, {
-      width: '600px',
-      maxWidth: '90vw',
+      width: '720px',
+      maxWidth: '95vw',
       disableClose: false,
       panelClass: ['crear-usuario-dialog']
     });
@@ -127,20 +140,16 @@ export class UsuarioComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(result => {
         if (result) {
-          this.snackBar.open('Usuario creado exitosamente', 'OK', { duration: 3000 });
           this.currentPage = 0;
           this.loadUsuarios();
         }
       });
   }
 
-  /**
-   * Editar usuario
-   */
   editarUsuario(usuario: Usuario): void {
     const dialogRef = this.dialog.open(CrearUsuarioComponent, {
-      width: '600px',
-      maxWidth: '90vw',
+      width: '720px',
+      maxWidth: '95vw',
       disableClose: false,
       panelClass: ['crear-usuario-dialog'],
       data: { usuario }
@@ -150,16 +159,12 @@ export class UsuarioComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(result => {
         if (result) {
-          this.snackBar.open('Usuario actualizado exitosamente', 'OK', { duration: 3000 });
           this.currentPage = 0;
           this.loadUsuarios();
         }
       });
   }
 
-  /**
-   * Eliminar usuario
-   */
   eliminarUsuario(usuario: Usuario): void {
     const dialogRef = this.dialog.open(EliminarUsuarioComponent, {
       width: '500px',

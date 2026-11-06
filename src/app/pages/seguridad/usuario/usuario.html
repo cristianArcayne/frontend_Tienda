@@ -1,18 +1,32 @@
-<mat-card>
-  <mat-card-header>
-    <div class="page-header">
-      <mat-card-title>Gestión de Usuarios</mat-card-title>
-      <button *ngIf="puedeCrear" mat-raised-button color="primary" (click)="crearUsuario()">
-        <mat-icon class="m-r-8">add</mat-icon>
-        Crear Nuevo Usuario
+<mat-card class="cardWithShadow">
+  <mat-card-header class="p-20" style="border-bottom: 1px solid #e2e8f0;">
+    <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-16">
+      <div class="d-flex align-items-center gap-12">
+        <div style="background: #7c3aed; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+          <mat-icon>manage_accounts</mat-icon>
+        </div>
+        <div>
+          <mat-card-title class="m-0 font-weight-bold" style="font-size: 18px; color: #1e293b;">
+            [CU-02] Gestión de Usuarios y Accesos
+          </mat-card-title>
+          <p class="m-t-2 m-b-0 text-muted" style="font-size: 13px;">
+            <span *ngIf="isSuperuser">Control centralizado de cuentas de todas las empresas inquilinas (Plataforma Global).</span>
+            <span *ngIf="!isSuperuser">Gestión de personal y roles de <strong>{{ empresaNombre || 'Mi Empresa' }}</strong>.</span>
+          </p>
+        </div>
+      </div>
+
+      <button *ngIf="puedeCrear" mat-flat-button color="primary" (click)="crearUsuario()" style="background: #7c3aed; color: white;">
+        <mat-icon class="m-r-8">person_add</mat-icon>
+        Registrar Nuevo Usuario
       </button>
     </div>
   </mat-card-header>
 
-  <mat-card-content>
+  <mat-card-content class="p-20">
     <!-- Estado de carga -->
     <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
-      <mat-spinner diameter="50"></mat-spinner>
+      <mat-spinner diameter="44"></mat-spinner>
     </div>
 
     <!-- Tabla con usuarios -->
@@ -20,61 +34,82 @@
       <table mat-table [dataSource]="dataSource" class="w-full">
         <!-- ID Column -->
         <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef>ID</th>
-          <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">#</th>
+          <td mat-cell *matCellDef="let element" style="font-weight: 600; color: #64748b;">{{ element.id }}</td>
         </ng-container>
 
         <!-- Username Column -->
         <ng-container matColumnDef="username">
-          <th mat-header-cell *matHeaderCellDef>Username</th>
-          <td mat-cell *matCellDef="let element">{{ element.username }}</td>
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">Usuario (Login)</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="d-flex align-items-center gap-8">
+              <span class="font-weight-bold" style="color: #0f172a;">{{ element.username }}</span>
+              <span *ngIf="element.is_superuser" class="badge bg-light-error text-error" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;">Superadmin</span>
+            </div>
+          </td>
         </ng-container>
 
         <!-- Nombre Column -->
         <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Nombre</th>
-          <td mat-cell *matCellDef="let element">{{ element.nombre }}</td>
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">Nombre</th>
+          <td mat-cell *matCellDef="let element">{{ element.nombre || '-' }}</td>
         </ng-container>
 
         <!-- Apellido Column -->
         <ng-container matColumnDef="apellido">
-          <th mat-header-cell *matHeaderCellDef>Apellido</th>
-          <td mat-cell *matCellDef="let element">{{ element.apellido }}</td>
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">Apellido</th>
+          <td mat-cell *matCellDef="let element">{{ element.apellido || '-' }}</td>
         </ng-container>
 
         <!-- Email Column -->
         <ng-container matColumnDef="email">
-          <th mat-header-cell *matHeaderCellDef>Correo</th>
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">Correo Electrónico</th>
           <td mat-cell *matCellDef="let element">
-            <span *ngIf="element.email">{{ element.email }}</span>
-            <span *ngIf="!element.email" style="color: #bbb; font-style: italic;">Sin correo</span>
+            <span *ngIf="element.email" style="color: #3b82f6;">{{ element.email }}</span>
+            <span *ngIf="!element.email" class="text-muted" style="font-style: italic;">Sin correo</span>
+          </td>
+        </ng-container>
+
+        <!-- Empresa Column (Solo Superadmin) -->
+        <ng-container matColumnDef="empresa">
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">Empresa (Tenant)</th>
+          <td mat-cell *matCellDef="let element">
+            <span *ngIf="element.empresa_nombre" class="badge bg-light-primary text-primary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 600;">
+              🏢 {{ element.empresa_nombre }}
+            </span>
+            <span *ngIf="!element.empresa_nombre" class="badge bg-light-secondary text-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;">
+              🌐 Global
+            </span>
           </td>
         </ng-container>
 
         <!-- Rol Column -->
         <ng-container matColumnDef="grupos">
-          <th mat-header-cell *matHeaderCellDef>Grupos</th>
-          <td mat-cell *matCellDef="let element">{{ element.grupos?.join(', ') }}</td>
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600;">Rol Asignado</th>
+          <td mat-cell *matCellDef="let element">
+            <span class="badge" [style.background]="(element.grupos?.[0] || '').toLowerCase().includes('admin') ? '#f3e8ff' : '#e0f2fe'" [style.color]="(element.grupos?.[0] || '').toLowerCase().includes('admin') ? '#7e22ce' : '#0369a1'" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 600;">
+              {{ element.grupos?.join(', ') || 'Sin Rol' }}
+            </span>
+          </td>
         </ng-container>
-
 
         <!-- Acciones Column -->
         <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef>Acciones</th>
-          <td mat-cell *matCellDef="let element">
+          <th mat-header-cell *matHeaderCellDef style="font-weight: 600; text-align: right;">Acciones</th>
+          <td mat-cell *matCellDef="let element" style="text-align: right;">
             <button
               *ngIf="puedeEditar"
               mat-icon-button
-              matTooltip="Editar"
+              matTooltip="Editar Usuario"
               (click)="editarUsuario(element)"
               color="primary"
-              [disabled]="element.is_superuser">
+              [disabled]="element.is_superuser && !isSuperuser">
               <mat-icon>edit</mat-icon>
             </button>
             <button
               *ngIf="puedeEliminar"
               mat-icon-button
-              matTooltip="Eliminar"
+              matTooltip="Eliminar Usuario"
               (click)="eliminarUsuario(element)"
               color="warn"
               [disabled]="element.is_superuser">
@@ -84,14 +119,14 @@
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.superuser-row]="row.is_superuser"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.superuser-row]="row.is_superuser && !isSuperuser"></tr>
       </table>
     </div>
 
     <!-- Sin datos -->
-    <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state">
-      <mat-icon class="empty-icon">info</mat-icon>
-      <p class="empty-text">No hay usuarios disponibles</p>
+    <div *ngIf="!isLoading && dataSource.length === 0" class="empty-state p-40 text-center">
+      <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #cbd5e1;">person_off</mat-icon>
+      <p class="m-t-8 text-muted font-weight-bold">No hay usuarios registrados</p>
     </div>
 
     <!-- Paginador -->

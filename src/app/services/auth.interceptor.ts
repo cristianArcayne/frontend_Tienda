@@ -23,11 +23,10 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Agregar token de acceso a la petición
+    // Agregar token de acceso y tenant header a la petición
     const token = this.authService.getAccessToken();
-    if (token) {
-      request = this.addTokenToRequest(request, token);
-    }
+    const empresaId = this.authService.getEmpresaId();
+    request = this.addHeadersToRequest(request, token, empresaId);
 
     return next.handle(request).pipe(
       catchError(error => {
@@ -40,7 +39,8 @@ export class AuthInterceptor implements HttpInterceptor {
               this.isRefreshing = false;
               // Reintentar la petición original con el nuevo token
               const newToken = response.access;
-              return next.handle(this.addTokenToRequest(request, newToken));
+              const currentTenantId = this.authService.getEmpresaId();
+              return next.handle(this.addHeadersToRequest(request, newToken, currentTenantId));
             }),
             catchError(refreshError => {
               this.isRefreshing = false;
@@ -57,13 +57,26 @@ export class AuthInterceptor implements HttpInterceptor {
   }
 
   /**
-   * Agregar token Bearer a las peticiones
+   * Agregar token Bearer y X-Tenant-ID a las peticiones
    */
-  private addTokenToRequest(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
-    return request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  private addHeadersToRequest(
+    request: HttpRequest<unknown>,
+    token: string | null,
+    empresaId: number | null
+  ): HttpRequest<unknown> {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (this.authService.isSuperuser()) {
+      headers['X-Is-Superuser'] = 'true';
+    }
+    if (empresaId !== null && empresaId !== undefined) {
+      headers['X-Tenant-ID'] = empresaId.toString();
+    }
+    if (Object.keys(headers).length > 0) {
+      return request.clone({ setHeaders: headers });
+    }
+    return request;
   }
 }

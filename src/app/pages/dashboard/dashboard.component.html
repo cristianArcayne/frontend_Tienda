@@ -9,53 +9,62 @@
       </h1>
       <p class="subtitle">Proyección histórica y futura por categoría</p>
     </div>
-    <div class="header-actions">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="meses-field">
-        <mat-label>Período</mat-label>
-        <mat-select [value]="mesesSeleccionado()" (selectionChange)="onMesesChange($event.value)">
-          @for (op of opcionesMeses; track op.value) {
-            <mat-option [value]="op.value">{{ op.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      @if (mesesSeleccionado() === 0) {
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="meses-custom-field">
-          <mat-label>Nº meses</mat-label>
-          <input matInput type="number" min="1" max="120" placeholder="ej: 18" #mesesInput
-                 [value]="mesesPersonalizado()"
-                 (change)="onMesesPersonalizadoChange(+mesesInput.value)">
+    @if (!bloqueadoPorPlan()) {
+      <div class="header-actions">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="meses-field">
+          <mat-label>Período</mat-label>
+          <mat-select [value]="mesesSeleccionado()" (selectionChange)="onMesesChange($event.value)">
+            @for (op of opcionesMeses; track op.value) {
+              <mat-option [value]="op.value">{{ op.label }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
-      }
 
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="date-field">
-        <mat-label>Proyectar hasta</mat-label>
-        <input matInput [matDatepicker]="picker" [min]="hoy"
-               (dateChange)="onFechaChange($event.value)"
-               placeholder="Seleccionar fecha">
-        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-        <mat-datepicker #picker></mat-datepicker>
-      </mat-form-field>
+        @if (mesesSeleccionado() === 0) {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="meses-custom-field">
+            <mat-label>Nº meses</mat-label>
+            <input matInput type="number" min="1" max="120" placeholder="ej: 18" #mesesInput
+                   [value]="mesesPersonalizado()"
+                   (change)="onMesesPersonalizadoChange(+mesesInput.value)">
+          </mat-form-field>
+        }
 
-      @if (isSuperuser) {
-        <button mat-raised-button color="accent" class="retrain-btn"
-                (click)="reentrenarModelos()" [disabled]="reentrenando()">
-          @if (!reentrenando()) {
-            <mat-icon>model_training</mat-icon>
-          }
-          @if (reentrenando()) {
-            <mat-spinner diameter="18" class="inline-spinner"></mat-spinner>
-            Reentrenando...
-          } @else {
-            Reentrenar Modelos
-          }
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="date-field">
+          <mat-label>Proyectar hasta</mat-label>
+          <input matInput [matDatepicker]="picker" [min]="hoy"
+                 (dateChange)="onFechaChange($event.value)"
+                 placeholder="Seleccionar fecha">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        @if (isSuperuser) {
+          <button mat-raised-button color="accent" class="retrain-btn"
+                  (click)="reentrenarModelos()" [disabled]="reentrenando()">
+            @if (!reentrenando()) {
+              <mat-icon>model_training</mat-icon>
+            }
+            @if (reentrenando()) {
+              <mat-spinner diameter="18" class="inline-spinner"></mat-spinner>
+              Reentrenando...
+            } @else {
+              Reentrenar Modelos
+            }
+          </button>
+        }
+
+        <button mat-icon-button (click)="cargarDashboard()" matTooltip="Actualizar datos" [disabled]="cargando()">
+          <mat-icon>refresh</mat-icon>
         </button>
-      }
-
-      <button mat-icon-button (click)="cargarDashboard()" matTooltip="Actualizar datos" [disabled]="cargando()">
-        <mat-icon>refresh</mat-icon>
-      </button>
-    </div>
+      </div>
+    } @else {
+      <div class="header-actions">
+        <div class="header-badge-plan">
+          <mat-icon>lock</mat-icon>
+          <span>Plan Básico (Sin IA)</span>
+        </div>
+      </div>
+    }
   </div>
 
   <!-- Loading state -->
@@ -63,6 +72,97 @@
     <div class="loading-container">
       <mat-spinner diameter="52"></mat-spinner>
       <p>Cargando datos de IA...</p>
+    </div>
+  } @else if (bloqueadoPorPlan()) {
+    <div class="plan-restricted-card">
+      <div class="restricted-header">
+        <div class="icon-badge">
+          <mat-icon>workspace_premium</mat-icon>
+        </div>
+        <div class="badge-row">
+          <span class="plan-pill basic">Plan Actual: Básico</span>
+          <span class="plan-pill required">Función Exclusiva Plan Profesional</span>
+        </div>
+        <h2 class="restricted-title">Módulo de Inteligencia Artificial No Incluido</h2>
+        <p class="restricted-company">
+          Empresa seleccionada: <strong>{{ currentEmpresaNombre }}</strong>
+        </p>
+      </div>
+
+      <div class="restricted-body">
+        <div class="alert-box-info">
+          <mat-icon class="info-icon">lock</mat-icon>
+          <div class="alert-content">
+            <strong>Restricción por Plan de Suscripción SaaS</strong>
+            <p>{{ mensajeBloqueo() }}</p>
+          </div>
+        </div>
+
+        <div class="features-comparison">
+          <h3 class="comparison-title">
+            <mat-icon class="sparkle-icon">auto_awesome</mat-icon>
+            ¿Qué incluye el Plan Profesional?
+          </h3>
+          <div class="features-grid">
+            <div class="feature-item">
+              <div class="feat-icon-wrap">
+                <mat-icon>auto_graph</mat-icon>
+              </div>
+              <div class="feat-text">
+                <strong>Dashboard de Ventas IA Predictivo</strong>
+                <p>Modelos de Machine Learning para predecir demandas futuras por categoría de ropa.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feat-icon-wrap">
+                <mat-icon>model_training</mat-icon>
+              </div>
+              <div class="feat-text">
+                <strong>Reentrenamiento de Modelos</strong>
+                <p>Reajuste continuo de coeficientes y patrones según las ventas reales del negocio.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feat-icon-wrap">
+                <mat-icon>palette</mat-icon>
+              </div>
+              <div class="feat-text">
+                <strong>Recomendador Inteligente de Outfits</strong>
+                <p>Generación de combinaciones con teoría del color cromático e historial de compra.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feat-icon-wrap">
+                <mat-icon>store</mat-icon>
+              </div>
+              <div class="feat-text">
+                <strong>Hasta 10 Sucursales Activas</strong>
+                <p>Escala tu presencia comercial con control multisede (Plan Básico limitado a 2 sucursales).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="restricted-actions">
+          @if (isSuperuser) {
+            <a mat-raised-button color="primary" routerLink="/superadmin/panel" class="action-btn-admin">
+              <mat-icon>admin_panel_settings</mat-icon>
+              Gestionar Plan en Panel Superadmin
+            </a>
+            <div class="superadmin-tip">
+              <mat-icon>lightbulb</mat-icon>
+              <span>
+                <strong>Modo Superadministrador:</strong> Puedes actualizar la suscripción de <em>{{ currentEmpresaNombre }}</em> al Plan Profesional en el Panel Superadmin, o cambiar a una empresa con IA habilitada (ej. <strong>FashionStore S.A.</strong> o <strong>Camsa Fashion SRL</strong>) en el selector superior.
+              </span>
+            </div>
+          } @else {
+            <a mat-raised-button color="primary" routerLink="/suscripcion/cambiar-plan" class="action-btn-admin">
+              <mat-icon>rocket_launch</mat-icon>
+              Actualizar a Plan Profesional
+            </a>
+          }
+        </div>
+      </div>
     </div>
   } @else if (!dashboardData()) {
     <div class="empty-state">

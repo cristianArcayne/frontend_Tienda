@@ -1,48 +1,202 @@
-<h2 mat-dialog-title>Suscripción — {{ empresa.nombre }}</h2>
-
-<mat-dialog-content>
-  <div *ngIf="empresa.suscripcion_actual; else sinSuscripcion" style="display: flex; flex-direction: column; gap: 12px; padding: 8px 0;">
-
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #666; font-size: 14px;">Plan</span>
-      <strong>{{ empresa.suscripcion_actual.plan_nombre }}</strong>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #666; font-size: 14px;">Estado</span>
-      <span [style.color]="getEstadoColor(empresa.suscripcion_actual.estado)"
-            style="font-weight: 600; text-transform: capitalize;">
-        {{ empresa.suscripcion_actual.estado }}
-      </span>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #666; font-size: 14px;">Ciclo</span>
-      <span style="text-transform: capitalize;">{{ empresa.suscripcion_actual.ciclo }}</span>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #666; font-size: 14px;">Precio</span>
-      <strong>Bs. {{ empresa.suscripcion_actual.plan_precio | number:'1.2-2' }}</strong>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #666; font-size: 14px;">Inicio</span>
-      <span>{{ empresa.suscripcion_actual.fecha_inicio | date:'dd/MM/yyyy' }}</span>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #666; font-size: 14px;">Vencimiento</span>
-      <span>{{ empresa.suscripcion_actual.fecha_fin ? (empresa.suscripcion_actual.fecha_fin | date:'dd/MM/yyyy') : '—' }}</span>
-    </div>
-
+<div class="modal-header d-flex justify-content-between align-items-center p-24" style="border-bottom: 1px solid #e2e8f0;">
+  <div class="d-flex align-items-center gap-2">
+    <mat-icon color="primary">business</mat-icon>
+    <h2 mat-dialog-title class="m-0" style="font-size: 18px; font-weight: 700;">
+      Ficha de Tenant: {{ empresa.nombre }}
+    </h2>
   </div>
+  <div class="d-flex align-items-center gap-2">
+    <button mat-stroked-button color="primary" (click)="abrirEdicion()">
+      <mat-icon class="m-r-4">edit</mat-icon> Editar Datos de Empresa
+    </button>
+    <button mat-icon-button (click)="cerrar()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+</div>
 
-  <ng-template #sinSuscripcion>
-    <p style="color: #999; text-align: center; padding: 16px 0;">Sin suscripción registrada.</p>
-  </ng-template>
+<mat-dialog-content class="modal-content-wrap">
+
+  <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="selectedTabIndex = $event">
+
+    <!-- Pestaña 1: Ficha Corporativa & Suscripción -->
+    <mat-tab label="Suscripción & Datos">
+      <div style="padding-top: 16px;">
+
+        <div class="data-grid">
+          <div class="data-item">
+            <div class="data-label">Razón Social</div>
+            <div class="data-val">{{ empresa.razon_social || empresa.nombre }}</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">NIT</div>
+            <div class="data-val">{{ empresa.nit || '—' }}</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">Subdominio / Slug</div>
+            <div class="data-val" style="font-family: monospace; color: #2563eb;">{{ empresa.subdominio }}</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">Contacto</div>
+            <div class="data-val">{{ empresa.correo || '—' }}</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">Ciudad / Teléfono</div>
+            <div class="data-val">{{ empresa.ciudad || 'Santa Cruz' }} • {{ empresa.telefono || '—' }}</div>
+          </div>
+          <div class="data-item">
+            <div class="data-label">Fecha de Registro</div>
+            <div class="data-val">{{ empresa.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+          <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+            Vigencia del Plan Actual
+          </h4>
+
+          <div class="data-grid" *ngIf="empresa.suscripcion_actual; else sinPlan">
+            <div class="data-item">
+              <div class="data-label">Plan Activo</div>
+              <div class="data-val" style="color: #6b21a8;">{{ empresa.suscripcion_actual.plan_nombre }}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Tarifa Comercial</div>
+              <div class="data-val">Bs. {{ empresa.suscripcion_actual.plan_precio | number:'1.2-2' }} ({{ empresa.suscripcion_actual.ciclo }})</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Fecha de Activación</div>
+              <div class="data-val">{{ empresa.suscripcion_actual.fecha_inicio | date:'dd/MM/yyyy' }}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Fecha de Vencimiento</div>
+              <div class="data-val" style="color: #dc2626;">
+                {{ empresa.suscripcion_actual.fecha_fin ? (empresa.suscripcion_actual.fecha_fin | date:'dd/MM/yyyy') : 'Indefinido' }}
+              </div>
+            </div>
+          </div>
+
+          <ng-template #sinPlan>
+            <p class="text-muted p-16 text-center">Sin suscripción activa registrada.</p>
+          </ng-template>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- Pestaña 2: Cuotas de Ingeniería y Consumo -->
+    <mat-tab label="Límites & Cuotas">
+      <div style="padding-top: 16px;">
+
+        <div class="cuota-meter">
+          <div>
+            <strong style="display: block; font-size: 13px;">Usuarios del Sistema</strong>
+            <span style="font-size: 11px; color: #64748b;">Administradores y empleados asignados</span>
+          </div>
+          <div>
+            <strong style="font-size: 16px; color: #0f172a;">
+              {{ empresa.usuarios_count || 0 }} / {{ empresa.suscripcion_actual?.limite_usuarios || 5 }}
+            </strong>
+          </div>
+        </div>
+
+        <div class="cuota-meter">
+          <div>
+            <strong style="display: block; font-size: 13px;">Sucursales Físicas</strong>
+            <span style="font-size: 11px; color: #64748b;">Puntos de venta autorizados</span>
+          </div>
+          <div>
+            <strong style="font-size: 16px; color: #0f172a;">
+              {{ empresa.sucursales_count || 0 }} / {{ empresa.suscripcion_actual?.limite_sucursales || 2 }}
+            </strong>
+          </div>
+        </div>
+
+        <div class="cuota-meter">
+          <div>
+            <strong style="display: block; font-size: 13px;">Prendas en Catálogo</strong>
+            <span style="font-size: 11px; color: #64748b;">Artículos registrados por la empresa</span>
+          </div>
+          <div>
+            <strong style="font-size: 16px; color: #0f172a;">
+              {{ empresa.prendas_count || 0 }} artículos
+            </strong>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; background: #f8fafc; border-radius: 8px; padding: 12px;">
+          <strong style="font-size: 12px; color: #334155; display: block; margin-bottom: 8px;">Módulos del Plan</strong>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <mat-chip-set>
+              <mat-chip [style.background]="empresa.suscripcion_actual?.soporta_ar !== false ? '#dcfce7' : '#f1f5f9'">
+                <mat-icon class="m-r-4">view_in_ar</mat-icon> Probador 3D AR
+              </mat-chip>
+              <mat-chip [style.background]="empresa.suscripcion_actual?.soporta_ia ? '#faf5ff' : '#f1f5f9'">
+                <mat-icon class="m-r-4">auto_awesome</mat-icon> IA Generativa
+              </mat-chip>
+              <mat-chip style="background: #e0f2fe;">
+                <mat-icon class="m-r-4">wifi_off</mat-icon> Punto de Venta POS
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- Pestaña 3: Gestión de Plan y Periodos (Acciones Superadmin) -->
+    <mat-tab label="Modificar / Extender">
+      <div style="padding-top: 16px;">
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Plan Comercial Asignado</mat-label>
+            <mat-select [(ngModel)]="selectedPlanId">
+              <mat-option [value]="1">Plan Básico (Hasta 2 sucursales, 5 usuarios - Bs. 49/mes)</mat-option>
+              <mat-option [value]="2">Plan Profesional (Hasta 10 sucursales, 20 usuarios, IA - Bs. 129/mes)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Estado de Operación</mat-label>
+            <mat-select [(ngModel)]="nuevoEstado">
+              <mat-option value="ACTIVA">Activa (Acceso Total)</mat-option>
+              <mat-option value="SUSPENDIDA">Suspendida (Bloqueo Temporal)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" [disabled]="isSaving" (click)="guardarCambiosPlan()">
+            <mat-icon>save</mat-icon> Guardar Cambios de Plan
+          </button>
+
+        </div>
+
+        <div class="extension-box">
+          <div class="box-title">Extensión Rápida de Periodo de Suscripción</div>
+          <p style="font-size: 12px; color: #166534; margin: 0 0 12px 0;">
+            Añade tiempo de vigencia adicional al plan de esta empresa sin interrumpir sus operaciones:
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button mat-stroked-button color="primary" (click)="extenderPeriodo(30)" [disabled]="isSaving">
+              + 30 Días (1 Mes)
+            </button>
+            <button mat-stroked-button color="primary" (click)="extenderPeriodo(90)" [disabled]="isSaving">
+              + 90 Días (Trimestre)
+            </button>
+            <button mat-stroked-button color="accent" (click)="extenderPeriodo(365)" [disabled]="isSaving">
+              + 365 Días (1 Año)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
+<mat-dialog-actions align="end" class="p-16">
   <button mat-button (click)="cerrar()">Cerrar</button>
 </mat-dialog-actions>

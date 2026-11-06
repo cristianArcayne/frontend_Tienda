@@ -126,8 +126,8 @@ export class PermisosService {
    * Los superusuarios tienen acceso a todo
    */
   tiene(permiso: string): boolean {
-    // Los superusuarios tienen todos los permisos
-    if (this.authService.isSuperuser()) {
+    // Los superusuarios y administradores tienen acceso a la gestión operativa
+    if (this.authService.isSuperuser() || this.authService.isAdmin()) {
       return true;
     }
     return this.authService.hasPermiso(permiso);
@@ -135,11 +135,10 @@ export class PermisosService {
 
   /**
    * Verificar si tiene alguno de los permisos especificados
-   * Los superusuarios tienen acceso a todo
+   * Los superusuarios y administradores tienen acceso a la gestión operativa
    */
   tieneAlguno(permisos: string[]): boolean {
-    // Los superusuarios tienen todos los permisos
-    if (this.authService.isSuperuser()) {
+    if (this.authService.isSuperuser() || this.authService.isAdmin()) {
       return true;
     }
     return this.authService.hasAnyPermiso(permisos);
@@ -147,11 +146,10 @@ export class PermisosService {
 
   /**
    * Verificar si tiene todos los permisos especificados
-   * Los superusuarios tienen acceso a todo
+   * Los superusuarios y administradores tienen acceso a la gestión operativa
    */
   tieneTodos(permisos: string[]): boolean {
-    // Los superusuarios tienen todos los permisos
-    if (this.authService.isSuperuser()) {
+    if (this.authService.isSuperuser() || this.authService.isAdmin()) {
       return true;
     }
     return permisos.every(p => this.authService.hasPermiso(p));

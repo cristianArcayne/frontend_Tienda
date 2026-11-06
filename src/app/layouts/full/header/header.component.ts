@@ -60,7 +60,20 @@ export class HeaderComponent implements OnInit, OnDestroy {
   currentUsername: string = '';
   conteoAlertasNoLeidas = signal(0);
   conteoDevolucionesPendientes = signal(0);
+  empresasDisponibles: { id: number; razon_social: string }[] = [];
   private destroy$ = new Subject<void>();
+
+  get isSuperuser(): boolean {
+    return this.authService.isSuperuser();
+  }
+
+  get currentEmpresaNombre(): string {
+    return this.authService.getEmpresaNombre() || (this.isSuperuser ? 'Plataforma Global (SaaS)' : 'Empresa');
+  }
+
+  get currentEmpresaId(): number | null {
+    return this.authService.getEmpresaId();
+  }
 
   constructor(
     private authService: AuthService,
@@ -76,6 +89,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.obtenerUsuarioActual();
+    if (this.isSuperuser) {
+      this.cargarEmpresasParaSuperadmin();
+    }
     if (!this.esCliente()) {
       this.cargarConteoAlertas();
       this.cargarConteoDevoluciones();
@@ -96,6 +112,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
           }
         });
     }
+  }
+
+  cargarEmpresasParaSuperadmin(): void {
+    const url = `${this.configService.getApiBaseUrl()}/empresas/`;
+    this.apiService.getAll<{ id: number; razon_social: string }>(url)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data: { id: number; razon_social: string }[]) => {
+          this.empresasDisponibles = Array.isArray(data) ? data : [];
+        },
+        error: () => {
+          this.empresasDisponibles = [];
+        }
+      });
+  }
+
+  cambiarTenant(empresa: { id: number; razon_social: string } | null): void {
+    if (empresa) {
+      this.authService.setEmpresaActiva(empresa.id, empresa.razon_social);
+    } else {
+      this.authService.setEmpresaActiva(null, 'Plataforma Global (SaaS)');
+    }
+    window.location.reload();
   }
 
   private cargarConteoAlertas(): void {

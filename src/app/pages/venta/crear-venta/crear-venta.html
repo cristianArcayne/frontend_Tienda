@@ -1,20 +1,155 @@
 <mat-card>
   <mat-card-header>
-    <div class="page-header">
-      <mat-card-title>Nueva Venta</mat-card-title>
-      <button mat-stroked-button color="default" routerLink="/ventas">
-        <mat-icon>arrow_back</mat-icon>
-        Volver
-      </button>
+    <div class="page-header w-100 d-flex flex-wrap align-items-center justify-content-between gap-12 p-b-16 border-bottom">
+      <div>
+        <div class="d-flex align-items-center gap-8 flex-wrap">
+          <mat-card-title class="m-0 font-weight-bold" style="font-size: 1.3rem; color: #1e293b;">
+            [CU-09] Procesar Ventas POS con Resiliencia Offline (Web - PWA)
+          </mat-card-title>
+          <span [ngStyle]="{
+            'background-color': enModoOffline ? '#fef2f2' : '#f0fdf4',
+            'color': enModoOffline ? '#dc2626' : '#16a34a',
+            'border': '1px solid ' + (enModoOffline ? '#fecaca' : '#bbf7d0'),
+            'padding': '3px 10px',
+            'border-radius': '16px',
+            'font-size': '0.78rem',
+            'font-weight': '600',
+            'display': 'inline-flex',
+            'align-items': 'center',
+            'gap': '4px'
+          }">
+            <mat-icon style="font-size: 14px; height: 14px; width: 14px;">{{ enModoOffline ? 'wifi_off' : 'wifi' }}</mat-icon>
+            {{ enModoOffline ? 'OFFLINE (OUTBOX ACTIVA)' : 'ONLINE (SERVIDOR CENTRAL)' }}
+          </span>
+        </div>
+        <p class="text-muted m-t-4 m-b-0" style="font-size: 0.85rem;">
+          Terminal de Punto de Venta en Mostrador • Facturación Fiscal con Código de Control • Tolerancia a Fallos de Red & Cola Outbox
+        </p>
+      </div>
+
+      <div class="d-flex align-items-center gap-8 flex-wrap">
+        <button *ngIf="pendingSyncCount > 0" mat-flat-button color="warn" (click)="sincronizarColaOffline()" [disabled]="isSyncingCola" matTooltip="Sincronizar transacciones guardadas localmente">
+          <mat-icon [class.spinner]="isSyncingCola">sync</mat-icon>
+          Sincronizar Cola Outbox ({{ pendingSyncCount }})
+        </button>
+
+        <button *ngIf="pendingSyncCount > 0" mat-stroked-button color="warn" (click)="limpiarColaOffline()" [disabled]="isSyncingCola" matTooltip="Vaciar cola de transacciones pendientes">
+          <mat-icon>delete_sweep</mat-icon>
+          Limpiar Cola
+        </button>
+
+        <button mat-stroked-button [color]="modoOfflineForzado ? 'warn' : 'primary'" (click)="toggleModoOfflineSimulado()">
+          <mat-icon>{{ modoOfflineForzado ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+          {{ modoOfflineForzado ? 'Desactivar Simulación Offline' : 'Simular Corte de Internet' }}
+        </button>
+
+        <button mat-stroked-button color="default" routerLink="/ventas">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+      </div>
     </div>
   </mat-card-header>
 
-  <mat-card-content>
+  <mat-card-content class="p-t-16">
     <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
       <mat-spinner diameter="50"></mat-spinner>
     </div>
 
     <div *ngIf="!isLoading">
+
+      <!-- Barra de Selección de Sucursal Física y Venta Omnicanal -->
+      <div class="m-b-16 p-12 rounded d-flex align-items-center justify-content-between flex-wrap gap-12" style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 5px solid #0284c7;">
+        <div class="d-flex align-items-center gap-12">
+          <div style="background: #0284c7; color: white; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);">
+            <mat-icon style="font-size: 24px; width: 24px; height: 24px;">storefront</mat-icon>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Mostrador Físico / Sucursal Activa</div>
+            <div style="font-size: 1rem; font-weight: 700; color: #0f172a;" class="d-flex align-items-center gap-6">
+              {{ selectedSucursalNombre || 'Cargando sucursales...' }}
+              <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Stock en Tiempo Real</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-8" *ngIf="sucursales.length > 0">
+          <label style="font-size: 0.85rem; font-weight: 600; color: #334155;">Cambiar de Sucursal:</label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" style="min-width: 280px;">
+            <mat-select [(ngModel)]="selectedSucursalId" (selectionChange)="onSucursalChange($event.value)">
+              <mat-option *ngFor="let s of sucursales" [value]="s.id">
+                🏪 {{ s.nombre }} {{ s.ciudad ? '· ' + s.ciudad : '' }} (ID #{{ s.id }})
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Notificación de contingencia Offline -->
+      <div *ngIf="enModoOffline" class="m-b-16 p-16 d-flex align-items-start gap-12" style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; color: #92400e;">
+        <mat-icon style="color: #d97706; margin-top: 2px;">wifi_off</mat-icon>
+        <div style="font-size: 0.88rem; line-height: 1.45;">
+          <strong>Modo de Resiliencia Offline Activo:</strong> El terminal POS opera de forma 100% autónoma en mostrador.
+          <ul class="m-t-4 m-b-4 p-l-20" style="margin-bottom: 4px;">
+            <li><strong>Paso 1:</strong> Seleccione productos y registre la venta (F2 o Pagar y Facturar).</li>
+            <li><strong>Paso 2:</strong> Se emitirá el Comprobante de Contingencia y la transacción se resguardará en la cola Outbox (<code>pending_sync</code>).</li>
+            <li><strong>Paso 3:</strong> Presione <strong>"Sincronizar Cola Outbox"</strong> o desactive la simulación para consolidar todas las ventas pendientes en el servidor central con su Factura Fiscal definitiva.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Comprobante Fiscal en Contingencia Offline Emitido -->
+      <div *ngIf="ultimaVentaOffline" class="m-b-24 p-16" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border: 2px dashed #3b82f6; border-radius: 12px;">
+        <div class="d-flex align-items-center justify-content-between m-b-12">
+          <div class="d-flex align-items-center gap-12">
+            <div style="background: #3b82f6; color: white; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+              <mat-icon>receipt_long</mat-icon>
+            </div>
+            <div>
+              <h3 class="m-0 font-weight-bold" style="color: #1e3a8a; font-size: 1.05rem;">COMPROBANTE FISCAL EN CONTINGENCIA (OFFLINE)</h3>
+              <span style="font-size: 0.82rem; color: #475569;">Emitido en mostrador físico y encolado en tabla local <strong>pending_sync</strong></span>
+            </div>
+          </div>
+          <button mat-icon-button (click)="cerrarModalTicket()" matTooltip="Cerrar comprobante">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div style="font-size: 0.88rem; color: #1e293b; background: white; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+          <div>
+            <strong>N° Factura Contingencia:</strong><br>
+            <span style="font-family: monospace; color: #2563eb; font-weight: bold;">{{ ultimaVentaOffline.nro_factura }}</span>
+          </div>
+          <div>
+            <strong>UUID Local (Outbox):</strong><br>
+            <span style="font-family: monospace; font-size: 0.78rem; color: #64748b;">{{ ultimaVentaOffline.uuid }}</span>
+          </div>
+          <div>
+            <strong>Código de Control Offline:</strong><br>
+            <span style="font-family: monospace; font-weight: bold; color: #475569;">{{ ultimaVentaOffline.codigo_control }}</span>
+          </div>
+          <div>
+            <strong>Total Pagado:</strong><br>
+            <span style="font-size: 1.05rem; font-weight: bold; color: #16a34a;">Bs. {{ ultimaVentaOffline.total.toFixed(2) }} ({{ ultimaVentaOffline.metodo }})</span>
+          </div>
+          <div>
+            <strong>Cliente:</strong> {{ ultimaVentaOffline.cliente }} (NIT/CI: {{ ultimaVentaOffline.nit }})
+          </div>
+          <div>
+            <strong>Sucursal Mostrador:</strong><br>
+            <span style="color: #0284c7; font-weight: 600;">🏪 {{ ultimaVentaOffline.sucursal || selectedSucursalNombre }}</span>
+          </div>
+          <div>
+            <strong>Prendas Despachadas:</strong> {{ ultimaVentaOffline.cant_items }} unidades descontadas de stock local
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-12 m-t-12">
+          <button mat-flat-button color="primary" (click)="cerrarModalTicket()">
+            <mat-icon>check</mat-icon> Continuar Nueva Venta POS
+          </button>
+        </div>
+      </div>
 
       <mat-form-field appearance="outline" class="w-full m-b-16">
         <mat-label>Cliente</mat-label>
@@ -108,7 +243,7 @@
                   [class.stock-none]="v.cantidad === 0">
               {{ v.cantidad === 0 ? 'Agotado' : 'Stock: ' + v.cantidad }}
             </span>
-            <span class="variante-precio">S/ {{ v.precio }}</span>
+            <span class="variante-precio">Bs. {{ v.precio }}</span>
             <div class="variante-actions">
               <div *ngIf="v.cantidad > 0" class="qty-stepper">
                 <button mat-icon-button class="stepper-btn" type="button"
@@ -168,12 +303,12 @@
 
             <ng-container matColumnDef="precio_unitario">
               <th mat-header-cell *matHeaderCellDef>P.Unit</th>
-              <td mat-cell *matCellDef="let item">S/ {{ item.precio_unitario }}</td>
+              <td mat-cell *matCellDef="let item">Bs. {{ item.precio_unitario.toFixed(2) }}</td>
             </ng-container>
 
             <ng-container matColumnDef="subtotal">
               <th mat-header-cell *matHeaderCellDef>Subtotal</th>
-              <td mat-cell *matCellDef="let item">S/ {{ (item.cantidad * item.precio_unitario).toFixed(2) }}</td>
+              <td mat-cell *matCellDef="let item">Bs. {{ (item.cantidad * item.precio_unitario).toFixed(2) }}</td>
             </ng-container>
 
             <ng-container matColumnDef="acciones">
@@ -189,8 +324,8 @@
             <tr mat-row *matRowDef="let row; columns: displayedColumnsCart;"></tr>
           </table>
 
-          <div *ngIf="cartItems.length > 0" class="total-row m-t-16">
-            <strong>TOTAL: S/ {{ totalCarrito.toFixed(2) }}</strong>
+          <div *ngIf="cartItems.length > 0" class="total-row m-t-16" style="display: flex; justify-content: flex-end; font-size: 1.15rem; color: #1e293b;">
+            <strong>TOTAL A COBRAR: Bs. {{ totalCarrito.toFixed(2) }}</strong>
           </div>
         </mat-card-content>
       </mat-card>
@@ -207,17 +342,17 @@
           (click)="finalizarVenta()">
           <mat-icon *ngIf="isSubmitting" class="spinner">sync</mat-icon>
           <mat-icon *ngIf="!isSubmitting">save</mat-icon>
-          Guardar Pendiente
+          {{ enModoOffline ? 'Guardar Offline' : 'Guardar Pendiente' }}
         </button>
 
         <button
           mat-raised-button
-          color="accent"
+          [color]="enModoOffline ? 'warn' : 'accent'"
           [disabled]="!carritoValido || isSubmitting"
           (click)="pagarYFinalizarVenta()">
           <mat-icon *ngIf="isSubmitting" class="spinner">sync</mat-icon>
-          <mat-icon *ngIf="!isSubmitting">payments</mat-icon>
-          Pagar y Completar
+          <mat-icon *ngIf="!isSubmitting">{{ enModoOffline ? 'offline_bolt' : 'payments' }}</mat-icon>
+          {{ enModoOffline ? 'Cobrar y Encolar Offline' : 'Pagar y Facturar POS' }}
         </button>
       </div>
     </div>

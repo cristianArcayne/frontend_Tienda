@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { PermisosService } from '../services/permisos.service';
+import { superadminGuard } from '../services/superadmin.guard';
 
 const canAccessWithPermiso = (permiso: string) => {
   return () => {
@@ -21,6 +22,14 @@ const canAccessWithPermiso = (permiso: string) => {
 export const PagesRoutes: Routes = [
   {
     path: '',
+    component: DashboardComponent,
+    data: {
+      title: 'Dashboard',
+      urls: [{ title: 'Dashboard', url: '/' }],
+    },
+  },
+  {
+    path: 'dashboard',
     component: DashboardComponent,
     data: {
       title: 'Dashboard',
@@ -89,6 +98,18 @@ export const PagesRoutes: Routes = [
       urls: [
         { title: 'Dashboard', url: '/' },
         { title: 'Historial de compras' }
+      ]
+    }
+  },
+  {
+    path: 'empresa/registro',
+    loadComponent: () =>
+      import('./empresa/registro/registro.component').then((m) => m.EmpresaRegistroComponent),
+    data: {
+      title: 'Registrar Nueva Empresa (SaaS)',
+      urls: [
+        { title: 'SuperAdmin Panel', url: '/superadmin/panel' },
+        { title: 'Registrar Empresa' }
       ]
     }
   },
@@ -168,6 +189,20 @@ export const PagesRoutes: Routes = [
         { title: 'Dashboard', url: '/' },
         { title: 'Mi Suscripción', url: '/suscripcion' },
         { title: 'Cambiar Plan' }
+      ]
+    }
+  },
+  {
+    path: 'superadmin/panel',
+    loadComponent: () =>
+      import('./superadmin/panel/panel-superadmin').then((m) => m.PanelSuperadmin),
+    canActivate: [superadminGuard],
+    data: {
+      title: 'Panel Superadministrador SaaS',
+      urls: [
+        { title: 'Dashboard', url: '/' },
+        { title: 'SaaS Multi-Tenant' },
+        { title: 'Panel Superadmin' }
       ]
     }
   },

@@ -1,4 +1,4 @@
-﻿import { Component, OnDestroy, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnDestroy, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -303,7 +303,7 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
         images: [],
         startIndex: 0,
         title: 'Modelo 3D',
-        modelUrl: this.modelo3dDisponible.archivo_url
+        modelUrl: this.configService.formatImageUrl(this.modelo3dDisponible.archivo_url)
       }
     });
   }

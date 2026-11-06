@@ -89,6 +89,20 @@ export class ApiService {
   }
 
   /**
+   * PUT directo a una URL completa
+   */
+  put<T>(url: string, data: any): Observable<T> {
+    return this.http.put<T>(url, data);
+  }
+
+  /**
+   * POST directo a una URL completa
+   */
+  post<T>(url: string, data: any): Observable<T> {
+    return this.http.post<T>(url, data);
+  }
+
+  /**
    * PATCH - Actualización parcial de un elemento
    * @param url - URL del endpoint
    * @param id - ID del elemento

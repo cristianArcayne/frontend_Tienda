@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ApiService } from '../../../../services/api.service';
 import { ConfigService } from '../../../../services/config.service';
+import { AuthService } from '../../../../services/auth.service';
 import { Plan } from '../../../../models/empresa/plan.model';
 import { Suscripcion, CicloSuscripcion } from '../../../../models/empresa/suscripcion.model';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
@@ -43,7 +44,8 @@ export class CambiarPlanComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private configService: ConfigService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private authService: AuthService
   ) {
     this.planesUrl = this.configService.getApiUrl('planes');
     this.suscripcionesUrl = this.configService.getApiUrl('suscripciones');
@@ -60,16 +62,28 @@ export class CambiarPlanComponent implements OnInit, OnDestroy {
 
   cargarDatos(): void {
     this.cargando.set(true);
+    const empresaId = this.authService.getEmpresaId();
+    const suscFilters: Record<string, any> = {};
+    if (empresaId) {
+      suscFilters['empresa_id'] = empresaId;
+    }
+
     forkJoin({
       planes: this.apiService.getWithPagination<Plan>(this.planesUrl, 1, 100, { activos: 'true' }),
-      suscripciones: this.apiService.getWithPagination<Suscripcion>(this.suscripcionesUrl, 1, 10)
+      suscripciones: this.apiService.getWithPagination<Suscripcion>(this.suscripcionesUrl, 1, 10, suscFilters)
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ planes, suscripciones }) => {
-          this.planes.set(planes.results);
-          const activa = suscripciones.results
-            .find(s => s.estado === 'activa' || s.estado === 'trial');
+          const listPlanes = Array.isArray(planes) ? planes : ((planes as any)?.results || []);
+          const listSusc = Array.isArray(suscripciones) ? suscripciones : ((suscripciones as any)?.results || []);
+
+          this.planes.set(listPlanes);
+          const activa = listSusc.find((s: any) => {
+            const st = (s.estado || '').toLowerCase();
+            return st === 'activa' || st === 'trial';
+          }) ?? listSusc[0] ?? null;
+
           if (activa) {
             this.suscripcionActual.set(activa);
             this.cicloSeleccionado = activa.ciclo;
@@ -78,7 +92,7 @@ export class CambiarPlanComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.cargando.set(false);
-          this.snackBar.open('Error al cargar los datos', 'Cerrar', { duration: 3000 });
+          this.snackBar.open('Error al cargar los planes disponibles', 'Cerrar', { duration: 3000 });
         }
       });
   }
@@ -99,18 +113,19 @@ export class CambiarPlanComponent implements OnInit, OnDestroy {
     this.guardando.set(true);
     this.apiService.patch<Suscripcion>(this.suscripcionesUrl, suscripcion.id, {
       plan: plan.id,
-      ciclo: this.cicloSeleccionado
+      ciclo: this.cicloSeleccionado,
+      motivo: `Actualización de suscripción a ${plan.nombre}`
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.guardando.set(false);
-          this.snackBar.open(`Plan cambiado a ${plan.nombre} correctamente`, 'Cerrar', { duration: 4000 });
+          this.snackBar.open(`¡Suscripción actualizada exitosamente a ${plan.nombre}!`, 'OK', { duration: 4000 });
           this.router.navigate(['/suscripcion']);
         },
-        error: () => {
+        error: (err) => {
           this.guardando.set(false);
-          this.snackBar.open('Error al cambiar el plan', 'Cerrar', { duration: 3000 });
+          this.snackBar.open(err?.error?.detail || 'Error al cambiar el plan', 'Cerrar', { duration: 4000 });
         }
       });
   }

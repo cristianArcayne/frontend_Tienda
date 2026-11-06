@@ -1,49 +1,74 @@
 <section class="empresa-landing">
-  <mat-card class="landing-card">
+  <mat-card class="landing-card hero-gradient-card">
     <div class="landing-hero">
-      <h1 class="landing-title">Kreativ-Flow</h1>
+      <div class="hero-badge">
+        <mat-icon class="badge-icon">verified</mat-icon>
+        <span>Arquitectura SaaS Multi-Tenant & Retail Moda</span>
+      </div>
+      <h1 class="landing-title">FashionStore SaaS</h1>
       <p class="landing-subtitle">
-        Plataforma SaaS para tiendas de muebles en linea. Gestiona catalogos,
-        ventas, clientes y reportes con una experiencia moderna y escalable.
+        Plataforma integral en la nube para Cadenas y Tiendas de Moda, Calzado y Retail.
+        Gestiona múltiples sucursales, catálogos con probador virtual en Realidad Aumentada (AR),
+        analítica predictiva con Machine Learning y ventas omnicanal con aislamiento seguro de datos.
       </p>
       <div class="landing-actions">
-        <button mat-raised-button color="primary" routerLink="/empresa/registro">
-          Registrar Empresa
-        </button>
-        <button mat-button (click)="abrirLogin()">
-          Acceso Subdominio
-        </button>
-        <button mat-raised-button color="accent" (click)="abrirLogin()">
-          Iniciar Sesión
-        </button>
+        <ng-container *ngIf="!isLoggedIn">
+          <button mat-raised-button color="primary" routerLink="/empresa/registro" class="action-btn-main">
+            <mat-icon>storefront</mat-icon>
+            Registrar Empresa
+          </button>
+          <button mat-stroked-button color="primary" routerLink="/login" class="action-btn-sec">
+            <mat-icon>login</mat-icon>
+            Iniciar Sesión
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="isLoggedIn">
+          <button mat-raised-button color="primary" routerLink="/dashboard" class="action-btn-main">
+            <mat-icon>dashboard</mat-icon>
+            Ir al Panel de Administración
+          </button>
+          <button mat-stroked-button color="warn" (click)="cerrarSesion()" class="action-btn-sec">
+            <mat-icon>logout</mat-icon>
+            Cerrar Sesión
+          </button>
+        </ng-container>
       </div>
     </div>
   </mat-card>
 
   <mat-card class="landing-card">
-    <h2 class="landing-section-title">Por que Kreativ-Flow?</h2>
+    <h2 class="landing-section-title">¿Por qué elegir FashionStore SaaS?</h2>
+    <p class="landing-section-subtitle">Diseñado bajo arquitectura ICONIX y microservicios escalables para negocios de moda</p>
     <mat-divider></mat-divider>
     <div class="feature-grid">
       <mat-card class="feature-card">
-        <mat-icon>storefront</mat-icon>
-        <h3 class="feature-title">Catalogo inteligente</h3>
-        <p class="feature-text">Muestra tus muebles con fichas completas, fotos y variantes.</p>
+        <div class="feature-icon-wrapper ar-icon">
+          <mat-icon>view_in_ar</mat-icon>
+        </div>
+        <h3 class="feature-title">Probador Virtual AR y 3D</h3>
+        <p class="feature-text">Visualización de prendas con realidad aumentada, selección de variantes de color, tallas y visor 3D interactivo.</p>
       </mat-card>
       <mat-card class="feature-card">
-        <mat-icon>insights</mat-icon>
-        <h3 class="feature-title">Analitica accionable</h3>
-        <p class="feature-text">Reportes dinamicos para ventas, stock y rendimiento.</p>
+        <div class="feature-icon-wrapper ai-icon">
+          <mat-icon>psychology</mat-icon>
+        </div>
+        <h3 class="feature-title">Analítica e IA Predictiva</h3>
+        <p class="feature-text">Recomendaciones personalizadas para clientes, predicción de demanda de inventarios y reportes ejecutivos por voz.</p>
       </mat-card>
       <mat-card class="feature-card">
-        <mat-icon>verified_user</mat-icon>
-        <h3 class="feature-title">Seguridad total</h3>
-        <p class="feature-text">Roles y permisos para controlar cada acceso.</p>
+        <div class="feature-icon-wrapper tenant-icon">
+          <mat-icon>domain_verification</mat-icon>
+        </div>
+        <h3 class="feature-title">Multitenant Seguro</h3>
+        <p class="feature-text">Aislamiento riguroso por tenant (empresa_id), control de límites por plan y sincronización POS offline/online.</p>
       </mat-card>
     </div>
   </mat-card>
 
   <mat-card class="landing-card">
-    <h2 class="landing-section-title">Planes disponibles</h2>
+    <h2 class="landing-section-title">Planes y Suscripciones</h2>
+    <p class="landing-section-subtitle">Elige el plan ideal según la escala de tus tiendas y sucursales</p>
     <mat-divider></mat-divider>
 
     @if (isLoading) {
@@ -59,39 +84,51 @@
     @if (!isLoading && !errorMessage) {
       <div class="plan-grid">
         @for (plan of planes; track plan.id) {
-          <mat-card class="plan-card">
+          <mat-card class="plan-card" [class.plan-featured]="plan.codigo === 'PROFESIONAL' || plan.soporta_ia">
             <div class="plan-header">
               <h3 class="plan-title">{{ plan.nombre }}</h3>
               <mat-chip-set>
-                <mat-chip>{{ plan.activo ? 'Activo' : 'Inactivo' }}</mat-chip>
+                <mat-chip [color]="(plan.codigo === 'PROFESIONAL' || plan.soporta_ia) ? 'accent' : 'primary'" selected>
+                  {{ (plan.codigo === 'PROFESIONAL' || plan.soporta_ia) ? '⭐ Recomendado' : 'Boutiques' }}
+                </mat-chip>
               </mat-chip-set>
             </div>
             <p class="plan-description">{{ plan.descripcion }}</p>
             <div class="plan-prices">
-              <span>Mensual: {{ getPrecio(plan, 'mensual') | currency:'USD':'symbol':'1.0-0' }}</span>
-              <span>Anual: {{ getPrecio(plan, 'anual') | currency:'USD':'symbol':'1.0-0' }}</span>
+              <div class="price-row">
+                <span class="price-val">{{ getPrecio(plan, 'mensual') | currency:'USD':'symbol':'1.0-0' }}</span>
+                <span class="price-period">/ mes</span>
+              </div>
+              <div class="price-sub">
+                o {{ getPrecio(plan, 'anual') | currency:'USD':'symbol':'1.0-0' }} facturado anualmente
+              </div>
             </div>
             <div class="plan-limits">
-              <div>
-                Limites: {{ plan.limite_usuarios }} usuarios, {{ plan.limite_productos }} productos,
-                {{ plan.limite_clientes }} clientes, {{ plan.limite_proveedores }} proveedores.
+              <div class="limit-item">
+                <mat-icon class="limit-icon">store</mat-icon>
+                <span><strong>{{ plan.limite_sucursales || 2 }}</strong> Sucursales permitidas</span>
+              </div>
+              <div class="limit-item">
+                <mat-icon class="limit-icon">people</mat-icon>
+                <span><strong>{{ plan.limite_usuarios || 5 }}</strong> Usuarios admin/cajeros</span>
               </div>
             </div>
             <div class="plan-features">
-              @if (getFeatures(plan).length === 0) {
-                <span class="plan-feature-muted">Sin features extra</span>
-              }
               @for (feature of getFeatures(plan); track feature) {
-                <span class="plan-feature">- {{ feature }}</span>
+                <div class="plan-feature-row">
+                  <mat-icon class="feature-check">check_circle</mat-icon>
+                  <span>{{ feature }}</span>
+                </div>
               }
             </div>
             <div class="plan-cta">
               <button
                 mat-raised-button
-                color="primary"
+                [color]="(plan.codigo === 'PROFESIONAL' || plan.soporta_ia) ? 'accent' : 'primary'"
+                class="w-100"
                 [routerLink]="['/empresa/registro']"
                 [queryParams]="{ plan: plan.id }">
-                Seleccionar plan
+                Seleccionar {{ plan.nombre }}
               </button>
             </div>
           </mat-card>

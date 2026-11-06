@@ -36,11 +36,18 @@ const canMatchPublicLanding = (_route: any, segments: UrlSegment[] = []) => {
     return false;
   }
 
+  // Solo aplicar comprobacion de autenticacion en la ruta raiz '/'
   if (segments.length === 0) {
-    return true;
+    const authService = inject(AuthService);
+    return !authService.isAuthenticated();
   }
 
-  return segments[0].path === 'empresa';
+  // Rutas publicas de onboarding y planes permitidas siempre
+  return (
+    segments[0].path === 'empresa' ||
+    segments[0].path === 'planes' ||
+    segments[0].path === 'registro-empresa'
+  );
 };
 
 const canMatchSuperAdmin = (_route: any, segments: UrlSegment[] = []) => {
@@ -54,14 +61,7 @@ const canMatchSuperAdmin = (_route: any, segments: UrlSegment[] = []) => {
 };
 
 export const routes: Routes = [
-  // Panel superadmin del esquema público (oculto, solo en host público)
-  {
-    path: 'superadmin',
-    component: BlankComponent,
-    canMatch: [canMatchSuperAdmin],
-    loadChildren: () =>
-      import('./pages/superadmin/superadmin.routes').then((m) => m.SuperAdminRoutes),
-  },
+
   // Landing publica (sin sidebar) solo en host publico
   {
     path: '',

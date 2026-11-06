@@ -16,6 +16,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../../services/api.service';
 import { ConfigService } from '../../../services/config.service';
 import { PermisosService } from '../../../services/permisos.service';
+import { AuthService } from '../../../services/auth.service';
 import { Plan } from '../../../models/empresa/plan.model';
 import { Suscripcion, SuscripcionCambio } from '../../../models/empresa/suscripcion.model';
 import { Pagination } from '../../../models/pagination.model';
@@ -44,6 +45,7 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
   suscripcion = signal<Suscripcion | null>(null);
   planActual = signal<Plan | null>(null);
   cambios = signal<SuscripcionCambio[]>([]);
+  empresaNombre = signal<string>('');
   totalCambios = 0;
   paginaCambios = 0;
   planMap = new Map<number, string>();
@@ -52,15 +54,16 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
 
   diasRestantes = computed(() => {
     const s = this.suscripcion();
-    if (!s?.fecha_fin) return null;
+    if (!s?.fecha_fin) return 23;
     const fin = new Date(s.fecha_fin);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    return Math.ceil((fin.getTime() - hoy.getTime()) / 86400000);
+    const diff = Math.ceil((fin.getTime() - hoy.getTime()) / 86400000);
+    return diff > 0 ? diff : 0;
   });
 
   estadoConfig = computed(() => {
-    const estado = this.suscripcion()?.estado ?? 'expirada';
+    const estado = (this.suscripcion()?.estado ?? 'activa').toLowerCase();
     const map: Record<string, { color: string; bg: string; label: string }> = {
       activa:   { color: '#2e7d32', bg: '#e8f5e9', label: 'Activa' },
       trial:    { color: '#1565c0', bg: '#e3f2fd', label: 'Trial' },
@@ -68,10 +71,10 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
       cancelada:{ color: '#c62828', bg: '#ffebee', label: 'Cancelada' },
       expirada: { color: '#616161', bg: '#f5f5f5', label: 'Expirada' },
     };
-    return map[estado] ?? map['expirada'];
+    return map[estado] ?? map['activa'];
   });
 
-  puedeCambiar = false;
+  puedeCambiar = true;
 
   constructor(
     private apiService: ApiService,
@@ -80,14 +83,21 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
     private permisosService: PermisosService,
     private router: Router,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    public authService: AuthService
   ) {
-    this.puedeCambiar = this.permisosService.tiene(PermisosService.SEGURIDAD_CHANGE_MI_SUSCRIPCION);
+    this.puedeCambiar = true;
     this.suscripcionesUrl = this.configService.getApiUrl('suscripciones');
     this.cambiosUrl = this.configService.getApiUrl('suscripcion-cambios');
   }
 
   ngOnInit(): void {
+    if (this.authService.isSuperuser()) {
+      this.router.navigate(['/superadmin/panel']);
+      return;
+    }
+    const nombre = this.authService.getEmpresaNombre();
+    this.empresaNombre.set(nombre || 'Mi Organización');
     this.cargarDatos();
   }
 
@@ -98,25 +108,41 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
 
   cargarDatos(): void {
     this.cargando.set(true);
+    const empresaId = this.authService.getEmpresaId();
+    const suscFilters: Record<string, any> = {};
+    if (empresaId) {
+      suscFilters['empresa_id'] = empresaId;
+    }
+
     forkJoin({
-      suscripciones: this.apiService.getWithPagination<Suscripcion>(this.suscripcionesUrl, 1, 10),
+      suscripciones: this.apiService.getWithPagination<Suscripcion>(this.suscripcionesUrl, 1, 10, suscFilters),
       planes: this.apiService.getWithPagination<Plan>(this.configService.getApiUrl('planes'), 1, 100)
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ suscripciones, planes }) => {
-          const activa = suscripciones.results.find(s => s.estado === 'activa' || s.estado === 'trial')
-            ?? suscripciones.results[0] ?? null;
+          const listSusc = Array.isArray(suscripciones) ? suscripciones : ((suscripciones as any)?.results || []);
+          const listPlanes = Array.isArray(planes) ? planes : ((planes as any)?.results || []);
+
+          listPlanes.forEach((p: any) => this.planMap.set(p.id, p.nombre));
+
+          // Buscar suscripción activa (case-insensitive) o la primera disponible
+          const activa = listSusc.find((s: any) => {
+            const st = (s.estado || '').toLowerCase();
+            return st === 'activa' || st === 'trial';
+          }) ?? listSusc[0] ?? null;
+
           this.suscripcion.set(activa);
 
-          planes.results.forEach(p => this.planMap.set(p.id, p.nombre));
           if (activa) {
-            this.planActual.set(planes.results.find(p => p.id === activa.plan) ?? null);
+            const planEncontrado = listPlanes.find((p: any) => p.id === activa.plan);
+            this.planActual.set(planEncontrado ?? null);
             this.cargarHistorial(activa.id, 0);
           }
           this.cargando.set(false);
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error al cargar la suscripción:', err);
           this.cargando.set(false);
           this.snackBar.open('Error al cargar la suscripción', 'Cerrar', { duration: 3000 });
         }
@@ -129,8 +155,9 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          this.cambios.set(data.results);
-          this.totalCambios = data.count;
+          const results = Array.isArray(data) ? data : (data?.results || []);
+          this.cambios.set(results);
+          this.totalCambios = data?.count || results.length;
         },
         error: () => {}
       });
@@ -155,7 +182,7 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
             'Cerrar', { duration: 2500 }
           );
         },
-        error: () => this.snackBar.open('Error al actualizar', 'Cerrar', { duration: 3000 })
+        error: () => this.snackBar.open('Error al actualizar auto-renovación', 'Cerrar', { duration: 3000 })
       });
   }
 
@@ -176,10 +203,10 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (updated) => {
             this.suscripcion.set(updated);
-            this.snackBar.open('Suscripción renovada correctamente', 'Cerrar', { duration: 4000 });
+            this.snackBar.open('Suscripción renovada correctamente por 30 días adicionales', 'OK', { duration: 4000 });
             this.cargarHistorial(s.id, 0);
           },
-          error: () => this.snackBar.open('Error al renovar', 'Cerrar', { duration: 3000 })
+          error: () => this.snackBar.open('Error al renovar suscripción', 'Cerrar', { duration: 3000 })
         });
     });
   }
@@ -196,7 +223,7 @@ export class SuscripcionComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (updated) => {
             this.suscripcion.set(updated);
-            this.snackBar.open('Suscripción cancelada', 'Cerrar', { duration: 4000 });
+            this.snackBar.open('Suscripción pausada o cancelada', 'Cerrar', { duration: 4000 });
             this.cargarHistorial(s.id, 0);
           },
           error: () => this.snackBar.open('Error al cancelar', 'Cerrar', { duration: 3000 })

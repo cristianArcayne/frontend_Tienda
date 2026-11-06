@@ -100,6 +100,11 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
 
   puedeVerDetalle = false;
 
+  // Resiliencia Offline (CU-05 ICONIX)
+  isOnline = true;
+  modoOfflineForzado = false;
+  private readonly CACHE_KEY = 'fashionstore_catalogo_offline_cache';
+
   constructor(
     private http: HttpClient,
     private apiService: ApiService,
@@ -123,6 +128,11 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      this.isOnline = navigator.onLine;
+      window.addEventListener('online', this.handleOnline);
+      window.addEventListener('offline', this.handleOffline);
+    }
     this.cargarCategorias();
     this.cargarSucursales();
     this.cargarProductos();
@@ -153,6 +163,123 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.observer) {
       this.observer.disconnect();
     }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('online', this.handleOnline);
+      window.removeEventListener('offline', this.handleOffline);
+    }
+  }
+
+  private handleOnline = () => {
+    this.isOnline = true;
+    this.snackBar.open('🟢 Conexión restablecida con el catálogo central', 'OK', { duration: 3000 });
+    if (!this.modoOfflineForzado) {
+      this.cargarProductos();
+    }
+  };
+
+  private handleOffline = () => {
+    this.isOnline = false;
+    this.snackBar.open('🔴 Sin conexión: Consultando catálogo offline con persistencia local', 'OK', { duration: 4000 });
+    this.cargarProductos();
+  };
+
+  get enModoOffline(): boolean {
+    return !this.isOnline || this.modoOfflineForzado;
+  }
+
+  toggleModoOfflineSimulado(): void {
+    this.modoOfflineForzado = !this.modoOfflineForzado;
+    if (this.modoOfflineForzado) {
+      this.snackBar.open('⚠️ Simulación Offline activada: Catálogo operando con datos locales en caché', 'OK', { duration: 3500 });
+    } else {
+      this.snackBar.open('🟢 Simulación desactivada: Consultando inventario en tiempo real...', 'OK', { duration: 3000 });
+    }
+    this.cargarProductos();
+  }
+
+  resetFiltros(): void {
+    this.categoriaSeleccionada = null;
+    this.terminoBusqueda = '';
+    this.sucursalSeleccionadaId = null;
+    this.cargarProductos();
+  }
+
+  private guardarEnCacheOffline(items: Producto[]): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const exist = this.obtenerProductosDeCache();
+      const map = new Map<number, Producto>();
+      exist.forEach(p => map.set(p.id, p));
+      items.forEach(p => map.set(p.id, p));
+      localStorage.setItem(this.CACHE_KEY, JSON.stringify(Array.from(map.values())));
+    } catch (e) {
+      console.warn('Error guardando catálogo en caché:', e);
+    }
+  }
+
+  private readonly SEED_OFFLINE_PRODUCTS: Producto[] = [
+    {
+      id: 1,
+      nombre: 'Chaqueta Denim Vintage',
+      descripcion: 'Chaqueta denim clasica estilo vintage con costuras reforzadas.',
+      categoria_nombre: 'Denim & Jeans',
+      categoria: 1,
+      imagen_principal: 'assets/images/products/product-1.png',
+      precio_minimo: 349.99,
+      calificacion_promedio: 4.8,
+      total_resenas: 12,
+      stock_total: 53
+    },
+    {
+      id: 30,
+      nombre: 'Parka Termica DISMAC Smart Tech',
+      descripcion: 'Parka tecnica ultra resistente con aislamiento termico.',
+      categoria_nombre: 'Invierno Actualizado',
+      categoria: 5,
+      imagen_principal: 'assets/images/products/product-1.png',
+      precio_minimo: 599.99,
+      calificacion_promedio: 4.9,
+      total_resenas: 8,
+      stock_total: 70
+    },
+    {
+      id: 34,
+      nombre: 'Polera Oficial PARO AURA Tech',
+      descripcion: 'Edicion especial algodon peinado con acabados premium.',
+      categoria_nombre: 'PARO AURA',
+      categoria: 8,
+      imagen_principal: 'assets/images/products/product-1.png',
+      precio_minimo: 180.00,
+      calificacion_promedio: 5.0,
+      total_resenas: 4,
+      stock_total: 30
+    }
+  ];
+
+  private obtenerProductosDeCache(): Producto[] {
+    if (typeof localStorage === 'undefined') return this.SEED_OFFLINE_PRODUCTS;
+    try {
+      const raw = localStorage.getItem(this.CACHE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return (parsed && parsed.length > 0) ? parsed : this.SEED_OFFLINE_PRODUCTS;
+    } catch (e) {
+      return this.SEED_OFFLINE_PRODUCTS;
+    }
+  }
+
+  private filtrarProductosLocal(items: Producto[]): Producto[] {
+    let filtered = items;
+    if (this.categoriaSeleccionada) {
+      filtered = filtered.filter(p => p.categoria === this.categoriaSeleccionada);
+    }
+    if (this.terminoBusqueda) {
+      const term = this.terminoBusqueda.toLowerCase().trim();
+      filtered = filtered.filter(p =>
+        (p.nombre && p.nombre.toLowerCase().includes(term)) ||
+        (p.descripcion && p.descripcion.toLowerCase().includes(term))
+      );
+    }
+    return filtered;
   }
 
   cargarCategorias(): void {
@@ -191,6 +318,13 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
     this.productos = [];
     this.hayMas = false;
 
+    if (this.enModoOffline) {
+      const cached = this.obtenerProductosDeCache();
+      this.productos = this.filtrarProductosLocal(cached);
+      this.cargando = false;
+      return;
+    }
+
     const url = this.configService.getApiUrl('catalogo');
     const filtros: Record<string, any> = {};
     if (this.categoriaSeleccionada) filtros['categoria'] = this.categoriaSeleccionada;
@@ -201,12 +335,21 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (res: any) => {
         const items = Array.isArray(res) ? res : (res?.results || []);
         this.productos = items;
+        if (items.length > 0) {
+          this.guardarEnCacheOffline(items);
+        }
         this.hayMas = Array.isArray(res) ? false : !!res?.next;
         this.cargando = false;
       },
       error: () => {
+        const cached = this.obtenerProductosDeCache();
+        if (cached && cached.length > 0) {
+          this.productos = this.filtrarProductosLocal(cached);
+          this.snackBar.open('⚠️ Servidor no disponible: Catálogo recuperado de almacenamiento local offline', 'OK', { duration: 4000 });
+        } else {
+          this.snackBar.open('Error al cargar productos del catálogo', 'Cerrar', { duration: 3000 });
+        }
         this.cargando = false;
-        this.snackBar.open('Error al cargar productos del catálogo', 'Cerrar', { duration: 3000 });
       }
     });
   }
@@ -241,7 +384,11 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   seleccionarCategoria(id: number | null): void {
-    this.categoriaSeleccionada = id;
+    if (id !== null && this.categoriaSeleccionada === id) {
+      this.categoriaSeleccionada = null;
+    } else {
+      this.categoriaSeleccionada = id;
+    }
     this.cargarProductos();
   }
 

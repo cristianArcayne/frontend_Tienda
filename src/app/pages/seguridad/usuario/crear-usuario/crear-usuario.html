@@ -1,147 +1,184 @@
-<h2 mat-dialog-title>
-  {{ isEditMode ? 'Editar Usuario: ' + data.usuario.username : 'Crear Nuevo Usuario' }}
-</h2>
+<div class="crear-usuario-dialog-header p-20 d-flex align-items-center justify-content-between" style="border-bottom: 1px solid #e2e8f0; background: #faf5ff;">
+  <div class="d-flex align-items-center gap-12">
+    <div style="background: #9333ea; color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+      <mat-icon>{{ isEditMode ? 'manage_accounts' : 'person_add' }}</mat-icon>
+    </div>
+    <div>
+      <h3 class="m-0 font-weight-bold" style="color: #581c87; font-size: 18px;">
+        {{ isEditMode ? 'Editar Usuario: ' + form.get('username')?.value : 'Registrar Nuevo Usuario / Empleado' }}
+      </h3>
+      <p class="m-t-2 m-b-0 text-muted" style="font-size: 12px;">
+        Asignación de credenciales JWT, datos personales, rol y empresa inquilina (SaaS).
+      </p>
+    </div>
+  </div>
+  <button mat-icon-button (click)="cancelar()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
 
-<mat-dialog-content>
-  <form [formGroup]="form" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
-    <!-- Campo Username (deshabilitado en edición) -->
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Username</mat-label>
-      <input 
-        matInput 
-        formControlName="username"
-        [disabled]="isEditMode"
-        placeholder="Ej: admin, vendedor123"
-      />
-      <mat-error *ngIf="form.get('username')?.hasError('required')">
-        El username es requerido
-      </mat-error>
-      <mat-error *ngIf="form.get('username')?.hasError('minlength')">
-        Mínimo 3 caracteres
-      </mat-error>
-    </mat-form-field>
+<mat-dialog-content style="max-height: 75vh; padding: 24px;">
+  <form [formGroup]="form" class="d-flex flex-column gap-16">
 
-    <!-- Campo Email (opcional) -->
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Correo electrónico <span style="font-weight: 400; color: #999;">(opcional)</span></mat-label>
-      <input
-        matInput
-        type="email"
-        formControlName="email"
-        placeholder="Ej: usuario@correo.com"
-      />
-      <mat-icon matSuffix style="color: #999; font-size: 18px;">email</mat-icon>
-      <mat-error *ngIf="form.get('email')?.hasError('email')">
-        Ingresa un correo válido
-      </mat-error>
-    </mat-form-field>
+    <!-- 1. SELECCIÓN DE EMPRESA (MULTITENANT) -->
+    <div class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+      <label class="d-block font-weight-bold m-b-8" style="color: #334155; font-size: 13px;">
+        1. ASIGNACIÓN MULTI-INQUILINO (TENANT)
+      </label>
 
-    <!-- Campo Password -->
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Contraseña</mat-label>
-      <input 
-        matInput 
-        type="password"
-        formControlName="password"
-        [placeholder]="isEditMode ? 'Dejar en blanco para no cambiar' : 'Ingresa una contraseña segura'"
-      />
-      <mat-error *ngIf="form.get('password')?.hasError('required')">
-        La contraseña es requerida
-      </mat-error>
-    </mat-form-field>
-    <div class="pwd-req-list" *ngIf="form.get('password')?.value">
-      <div class="req-item" [class.req-ok]="passwordReqs.length">
-        <mat-icon>{{ passwordReqs.length ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-        <span>Mínimo 8 caracteres</span>
+      <!-- Si es Superadmin: Selector de Empresa -->
+      <div *ngIf="isSuperuser">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Empresa Inquilina (Destino)</mat-label>
+          <mat-select formControlName="empresa_id" (selectionChange)="onEmpresaSelected($event.value)">
+            <mat-option *ngFor="let emp of empresas" [value]="emp.id">
+              🏢 {{ emp.razon_social }} (ID: {{ emp.id }}) - {{ emp.plan_codigo || 'Activa' }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>Como Superadmin, puedes crear y asignar este usuario a cualquier empresa registrada.</mat-hint>
+        </mat-form-field>
       </div>
-      <div class="req-item" [class.req-ok]="passwordReqs.lowercase">
-        <mat-icon>{{ passwordReqs.lowercase ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-        <span>1 letra minúscula</span>
-      </div>
-      <div class="req-item" [class.req-ok]="passwordReqs.uppercase">
-        <mat-icon>{{ passwordReqs.uppercase ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-        <span>1 letra mayúscula</span>
-      </div>
-      <div class="req-item" [class.req-ok]="passwordReqs.number">
-        <mat-icon>{{ passwordReqs.number ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-        <span>1 número</span>
-      </div>
-      <div class="req-item" [class.req-ok]="passwordReqs.symbol">
-        <mat-icon>{{ passwordReqs.symbol ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-        <span>1 símbolo (@, #, !, etc.)</span>
+
+      <!-- Si es Admin de Empresa: Empresa Fija -->
+      <div *ngIf="!isSuperuser" class="d-flex align-items-center gap-12 p-8 rounded bg-white" style="border: 1px solid #cbd5e1;">
+        <mat-icon style="color: #7c3aed;">apartment</mat-icon>
+        <div>
+          <span style="font-size: 11px; color: #64748b; display: block; text-transform: uppercase;">Empresa Propietaria:</span>
+          <strong style="color: #1e293b; font-size: 14px;">{{ empresaActualNombre || 'Mi Empresa' }}</strong>
+          <span class="text-muted m-l-4" style="font-size: 12px;">(ID {{ empresaActualId }})</span>
+        </div>
       </div>
     </div>
 
-    <!-- Roles/Grupo Disponibles -->
-    <div style="margin-top: 16px;">
-      <label style="display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px;">
-        {{ isEditMode ? 'Rol Actual / Cambiar Rol:' : 'Selecciona un Grupo/Rol:' }}
+    <!-- 2. DATOS PERSONALES -->
+    <div class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+      <label class="d-block font-weight-bold m-b-8" style="color: #334155; font-size: 13px;">
+        2. DATOS DE LA PERSONA / EMPLEADO
       </label>
-      
-      <div *ngIf="isLoading" style="display: flex; justify-content: center; padding: 16px;">
-        <mat-spinner diameter="30"></mat-spinner>
+      <div class="row g-12">
+        <div class="col-md-6 col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Nombre(s) *</mat-label>
+            <input matInput formControlName="nombre" placeholder="Ej: Carlos" />
+            <mat-error *ngIf="form.get('nombre')?.hasError('required')">El nombre es requerido</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="col-md-6 col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Apellido(s) *</mat-label>
+            <input matInput formControlName="apellido" placeholder="Ej: Mamani" />
+            <mat-error *ngIf="form.get('apellido')?.hasError('required')">El apellido es requerido</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="col-md-6 col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Carnet de Identidad (CI)</mat-label>
+            <input matInput formControlName="ci" placeholder="Ej: 8493021" />
+          </mat-form-field>
+        </div>
+        <div class="col-md-6 col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Teléfono / Celular</mat-label>
+            <input matInput formControlName="telefono" placeholder="Ej: +591 70012345" />
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CREDENCIALES DE ACCESO Y SEGURIDAD -->
+    <div class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+      <label class="d-block font-weight-bold m-b-8" style="color: #334155; font-size: 13px;">
+        3. CREDENCIALES DE ACCESO (LOGIN)
+      </label>
+      <div class="row g-12">
+        <div class="col-md-6 col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Nombre de Usuario (Username) *</mat-label>
+            <input matInput formControlName="username" placeholder="Ej: cajero_central" />
+            <mat-error *ngIf="form.get('username')?.hasError('required')">El username es requerido</mat-error>
+            <mat-error *ngIf="form.get('username')?.hasError('minlength')">Mínimo 3 caracteres</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="col-md-6 col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Correo Electrónico Corporativo</mat-label>
+            <input matInput type="email" formControlName="email" placeholder="usuario@empresa.com" />
+            <mat-error *ngIf="form.get('email')?.hasError('email')">Formato de correo no válido</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Contraseña {{ isEditMode ? '(Dejar en blanco para conservar actual)' : '*' }}</mat-label>
+            <input matInput type="password" formControlName="password" [placeholder]="isEditMode ? '••••••••' : 'Password123!'" />
+            <mat-error *ngIf="form.get('password')?.hasError('required')">La contraseña es obligatoria</mat-error>
+          </mat-form-field>
+
+          <div class="pwd-req-list d-flex flex-wrap gap-8 m-t-4" *ngIf="form.get('password')?.value">
+            <span class="badge" [style.background]="passwordReqs.length ? '#dcfce7' : '#f1f5f9'" [style.color]="passwordReqs.length ? '#166534' : '#64748b'">
+              {{ passwordReqs.length ? '✓' : '○' }} Mín. 8 caracteres
+            </span>
+            <span class="badge" [style.background]="passwordReqs.uppercase ? '#dcfce7' : '#f1f5f9'" [style.color]="passwordReqs.uppercase ? '#166534' : '#64748b'">
+              {{ passwordReqs.uppercase ? '✓' : '○' }} 1 Mayúscula
+            </span>
+            <span class="badge" [style.background]="passwordReqs.lowercase ? '#dcfce7' : '#f1f5f9'" [style.color]="passwordReqs.lowercase ? '#166534' : '#64748b'">
+              {{ passwordReqs.lowercase ? '✓' : '○' }} 1 Minúscula
+            </span>
+            <span class="badge" [style.background]="passwordReqs.number ? '#dcfce7' : '#f1f5f9'" [style.color]="passwordReqs.number ? '#166534' : '#64748b'">
+              {{ passwordReqs.number ? '✓' : '○' }} 1 Número
+            </span>
+            <span class="badge" [style.background]="passwordReqs.symbol ? '#dcfce7' : '#f1f5f9'" [style.color]="passwordReqs.symbol ? '#166534' : '#64748b'">
+              {{ passwordReqs.symbol ? '✓' : '○' }} 1 Símbolo (!@#)
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ROL Y SUCURSAL ASIGNADA -->
+    <div class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+      <label class="d-block font-weight-bold m-b-8" style="color: #334155; font-size: 13px;">
+        4. ROL OPERATIVO Y SUCURSAL ASIGNADA
+      </label>
+
+      <!-- Selector de Sucursal Física -->
+      <mat-form-field appearance="outline" class="w-100 m-b-12">
+        <mat-label>Sucursal Física Asignada (Punto de Venta / Caja)</mat-label>
+        <mat-select formControlName="sucursal_id">
+          <mat-option [value]="null">-- Sin Sucursal Específica (Global de la Empresa) --</mat-option>
+          <mat-option *ngFor="let suc of sucursales" [value]="suc.id">
+            🏪 {{ suc.nombre }} ({{ suc.ciudad }}) - {{ suc.direccion }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <label class="d-block font-weight-bold m-t-8 m-b-4" style="color: #475569; font-size: 12px;">
+        Selecciona el Rol / Perfil de Acceso:
+      </label>
+
+      <div *ngIf="isLoading" class="text-center p-12">
+        <mat-spinner diameter="24" style="margin: 0 auto;"></mat-spinner>
       </div>
 
-      <mat-selection-list #rolesList
-        (selectionChange)="onRolSelected($event)"
-        style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px;">
-        <mat-list-option 
-          *ngFor="let rol of roles"
-          [value]="rol.id"
-          [selected]="rolesSeleccionadosPorDefecto.includes(rol.id)">
-          <strong>{{ rol.name }}</strong>
-          <div style="font-size: 12px; color: #999;">
-            Permisos: {{ rol.permisos.length || 0 }}
-            <span *ngIf="isEditMode && rolesSeleccionadosPorDefecto.includes(rol.id)" 
-              style="margin-left: 8px; color: #4caf50; font-weight: 600;">
-              ✓ Actual
+      <mat-selection-list #rolesList (selectionChange)="onRolSelected($event)" style="max-height: 180px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <mat-list-option *ngFor="let rol of roles" [value]="rol.id" [selected]="rolesSeleccionadosPorDefecto.includes(rol.id)">
+          <div class="d-flex align-items-center justify-content-between w-100">
+            <strong>{{ rol.name }}</strong>
+            <span class="text-muted" style="font-size: 11px;">
+              {{ (rol.name || '').toLowerCase().includes('vendedor') ? 'Ventas POS y Caja' : ((rol.name || '').toLowerCase().includes('admin') ? 'Acceso Administrativo' : 'Operativo') }}
             </span>
           </div>
         </mat-list-option>
       </mat-selection-list>
-
-      <!-- Controles de paginación -->
-      <div class="roles-pagination">
-        <button 
-          mat-stroked-button 
-          [disabled]="!previousRolesUrl || isLoading"
-          (click)="previousRolesPage()"
-          type="button">
-          <mat-icon>arrow_back</mat-icon>
-          Anterior
-        </button>
-        
-        <span style="font-size: 12px; color: #666;">
-          Página {{ rolesCurrentPage + 1 }} de {{ Math.ceil(rolesTotalItems / rolesPageSize) }}
-          ({{ rolesTotalItems }} total)
-        </span>
-
-        <button 
-          mat-stroked-button 
-          [disabled]="!nextRolesUrl || isLoading"
-          (click)="nextRolesPage()"
-          type="button">
-          Siguiente
-          <mat-icon>arrow_forward</mat-icon>
-        </button>
-      </div>
     </div>
+
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
+<mat-dialog-actions align="end" class="p-16 gap-8" style="border-top: 1px solid #e2e8f0; background: #faf5ff;">
   <button mat-button (click)="cancelar()">Cancelar</button>
-  <button 
-    mat-raised-button 
-    color="primary" 
-    (click)="guardar()"
-    [disabled]="isSaving || !form.valid">
-    <span *ngIf="!isSaving">
-      {{ isEditMode ? 'Actualizar Usuario' : 'Guardar Usuario' }}
-    </span>
-    <span *ngIf="isSaving" style="display: flex; align-items: center; gap: 8px;">
-      <mat-spinner diameter="16"></mat-spinner>
-      {{ isEditMode ? 'Actualizando...' : 'Guardando...' }}
-    </span>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="isSaving || !form.valid" style="background: #7c3aed; color: white;">
+    <mat-icon *ngIf="!isSaving">check</mat-icon>
+    <mat-spinner *ngIf="isSaving" diameter="18" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+    {{ isEditMode ? 'Actualizar Usuario' : 'Crear Usuario' }}
   </button>
 </mat-dialog-actions>

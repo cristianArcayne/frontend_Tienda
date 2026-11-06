@@ -31,14 +31,40 @@
 
 .sidebar-list {
   &.mdc-list {
-    padding: 0 18px;
-    width: $sidenav-desktop;
+    padding: 0 10px;
+    width: 100% !important;
 
     .sub-item-icon {
       width: 16px !important;
       height: 16px !important;
       opacity: 0.8;
       margin-inline-end: 13px;
+    }
+
+    .nav-caption-badge-container {
+      padding: 12px 2px 6px 2px;
+      width: 100%;
+
+      .nav-caption-badge {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: #1a56db;
+        background: rgba(26, 86, 219, 0.08);
+        border: 1px solid rgba(26, 86, 219, 0.22);
+        padding: 5px 8px;
+        border-radius: 7px;
+        text-align: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+
+        &.p1-badge {
+          color: #4b5563;
+          background: rgba(107, 114, 128, 0.08);
+          border-color: rgba(107, 114, 128, 0.22);
+        }
+      }
     }
 
     .mdc-list-group__subheader {
@@ -59,10 +85,10 @@
 
     .sidebar-divider {
       height: 1px;
-      width: calc(100% - 18px);
+      width: calc(100% - 8px);
       display: block;
-      margin: 13px 0;
-      margin-left: 9px;
+      margin: 12px 0;
+      margin-left: 4px;
       background-image: linear-gradient(
           90deg,
           transparent,
@@ -81,8 +107,8 @@
       background-size: 7px 3px, 100% 3px;
 
       &.lg {
-        width: calc(100% - 32px);
-        margin-left: 16px;
+        width: calc(100% - 16px);
+        margin-left: 8px;
       }
     }
 
@@ -99,9 +125,10 @@
         }
       }
       
-      border-radius: $border-radius;
-      height: 43px;
-      padding: 11px 16px !important;
+      border-radius: 9px;
+      min-height: 42px;
+      height: auto !important;
+      padding: 8px 12px !important;
       margin-bottom: 4px;
       width: 100%;
 
@@ -147,15 +174,27 @@
         line-height: 0px;
         fill: transparent !important;
         color: var(--mat-sys-on-background);
+        flex-shrink: 0;
       }
 
       .mdc-list-item__primary-text {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        width: 100%;
+        overflow: visible;
+
+        .hide-menu {
+          white-space: normal !important;
+          line-height: 1.25 !important;
+          overflow: visible;
+        }
 
         .arrow-icon {
           display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          margin-left: auto;
 
           .mat-icon {
             font-size: 18px;
@@ -167,7 +206,64 @@
           }
         }
       }
+
+      &.has-children {
+        font-weight: 600 !important;
+        cursor: pointer;
+        user-select: none;
+        background-color: rgba(0, 0, 0, 0.02);
+        transition: all 0.2s ease;
+
+        &:hover {
+          background-color: rgba(0, 161, 255, 0.08) !important;
+        }
+
+        .hide-menu {
+          font-weight: 600 !important;
+          font-size: 13px !important;
+          letter-spacing: -0.2px;
+          color: #2a3547;
+        }
+
+        .expand-arrow {
+          font-size: 20px !important;
+          width: 20px !important;
+          height: 20px !important;
+          color: #5a6a85 !important;
+          flex-shrink: 0;
+        }
+      }
+
+      &.sub-nav-item {
+        min-height: 36px !important;
+        height: auto !important;
+        padding: 6px 10px !important;
+        border-radius: 7px !important;
+
+        .hide-menu {
+          font-size: 12.5px !important;
+          font-weight: 400 !important;
+          color: #334155;
+        }
+
+        .routeIcon {
+          font-size: 15px !important;
+          width: 15px !important;
+          height: 15px !important;
+        }
+      }
     }
+  }
+
+  .sub-menu-accordion {
+    padding-left: 8px;
+    border-left: 2px solid rgba(0, 161, 255, 0.35);
+    margin-left: 18px;
+    margin-bottom: 6px;
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 }
 
@@ -188,6 +284,17 @@
     flex: 1 !important;
     min-height: 0 !important;
     height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar-scrollbar {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

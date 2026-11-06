@@ -39,6 +39,45 @@
     <mat-icon [matBadge]="cartService.obtenerCantidadItems()" matBadgeColor="warn" [matBadgeHidden]="cartService.obtenerCantidadItems() === 0">shopping_cart</mat-icon>
   </button>
 
+  <!-- Selector / Indicador Multi-Tenant -->
+  <div *ngIf="isSuperuser" class="m-r-8">
+    <button mat-stroked-button [matMenuTriggerFor]="tenantMenu" 
+            style="border-color: #6366f1; color: #4338ca; font-weight: 600; font-size: 13px; border-radius: 20px; padding: 0 12px; height: 36px; background: #eef2ff; display: inline-flex; align-items: center; gap: 4px;">
+      <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #6366f1;">admin_panel_settings</mat-icon>
+      <span>{{ currentEmpresaNombre }}</span>
+      <mat-icon style="font-size: 18px; width: 18px; height: 18px;">arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #tenantMenu="matMenu">
+      <div style="padding: 8px 16px; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold;">
+        Alcance SaaS (Superadmin)
+      </div>
+      <button mat-menu-item (click)="cambiarTenant(null)">
+        <mat-icon color="primary">public</mat-icon>
+        <span>Todas las Empresas (Global)</span>
+        <mat-icon *ngIf="currentEmpresaId === null" style="color: #22c55e; margin-left: auto;">check</mat-icon>
+      </button>
+      <mat-divider></mat-divider>
+      <div style="padding: 4px 16px; font-size: 11px; color: #94a3b8;">Cambiar a Tenant:</div>
+      <button mat-menu-item *ngFor="let emp of empresasDisponibles" (click)="cambiarTenant(emp)">
+        <mat-icon>business</mat-icon>
+        <span>{{ emp.razon_social }} (#{{ emp.id }})</span>
+        <mat-icon *ngIf="currentEmpresaId === emp.id" style="color: #22c55e; margin-left: auto;">check</mat-icon>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item routerLink="/superadmin/panel" style="color: #4f46e5; font-weight: 600;">
+        <mat-icon style="color: #4f46e5;">dashboard_customize</mat-icon>
+        <span>Panel Superadmin</span>
+      </button>
+    </mat-menu>
+  </div>
+
+  <div *ngIf="!isSuperuser && currentEmpresaNombre" class="m-r-8"
+       style="font-weight: 600; font-size: 13px; color: #1e293b; background: #f8fafc; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #cbd5e1; height: 36px;">
+    <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #2563eb;">business</mat-icon>
+    <span>{{ currentEmpresaNombre }}</span>
+    <span *ngIf="currentEmpresaId" style="font-size: 10px; background: #2563eb; color: white; padding: 2px 6px; border-radius: 10px; font-weight: bold;">ID {{ currentEmpresaId }}</span>
+  </div>
+
   <!-- Menú de Usuario -->
 
   <button 
@@ -63,6 +102,10 @@
     <button mat-menu-item routerLink="/configuracion">
       <mat-icon>settings</mat-icon>
       <span>Configuraciones</span>
+    </button>
+    <button *ngIf="isSuperuser" mat-menu-item routerLink="/superadmin/panel" style="color: #4f46e5; font-weight: 600;">
+      <mat-icon style="color: #4f46e5;">admin_panel_settings</mat-icon>
+      <span>Panel Superadmin</span>
     </button>
     <mat-divider></mat-divider>
     <button mat-menu-item (click)="cerrarSesion()" class="logout-button">

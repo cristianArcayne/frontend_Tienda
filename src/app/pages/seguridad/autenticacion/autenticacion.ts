@@ -66,7 +66,7 @@ export class Autenticacion implements OnDestroy {
 
   private formatTenantName(): string {
     const tenant = this.configService.getCurrentTenant();
-    if (!tenant) return '[Desarrollo Local]';
+    if (!tenant || tenant === 'localhost') return 'FashionStore Multi-Tenant';
     return tenant
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -99,8 +99,7 @@ export class Autenticacion implements OnDestroy {
           this.isLoading = false;
           this.snackBar.open(`¡Bienvenido ${response.username}!`, 'Cerrar', { duration: 3000 });
           setTimeout(() => {
-            const esClienteUnico = this.isClienteOnly(response.roles, response.is_superuser);
-            const destino = esClienteUnico ? '/extra/catalogo' : '/';
+            const destino = this.obtenerDestinoPorRol(response.roles, response.is_superuser);
             this.router.navigate([destino]);
           }, 500);
         },
@@ -115,9 +114,15 @@ export class Autenticacion implements OnDestroy {
       });
   }
 
-  private isClienteOnly(roles?: string[], isSuperuser?: boolean): boolean {
-    if (isSuperuser) return false;
-    if (!roles || roles.length !== 1) return false;
-    return roles[0]?.toLowerCase() === 'cliente';
+  private obtenerDestinoPorRol(roles?: string[], isSuperuser?: boolean): string {
+    if (isSuperuser) return '/superadmin/panel';
+    const rList = (roles || []).map(r => (r || '').toLowerCase());
+    if (rList.some(r => r.includes('vendedor') || r.includes('cajero'))) {
+      return '/ventas/nueva';
+    }
+    if (rList.length === 1 && rList[0] === 'cliente') {
+      return '/extra/catalogo';
+    }
+    return '/dashboard';
   }
 }

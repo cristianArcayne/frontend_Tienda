@@ -43,3 +43,6 @@ Thumbs.db
 
 # Wrangler
 .wrangler
+
+# Local dev helpers
+spa_server.py

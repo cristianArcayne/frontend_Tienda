@@ -12,5 +12,11 @@ export interface EmpresaRegistroPayload {
   correo: string;
   plan: number;
   ciclo: CicloSuscripcion;
+  metodo_pago?: string;
+  tarjeta_numero?: string;
+  tarjeta_exp?: string;
+  tarjeta_cvc?: string;
+  titular?: string;
   super_admin: SuperAdminRegistro;
 }
+

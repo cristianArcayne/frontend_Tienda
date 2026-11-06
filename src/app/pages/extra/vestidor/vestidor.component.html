@@ -1,0 +1,386 @@
+<div class="vestidor-container">
+  <!-- Header General -->
+  <div class="vestidor-hero-header">
+    <div class="header-content">
+      <div class="header-badge">
+        <mat-icon>view_in_ar</mat-icon>
+        <span>CASO DE USO CU-06 • OMNICANAL 3D & IA</span>
+      </div>
+      <h1>Vestidor Virtual con Realidad Aumentada y 3D</h1>
+      <p>Explora prendas en 3D con rotación 360°, valida tu ajuste biométrico con inteligencia artificial y pruébatelas en tu entorno con WebXR.</p>
+    </div>
+  </div>
+
+  <!-- Pestañas de Navegación del Caso de Uso -->
+  <mat-tab-group [(selectedIndex)]="tabActivaIndex" animationDuration="300ms" class="vestidor-tabs-custom">
+    
+    <!-- ========================================== -->
+    <!-- PESTAÑA 1: VISOR 3D & REALIDAD AUMENTADA   -->
+    <!-- ========================================== -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="tab-label-custom">
+          <mat-icon>view_in_ar</mat-icon>
+          <span>Visor 3D & Realidad Aumentada</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-body-wrapper">
+        <!-- Prenda Seleccionada Banner -->
+        <div *ngIf="prendaSeleccionada" class="prenda-active-strip">
+          <div class="prenda-strip-left">
+            <img [src]="getImagenUrl(prendaSeleccionada.imagen_uri)" [alt]="prendaSeleccionada.nombre"
+                 (error)="onImgError($event)" class="strip-thumb" />
+            <div class="strip-details">
+              <span class="strip-cat">{{ prendaSeleccionada.categoria }}</span>
+              <h3 class="strip-title">{{ prendaSeleccionada.nombre }}</h3>
+            </div>
+          </div>
+          <div class="strip-right">
+            <div class="strip-price">
+              <span class="price-val">BOB {{ prendaSeleccionada.precio | number:'1.2-2' }}</span>
+              <span class="badge-3d"><mat-icon>view_in_ar</mat-icon> 3D GLB Listo</span>
+            </div>
+            <button mat-stroked-button color="primary" (click)="irAlCatalogo()">
+              <mat-icon>storefront</mat-icon>
+              Catálogo
+            </button>
+          </div>
+        </div>
+
+        <!-- Layout Principal: 3D Stage + Panel Biométrico -->
+        <div class="stage-layout-grid" *ngIf="prendaSeleccionada">
+          
+          <!-- Columna Izquierda: Escenario 3D -->
+          <div class="stage-3d-card">
+            <div class="model-viewer-wrapper">
+              <model-viewer #modelViewer
+                [attr.src]="get3DModelUrl(prendaSeleccionada.modelo_3d_uri)"
+                [attr.alt]="prendaSeleccionada.nombre"
+                camera-controls
+                [attr.auto-rotate]="autoRotate ? '' : null"
+                auto-rotate-delay="1000"
+                rotation-per-second="20deg"
+                shadow-intensity="1.5"
+                shadow-softness="0.8"
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                camera-orbit="0deg 75deg 105%"
+                exposure="1.1"
+                interaction-prompt="auto"
+                class="model-viewer-element">
+                
+                <!-- Botón AR nativo dentro de model-viewer -->
+                <button slot="ar-button" class="btn-ar-slot">
+                  <mat-icon>view_in_ar</mat-icon>
+                  <span>Ver en tu Espacio (AR)</span>
+                </button>
+              </model-viewer>
+
+              <!-- Barra Flotante de Controles 3D -->
+              <div class="floating-viewer-controls">
+                <button mat-mini-fab [color]="autoRotate ? 'primary' : 'accent'" (click)="toggleAutoRotate()"
+                        matTooltip="Giro automático 360°" aria-label="Auto rotación">
+                  <mat-icon>{{ autoRotate ? 'pause' : '3d_rotation' }}</mat-icon>
+                </button>
+                <button mat-mini-fab color="basic" (click)="resetCamara()"
+                        matTooltip="Restablecer posición de cámara" aria-label="Reset cámara">
+                  <mat-icon>center_focus_strong</mat-icon>
+                </button>
+                <button mat-mini-fab color="primary" (click)="activarAR()"
+                        matTooltip="Activar Realidad Aumentada WebXR" aria-label="Activar AR">
+                  <mat-icon>view_in_ar</mat-icon>
+                </button>
+              </div>
+
+              <!-- Indicador de Navegación 3D -->
+              <div class="hint-3d-overlay">
+                <mat-icon>touch_app</mat-icon>
+                <span>Arrastra para rotar • Pellizca para zoom</span>
+              </div>
+            </div>
+
+            <!-- Selector de Variantes y Colores Texturizados -->
+            <div class="texturas-selector-card" *ngIf="prendaSeleccionada.texturas_disponibles && prendaSeleccionada.texturas_disponibles.length > 0">
+              <div class="selector-header">
+                <mat-icon>palette</mat-icon>
+                <h4>Texturas y Colores Disponibles en Tiempo Real:</h4>
+              </div>
+              <div class="swatches-grid">
+                <div *ngFor="let tex of prendaSeleccionada.texturas_disponibles"
+                     class="color-swatch-item"
+                     [class.swatch-selected]="texturaSeleccionada?.variante_id === tex.variante_id"
+                     (click)="seleccionarTextura(tex)">
+                  <span class="swatch-circle" [style.background-color]="tex.color_hex"></span>
+                  <div class="swatch-info">
+                    <span class="swatch-name">{{ tex.color_nombre }}</span>
+                    <span class="swatch-size">Talla {{ tex.talla }}</span>
+                  </div>
+                  <mat-icon *ngIf="texturaSeleccionada?.variante_id === tex.variante_id" class="swatch-check">check</mat-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Recomendador Biométrico y Compra -->
+          <div class="stage-sidebar-card">
+            
+            <!-- Calculador de Ajuste Biométrico -->
+            <div class="biometric-box">
+              <div class="biometric-header">
+                <div class="bio-icon-badge">
+                  <mat-icon>accessibility_new</mat-icon>
+                </div>
+                <div>
+                  <h3>Ajuste Biométrico Ergonómico</h3>
+                  <p>Algoritmo antropométrico para recomendación precisa de talla.</p>
+                </div>
+              </div>
+
+              <div class="bio-inputs-grid">
+                <div class="bio-field">
+                  <label>Altura (cm): <strong>{{ alturaCm }} cm</strong></label>
+                  <mat-slider min="140" max="210" step="1" discrete class="custom-slider">
+                    <input matSliderThumb [(ngModel)]="alturaCm" (change)="calcularAjusteBiometrico()">
+                  </mat-slider>
+                </div>
+
+                <div class="bio-field">
+                  <label>Contorno de Pecho (cm): <strong>{{ pechoCm }} cm</strong></label>
+                  <mat-slider min="70" max="130" step="1" discrete class="custom-slider">
+                    <input matSliderThumb [(ngModel)]="pechoCm" (change)="calcularAjusteBiometrico()">
+                  </mat-slider>
+                </div>
+
+                <div class="bio-field">
+                  <label>Cintura (cm): <strong>{{ cinturaCm }} cm</strong></label>
+                  <mat-slider min="55" max="120" step="1" discrete class="custom-slider">
+                    <input matSliderThumb [(ngModel)]="cinturaCm" (change)="calcularAjusteBiometrico()">
+                  </mat-slider>
+                </div>
+
+                <div class="bio-field">
+                  <label>Cadera (cm): <strong>{{ caderaCm }} cm</strong></label>
+                  <mat-slider min="70" max="130" step="1" discrete class="custom-slider">
+                    <input matSliderThumb [(ngModel)]="caderaCm" (change)="calcularAjusteBiometrico()">
+                  </mat-slider>
+                </div>
+              </div>
+
+              <button mat-raised-button color="primary" class="btn-calcular-bio"
+                      (click)="calcularAjusteBiometrico()" [disabled]="calculandoAjuste">
+                <mat-icon *ngIf="!calculandoAjuste">tune</mat-icon>
+                <mat-spinner diameter="18" *ngIf="calculandoAjuste"></mat-spinner>
+                {{ calculandoAjuste ? 'Calculando Calce...' : 'Recalcular Ajuste' }}
+              </button>
+
+              <!-- Resultado Biométrico Card -->
+              <div class="bio-result-card" *ngIf="ajusteResultado">
+                <div class="result-top">
+                  <div class="talla-badge-pill">
+                    <span class="lbl">Talla Recomendada</span>
+                    <span class="val">{{ ajusteResultado.talla_recomendada }}</span>
+                  </div>
+                  <div class="calce-badge">
+                    <mat-icon>verified</mat-icon>
+                    <span>{{ ajusteResultado.porcentaje_calce }}% Calce</span>
+                  </div>
+                </div>
+                <mat-progress-bar mode="determinate" [value]="ajusteResultado.porcentaje_calce" color="accent" class="calce-bar"></mat-progress-bar>
+                <p class="bio-desc">{{ ajusteResultado.mensaje_ajuste }}</p>
+              </div>
+            </div>
+
+            <!-- Acciones de Conversión: Compra y Reserva -->
+            <div class="actions-cta-card">
+              <div class="cta-price-display">
+                <span class="cta-price-label">Precio Final:</span>
+                <span class="cta-price-amount">BOB {{ prendaSeleccionada.precio | number:'1.2-2' }}</span>
+              </div>
+
+              <div class="cta-buttons-stack">
+                <button mat-raised-button color="primary" class="btn-primary-action" (click)="agregarAlCarrito()">
+                  <mat-icon>shopping_cart</mat-icon>
+                  <span>Añadir al Carrito (Talla {{ ajusteResultado?.talla_recomendada || 'M' }})</span>
+                </button>
+
+                <button mat-stroked-button color="primary" class="btn-secondary-action" (click)="iniciarReserva()">
+                  <mat-icon>calendar_today</mat-icon>
+                  <span>Apartar con Reserva Web-to-Store</span>
+                </button>
+
+                <button mat-stroked-button class="btn-switch-ia" (click)="tabActivaIndex = 1">
+                  <mat-icon>auto_awesome</mat-icon>
+                  <span>¿Quieres probártela en foto? Usar IA Try-On</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Carrusel / Galería de Prendas con Modelo 3D -->
+        <div class="prendas-3d-carousel-section">
+          <div class="section-heading">
+            <mat-icon>style</mat-icon>
+            <h3>Prendas con Modelado 3D Activo en la Colección</h3>
+          </div>
+
+          <div *ngIf="isLoadingPrendas" class="loading-grid">
+            <mat-spinner diameter="36"></mat-spinner>
+            <p>Cargando modelos 3D y texturas optimizadas...</p>
+          </div>
+
+          <div class="prendas-grid-cards" *ngIf="!isLoadingPrendas && prendasAR.length > 0">
+            <div *ngFor="let item of prendasAR"
+                 class="prenda-card-thumb"
+                 [class.active-thumb]="prendaSeleccionada?.ropa_id === item.ropa_id"
+                 (click)="seleccionarPrenda(item)">
+              <div class="thumb-img-wrapper">
+                <img [src]="getImagenUrl(item.imagen_uri)" [alt]="item.nombre"
+                     (error)="onImgError($event)" class="thumb-img" />
+                <span class="badge-tag-3d">3D AR</span>
+              </div>
+              <div class="thumb-meta">
+                <span class="meta-cat">{{ item.categoria }}</span>
+                <h4 class="meta-title">{{ item.nombre }}</h4>
+                <div class="meta-bottom">
+                  <span class="meta-price">BOB {{ item.precio | number:'1.2-2' }}</span>
+                  <button mat-icon-button color="primary" class="btn-view-item" matTooltip="Cargar en visor 3D">
+                    <mat-icon>view_in_ar</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 2: PROBADOR VIRTUAL CON IA         -->
+    <!-- ========================================== -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="tab-label-custom">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Probador Fotorrealista con IA</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-body-wrapper">
+        <div class="ai-tryon-container">
+          
+          <div class="ai-header-intro">
+            <mat-icon class="ai-magic-icon">auto_awesome</mat-icon>
+            <h2>Virtual Try-On Generativo con Inteligencia Artificial</h2>
+            <p>Sube tu foto de cuerpo completo y nuestro motor de IA fotorrealista vestirá tu imagen con la prenda seleccionada.</p>
+          </div>
+
+          <!-- Prenda Seleccionada para IA -->
+          <div *ngIf="prendaSeleccionada" class="prenda-active-strip m-b-24">
+            <div class="prenda-strip-left">
+              <img [src]="getImagenUrl(prendaSeleccionada.imagen_uri)" [alt]="prendaSeleccionada.nombre"
+                   (error)="onImgError($event)" class="strip-thumb" />
+              <div class="strip-details">
+                <span class="strip-cat">Prenda a Probar:</span>
+                <h3 class="strip-title">{{ prendaSeleccionada.nombre }}</h3>
+              </div>
+            </div>
+            <div class="strip-right">
+              <span class="price-val">BOB {{ prendaSeleccionada.precio | number:'1.2-2' }}</span>
+              <button mat-stroked-button (click)="tabActivaIndex = 0">
+                <mat-icon>swap_horiz</mat-icon>
+                Cambiar Prenda
+              </button>
+            </div>
+          </div>
+
+          <!-- Si no hay resultado, área de subida -->
+          <div *ngIf="!resultadoImagen" class="ai-upload-flow">
+            
+            <!-- Vista Previa de Foto -->
+            <div *ngIf="fotoPreview" class="photo-preview-card">
+              <img [src]="fotoPreview" alt="Tu Fotografía" class="user-photo-img" />
+              <button mat-icon-button class="btn-clear-photo" (click)="quitarFoto()" matTooltip="Eliminar foto">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <!-- Botón Subir Archivo -->
+            <div *ngIf="!fotoPreview" class="upload-dropzone" (click)="fileInput.click()">
+              <div class="dropzone-icon-circle">
+                <mat-icon>add_a_photo</mat-icon>
+              </div>
+              <h3>Sube o Toma tu Fotografía</h3>
+              <p>Recomendado: Foto frontal de cuerpo completo o medio cuerpo con buena iluminación.</p>
+              <div class="upload-formats">JPG, PNG o WEBP • Máximo 10 MB</div>
+            </div>
+
+            <input #fileInput type="file" accept="image/jpeg,image/png,image/webp"
+                   capture="user" (change)="onFotoSeleccionada($event)" style="display: none;" />
+
+            <!-- Botón de Generación -->
+            <button *ngIf="fotoPreview" mat-raised-button color="primary" class="btn-generate-ai"
+                    [disabled]="generandoImagen" (click)="probarRopaConIA()">
+              <mat-icon *ngIf="!generandoImagen">auto_awesome</mat-icon>
+              <mat-spinner *ngIf="generandoImagen" diameter="22" class="spinner-white"></mat-spinner>
+              <span>{{ generandoImagen ? 'La Inteligencia Artificial está procesando tu prueba...' : '✨ Generar Prueba Virtual con IA' }}</span>
+            </button>
+
+            <!-- Barra de Progreso Activa -->
+            <div *ngIf="generandoImagen" class="ai-progress-status">
+              <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+              <div class="progress-details">
+                <mat-icon class="pulse-icon">hourglass_top</mat-icon>
+                <span>Alineando patrones de costura, drapeado textil y fotometría... por favor espera unos segundos.</span>
+              </div>
+            </div>
+
+            <!-- Error Alerta -->
+            <div *ngIf="errorMensaje" class="ai-error-box">
+              <mat-icon>error_outline</mat-icon>
+              <div>
+                <h4>No se pudo generar la imagen</h4>
+                <p>{{ errorMensaje }}</p>
+              </div>
+              <button mat-stroked-button (click)="errorMensaje = ''">Cerrar</button>
+            </div>
+
+          </div>
+
+          <!-- Resultado Generado por IA -->
+          <div *ngIf="resultadoImagen" class="ai-result-display">
+            <div class="result-badge-success">
+              <mat-icon>check_circle</mat-icon>
+              <span>{{ resultadoMensaje }}</span>
+            </div>
+
+            <div class="result-frame">
+              <img [src]="resultadoImagen" alt="Resultado Virtual Try-On" class="result-img-hd" />
+            </div>
+
+            <div class="result-toolbar">
+              <button mat-raised-button color="primary" (click)="descargarResultado()">
+                <mat-icon>download</mat-icon>
+                Descargar Imagen HD
+              </button>
+              <button mat-stroked-button color="primary" (click)="probarOtraFoto()">
+                <mat-icon>photo_camera</mat-icon>
+                Probar con otra foto
+              </button>
+              <button mat-stroked-button (click)="tabActivaIndex = 0">
+                <mat-icon>view_in_ar</mat-icon>
+                Ver en 3D
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

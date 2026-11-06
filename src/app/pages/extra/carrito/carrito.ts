@@ -217,7 +217,7 @@ export class CarritoComponent implements OnInit {
         this.http.post<any>(baseUrlVentas, body).subscribe({
           next: (venta) => {
             const metodoFormateado = (result.metodo || 'DIGITAL').toUpperCase();
-            this.snackBar.open(`Â¡Pago exitoso vÃ­a ${metodoFormateado}! Factura y Venta #${venta.id || ''} registradas.`, 'OK', { duration: 5000 });
+            this.snackBar.open(`¡Pago exitoso vía ${metodoFormateado}! Factura y Venta #${venta.id || ''} registradas.`, 'OK', { duration: 5000 });
             
             this.cartService.vaciarCarrito().subscribe(() => {
               this.router.navigate(['/ventas']);
