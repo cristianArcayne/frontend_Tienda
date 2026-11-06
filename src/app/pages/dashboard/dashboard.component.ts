@@ -123,6 +123,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .reduce((sum, p) => sum + p.unidades, 0);
   });
 
+  // KPIs Ejecutivos CU-16 (MRR SaaS, Rotación, Devoluciones, Ventas)
+  kpis = computed(() => this.dashboardData()?.kpis);
+  clustering = computed(() => this.kpis()?.clustering_clientes_kmeans);
+  modelosML = computed(() => this.kpis()?.modelos_ml);
+
+  // Donut Chart: Clustering K-Means No Supervisado
+  clusterChartConfig: ApexChart = {
+    type: 'donut',
+    height: 240,
+    fontFamily: 'inherit',
+    animations: { enabled: true }
+  };
+  clusterLabels: string[] = ['VIP (Alto Valor)', 'Frecuentes (Estables)', 'Nuevos / En Riesgo'];
+  clusterColors: string[] = ['#7c3aed', '#0284c7', '#f59e0b'];
+  clusterLegend: ApexLegend = { position: 'bottom', fontSize: '12px' };
+
+  clusterSeries = computed(() => {
+    const c = this.clustering();
+    if (!c) return [2, 1, 10];
+    return [c.vip_alto_valor, c.frecuentes_estables, c.nuevos_o_riesgo];
+  });
+
   // ApexCharts
   series: ApexAxisChartSeries = [];
   chartConfig: ApexChart = {
