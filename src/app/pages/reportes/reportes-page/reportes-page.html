@@ -1,126 +1,290 @@
 <div class="reportes-container">
-  <!-- Header Card -->
-  <mat-card class="cardWithShadow mb-4">
-    <mat-card-content class="p-24">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-16">
-        <div>
-          <div class="d-flex align-items-center gap-8 mb-4">
-            <span class="cu-badge">[CU18]</span>
-            <h2 class="mat-headline-6 m-0 font-weight-bold">Centro Unificado de Reportes y Estadísticas</h2>
-          </div>
-          <p class="text-muted m-0 fs-3">
-            Genere reportes mediante comandos de voz con IA, consultas en lenguaje natural o el constructor tabular dinámico QBE.
-          </p>
-        </div>
 
-        <div class="d-flex align-items-center gap-8">
-          <button mat-stroked-button color="primary" (click)="cargarReporteInicial()" [disabled]="isLoading">
-            <mat-icon class="fs-4">refresh</mat-icon>
-            Actualizar Datos
-          </button>
+  <!-- ========================================================================= -->
+  <!-- ENCABEZADO PRINCIPAL (CU-15 ICONIX)                                      -->
+  <!-- ========================================================================= -->
+  <div class="header-card">
+    <div class="header-content">
+      <div class="title-group">
+        <div class="badge-header">
+          <span class="badge-tag">MÓDULO DE INTELIGENCIA ARTIFICIAL & ANALÍTICA</span>
+          <span class="badge-cu">[CU-15]</span>
         </div>
+        <h1 class="main-title">Reportes Generativos por Voz y Texto con IA</h1>
+        <p class="subtitle">
+          Consultas ejecutivas en lenguaje natural dictadas por voz (Web Speech API) o texto procesadas por LLM de solo lectura (Gemini 2.5),
+          con agregaciones SQL en tiempo real, gráficos interactivos, dictamen narrado por voz y exportación documental.
+        </p>
       </div>
 
-      <!-- Accesos Rápidos a Reportes Frecuentes -->
-      <div class="presets-section mt-4 pt-3 border-top">
-        <span class="text-muted fs-2 font-weight-semibold text-uppercase d-block mb-2">⚡ Reportes Rápidos con 1 Clic:</span>
-        <div class="d-flex flex-wrap gap-8">
-          <button 
-            *ngFor="let preset of presets" 
-            mat-flat-button 
-            [color]="presetActivo === preset.id ? 'primary' : 'basic'"
-            class="preset-chip"
-            [class.active]="presetActivo === preset.id"
-            (click)="ejecutarPreset(preset)"
-            [disabled]="isLoading">
-            <mat-icon class="fs-4">{{ preset.id === 'ventas' ? 'receipt_long' : (preset.id === 'ranking' ? 'trending_up' : (preset.id === 'stock_critico' ? 'warning' : (preset.id === 'clientes' ? 'groups' : 'store'))) }}</mat-icon>
-            {{ preset.label }}
-          </button>
+      <div class="plan-status-badge">
+        <mat-icon class="plan-icon">auto_awesome</mat-icon>
+        <div class="plan-info">
+          <span class="plan-title">Plan Profesional Activo</span>
+          <span class="plan-sub">Motor Generativo LLM Habilitado</span>
         </div>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
 
-  <!-- Métodos de Consulta y Generación (Tabs) -->
-  <mat-card class="cardWithShadow mb-4">
-    <mat-card-content class="p-0">
-      <mat-tab-group [selectedIndex]="tabIndex" (selectedTabChange)="onTabChange($event)" class="custom-reportes-tabs" mat-stretch-tabs="false">
-        
-        <!-- Tab 1: Voz -->
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <div class="d-flex align-items-center gap-8 py-2">
-              <mat-icon class="text-primary">mic</mat-icon>
-              <span class="font-weight-medium">Reportes por Voz (Micrófono)</span>
-            </div>
-          </ng-template>
-          <div class="p-24">
-            <app-voz
-              (ejecutar)="onEjecutarNLP($event)"
-              [isLoading]="isLoading">
-            </app-voz>
-          </div>
-        </mat-tab>
-
-        <!-- Tab 2: Lenguaje Natural Texto -->
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <div class="d-flex align-items-center gap-8 py-2">
-              <mat-icon class="text-info">auto_awesome</mat-icon>
-              <span class="font-weight-medium">Consulta en Lenguaje Natural (Texto)</span>
-            </div>
-          </ng-template>
-          <div class="p-24">
-            <app-texto-nlp
-              (ejecutar)="onEjecutarNLP($event)"
-              [isLoading]="isLoading">
-            </app-texto-nlp>
-          </div>
-        </mat-tab>
-
-        <!-- Tab 3: Constructor QBE -->
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <div class="d-flex align-items-center gap-8 py-2">
-              <mat-icon class="text-success">tune</mat-icon>
-              <span class="font-weight-medium">Constructor Tabular QBE (Avanzado)</span>
-            </div>
-          </ng-template>
-          <div class="p-24">
-            <app-qbe-builder
-              (ejecutarQBE)="onEjecutarQBE($event)"
-              [isLoading]="isLoading">
-            </app-qbe-builder>
-          </div>
-        </mat-tab>
-
-      </mat-tab-group>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Loading Overlay -->
-  <div *ngIf="isLoading" class="text-center py-4">
-    <mat-spinner diameter="40" class="mx-auto mb-2"></mat-spinner>
-    <p class="text-muted fs-3">Generando reporte y procesando información...</p>
-  </div>
-
-  <!-- Resultados y Exportación -->
-  <div *ngIf="!isLoading && (resultados || errorMsg)">
-    <app-reporte-resultados
-      *ngIf="resultados"
-      [resultados]="resultados"
-      [queryInterpretada]="queryInterpretada">
-    </app-reporte-resultados>
-
-    <app-reporte-export
-      *ngIf="resultados && resultados.datos && resultados.datos.length > 0"
-      [resultados]="resultados"
-      [nombreReporte]="nombreReporte">
-    </app-reporte-export>
-
-    <div *ngIf="errorMsg" class="empty-state p-24 text-center mt-3 bg-light rounded">
-      <mat-icon class="text-danger" style="font-size: 40px; height: 40px; width: 40px;">error_outline</mat-icon>
-      <p class="empty-text text-danger font-weight-medium mt-2">{{ errorMsg }}</p>
+    <!-- Barra de Accesos Rápidos con 1 Clic (Presets de IA) -->
+    <div class="presets-bar">
+      <span class="presets-label">⚡ Comandos Gerenciales Rápidos:</span>
+      <div class="presets-chips">
+        <button
+          *ngFor="let p of presets"
+          mat-stroked-button
+          class="preset-button"
+          [class.active]="presetActivo === p.id"
+          [disabled]="isLoading"
+          (click)="ejecutarComandoIA(p.query, p.id)"
+        >
+          <mat-icon class="preset-btn-icon">{{ p.icon }}</mat-icon>
+          <span>{{ p.label }}</span>
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- ========================================================================= -->
+  <!-- MÉTODOS DE CONSULTA (PESTAÑAS: VOZ, TEXTO NLP, CONSTRUCTOR QBE)           -->
+  <!-- ========================================================================= -->
+  <mat-card class="input-card">
+    <mat-tab-group
+      [(selectedIndex)]="tabIndex"
+      (selectedTabChange)="onTabChange($event)"
+      animationDuration="200ms"
+      class="luxury-tabs"
+    >
+      <!-- Tab 1: Dictado por Voz con IA -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon text-primary">mic</mat-icon>
+          <span>Dictado por Voz con IA</span>
+        </ng-template>
+        <div class="tab-content-padded">
+          <app-voz
+            (ejecutar)="onEjecutarNLP($event)"
+            [isLoading]="isLoading"
+          ></app-voz>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Consulta en Lenguaje Natural (Texto) -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon text-info">auto_awesome</mat-icon>
+          <span>Consulta en Lenguaje Natural (Texto)</span>
+        </ng-template>
+        <div class="tab-content-padded">
+          <app-texto-nlp
+            (ejecutar)="onEjecutarNLP($event)"
+            [isLoading]="isLoading"
+          ></app-texto-nlp>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3: Constructor QBE Tradicional -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon text-success">tune</mat-icon>
+          <span>Constructor Tabular QBE (Avanzado)</span>
+        </ng-template>
+        <div class="tab-content-padded">
+          <app-qbe-builder
+            (ejecutarQBE)="onEjecutarQBE($event)"
+            [isLoading]="isLoading"
+          ></app-qbe-builder>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+  <!-- ========================================================================= -->
+  <!-- SPINNER DE CARGA                                                          -->
+  <!-- ========================================================================= -->
+  <div *ngIf="isLoading" class="loading-state-card">
+    <mat-spinner diameter="46" class="m-b-16"></mat-spinner>
+    <h3>El motor de IA está procesando el dictamen analítico...</h3>
+    <p>Agregando métricas omnicanal, clasificando intenciones y construyendo el informe gerencial.</p>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- ALERTA DE RESTRICCIÓN SAAS: PLAN BÁSICO (HTTP 403)                        -->
+  <!-- ========================================================================= -->
+  <div *ngIf="isPlanBasicoError && !isLoading" class="saas-upgrade-card">
+    <div class="saas-lock-icon">
+      <mat-icon>lock</mat-icon>
+    </div>
+    <div class="saas-content">
+      <h3>Función Exclusiva del Plan Profesional</h3>
+      <p>{{ errorMsg }}</p>
+      <div class="saas-actions">
+        <a mat-flat-button color="primary" routerLink="/empresa/registro">
+          <mat-icon>upgrade</mat-icon>
+          <span>Actualizar a Plan Profesional</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- PANEL DE RESULTADOS GENERATIVOS CON IA (CU-15)                            -->
+  <!-- ========================================================================= -->
+  <div *ngIf="reporteIA && !isLoading && !isPlanBasicoError" class="ai-report-results">
+
+    <!-- 1. Tarjeta Editorial de Dictamen Generativo con Narrador de Voz (TTS) -->
+    <mat-card class="ai-narrative-card">
+      <div class="narrative-header">
+        <div class="narrative-tag-group">
+          <mat-icon class="ai-sparkle-icon">auto_awesome</mat-icon>
+          <span class="narrative-title">Dictamen Analítico de Inteligencia Artificial (Gemini 2.5)</span>
+          <span class="intent-chip">{{ reporteIA.intencion_detectada }}</span>
+        </div>
+
+        <!-- Botón de Síntesis de Voz (Text-to-Speech) -->
+        <button
+          mat-flat-button
+          class="btn-tts"
+          [class.btn-tts-active]="isSpeaking"
+          (click)="toggleHablarResumen()"
+        >
+          <mat-icon>{{ isSpeaking ? 'stop' : 'volume_up' }}</mat-icon>
+          <span>{{ isSpeaking ? 'Detener Voz' : 'Escuchar Dictamen con IA' }}</span>
+        </button>
+      </div>
+
+      <div class="narrative-body">
+        <p class="narrative-text">{{ reporteIA.resumen_ejecutivo }}</p>
+      </div>
+
+      <div class="narrative-footer">
+        <span class="cmd-echo">
+          <mat-icon class="cmd-icon">record_voice_over</mat-icon>
+          Comando Interpretado: <em>"{{ reporteIA.comando_reconocido }}"</em>
+        </span>
+        <span class="timestamp-echo">
+          Generado en tiempo real: {{ reporteIA.timestamp | date:'shortTime' }}
+        </span>
+      </div>
+    </mat-card>
+
+    <!-- 2. Tarjetas KPI de Métricas Clave -->
+    <div *ngIf="kpiEntries.length > 0" class="kpi-grid">
+      <div *ngFor="let kpi of kpiEntries" class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">{{ kpi.label }}</span>
+          <mat-icon class="kpi-icon">{{ kpi.icon }}</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <h2 class="kpi-value">{{ kpi.valor }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Gráfico Interactivo ApexCharts -->
+    <mat-card *ngIf="hasChart && chartOptions" class="chart-card">
+      <mat-card-header class="chart-header">
+        <div class="chart-title-group">
+          <mat-icon class="chart-icon">bar_chart</mat-icon>
+          <div>
+            <mat-card-title>Visualización Gráfica Interactiva</mat-card-title>
+            <mat-card-subtitle>Desglose cuantitativo por categorías, sucursales y canales de venta</mat-card-subtitle>
+          </div>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content class="chart-content">
+        <apx-chart
+          [series]="chartOptions.series!"
+          [chart]="chartOptions.chart!"
+          [xaxis]="chartOptions.xaxis!"
+          [labels]="chartOptions.labels!"
+          [colors]="chartOptions.colors!"
+          [plotOptions]="chartOptions.plotOptions!"
+          [dataLabels]="chartOptions.dataLabels!"
+          [legend]="chartOptions.legend!"
+          [responsive]="chartOptions.responsive!"
+        ></apx-chart>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- 4. Tabla Detallada con Buscador y Paginador -->
+    <mat-card *ngIf="datosFiltrados.length > 0" class="table-card">
+      <div class="table-toolbar">
+        <div class="table-title-group">
+          <mat-icon class="table-icon">table_chart</mat-icon>
+          <div>
+            <h3>Detalle Tabular de Registros</h3>
+            <p>Mostrando {{ datosFiltrados.length }} registros consolidados en base PostgreSQL Neon</p>
+          </div>
+        </div>
+
+        <div class="search-box">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Filtrar registros..."
+            [value]="filtroBusqueda"
+            (input)="onFilter($event)"
+          />
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table mat-table [dataSource]="datosPaginados" class="modern-report-table">
+          <ng-container *ngFor="let col of columnasTabla" [matColumnDef]="col.key">
+            <th mat-header-cell *matHeaderCellDef>{{ col.label }}</th>
+            <td mat-cell *matCellDef="let row">
+              <span [class.font-currency]="col.key.includes('ingreso') || col.key.includes('monto') || col.key.includes('total')">
+                {{ row[col.key] !== null && row[col.key] !== undefined ? row[col.key] : '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumnsKeys"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumnsKeys;" class="report-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        *ngIf="datosFiltrados.length > pageSize"
+        [length]="datosFiltrados.length"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        (page)="onPageChange($event)"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+      ></mat-paginator>
+    </mat-card>
+
+    <!-- 5. Sugerencias Inteligentes de la IA (Follow-up Prompts) -->
+    <mat-card *ngIf="reporteIA.sugerencias_siguientes_comandos && reporteIA.sugerencias_siguientes_comandos.length > 0" class="suggestions-card">
+      <div class="suggestions-header">
+        <mat-icon class="suggestions-icon">lightbulb</mat-icon>
+        <span>Consultas sugeridas por la IA para profundizar el análisis:</span>
+      </div>
+      <div class="suggestions-chips">
+        <button
+          *ngFor="let sug of reporteIA.sugerencias_siguientes_comandos"
+          mat-stroked-button
+          class="btn-suggestion"
+          (click)="ejecutarComandoIA(sug)"
+        >
+          <mat-icon>north_east</mat-icon>
+          <span>{{ sug }}</span>
+        </button>
+      </div>
+    </mat-card>
+
+    <!-- 6. Barra de Exportación Documental -->
+    <div class="export-section">
+      <app-reporte-export
+        *ngIf="reporteExportRespuesta"
+        [resultados]="reporteExportRespuesta"
+        [nombreReporte]="nombreReporte"
+      ></app-reporte-export>
+    </div>
+
+  </div>
+
 </div>
