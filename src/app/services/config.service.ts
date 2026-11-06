@@ -3,12 +3,7 @@ import { environment } from '../../environments/environment';
 
 /**
  * Servicio centralizado para configuración de URLs
- * Soporta multitenant automático detectando subdominios
- *
- * Ejemplos:
- * - tienda-amiga.localhost:8000 → http://tienda-amiga.localhost:8000/api
- * - empresa-xyz.saas.com → https://empresa-xyz.saas.com/api
- * - localhost:4200 → http://localhost:8000/api (fallback)
+ * Soporta multitenant automático detectando subdominios y entornos (localhost, LAN, Vercel/Render)
  */
 @Injectable({
   providedIn: 'root'
@@ -22,31 +17,34 @@ export class ConfigService {
 
   /**
    * Construir URL base dinámicamente según el contexto
-   * Si es multitenant, detecta el subdominio del hostname actual
    */
   private buildApiBaseUrl(): string {
-    if (!environment.isMultitenant) {
-      return environment.apiBaseUrl;
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+
+      // Si está desplegado en Vercel o producción remota
+      if (hostname.endsWith('vercel.app')) {
+        return 'https://tienda-backend-kvfk.onrender.com/api';
+      }
+
+      // Desarrollo local en localhost
+      if (hostname === 'localhost') {
+        return 'http://localhost:8000/api';
+      }
+
+      // Desarrollo local en 127.0.0.1
+      if (hostname === '127.0.0.1') {
+        return 'http://127.0.0.1:8000/api';
+      }
+
+      // Subdominio local o red LAN
+      if (window.location.port === '4200') {
+        return `${protocol}//${hostname}:8000/api`;
+      }
     }
 
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
-    let port = window.location.port;
-
-    // Si está en localhost o desplegado en Vercel, usar la URL del backend configurada
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('vercel.app')) {
-      return environment.apiBaseUrl;
-    }
-
-    // Multitenant local o producción
-    // En desarrollo con subdominios: tienda-amiga.localhost:4200
-    // → cambiar puerto 4200 a 8000 (backend)
-    if (port === '4200') {
-      port = '8000';
-    }
-
-    const portString = port ? `:${port}` : '';
-    return `${protocol}//${hostname}${portString}/api`;
+    return environment.apiBaseUrl || 'http://localhost:8000/api';
   }
 
   /**
@@ -66,22 +64,21 @@ export class ConfigService {
 
   /**
    * Obtener el subdominio/tenant actual
-   * Ej: tienda-amiga.localhost → 'tienda-amiga'
    */
   getCurrentTenant(): string | null {
+    if (typeof window === 'undefined') return null;
     const hostname = window.location.hostname;
 
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return null;  // No hay tenant en desarrollo local
+      return null;
     }
 
-    // Fallback para IPs locales o túneles de ngrok en desarrollo
     if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) || hostname.endsWith('ngrok-free.dev') || hostname.endsWith('ngrok.io')) {
       return 'tienda-amiga';
     }
 
     const parts = hostname.split('.');
-    return parts[0];  // Devolver solo el subdominio
+    return parts[0];
   }
 
   /**
@@ -96,35 +93,72 @@ export class ConfigService {
    */
   formatImageUrl(url: string | null | undefined): string {
     if (!url || typeof url !== 'string' || url.trim() === '') {
-      return '';
+      return '/assets/images/products/product-1.png';
     }
 
     let cleanUrl = url.trim();
 
-    // Obtener la raíz del servidor backend eliminando el sufijo /api
-    const serverBase = this.apiBaseUrl.replace(/\/api\/?$/, '');
-
-    // Si viene con dominio de onrender o remoto, redirigir al backend local/activo
-    if (cleanUrl.includes('onrender.com')) {
-      const pathPart = cleanUrl.replace(/^https?:\/\/[^\/]+/, '');
-      return `${serverBase}${pathPart.startsWith('/') ? '' : '/'}${pathPart}`;
-    }
-
-    // Si viene con localhost:8000 o 127.0.0.1:8000 pero estamos en entorno remoto (Vercel)
-    if (cleanUrl.includes('localhost:8000') || cleanUrl.includes('127.0.0.1:8000')) {
-      const isRemote = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-      if (isRemote) {
-        cleanUrl = cleanUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1):8000/, serverBase);
+    // Determinar serverBase dinámicamente según el entorno actual
+    let serverBase = 'http://localhost:8000';
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      if (hostname.endsWith('vercel.app')) {
+        serverBase = 'https://tienda-backend-kvfk.onrender.com';
+      } else if (hostname === '127.0.0.1') {
+        serverBase = 'http://127.0.0.1:8000';
+      } else {
+        serverBase = `http://${hostname}:8000`;
       }
     }
 
-    // Si es una ruta relativa (/static/...)
+    // Si viene con onrender y estamos en entorno local, redirigir a backend local
+    if (cleanUrl.includes('onrender.com')) {
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      if (isLocal) {
+        cleanUrl = cleanUrl.replace(/^https?:\/\/[^\/]+/, serverBase);
+      }
+    }
+
+    // Si viene con localhost o 127.0.0.1 pero estamos en Vercel
+    if (cleanUrl.includes('localhost:8000') || cleanUrl.includes('127.0.0.1:8000')) {
+      const isRemote = typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app');
+      if (isRemote) {
+        cleanUrl = cleanUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1):8000/, serverBase);
+      } else if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        cleanUrl = cleanUrl.replace('127.0.0.1:8000', 'localhost:8000');
+      } else if (typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
+        cleanUrl = cleanUrl.replace('localhost:8000', '127.0.0.1:8000');
+      }
+    }
+
+    // Rutas relativas del backend (/static/...)
     if (cleanUrl.startsWith('/static/')) {
       return `${serverBase}${cleanUrl}`;
     }
 
     if (cleanUrl.startsWith('static/')) {
       return `${serverBase}/${cleanUrl}`;
+    }
+
+    if (cleanUrl.startsWith('/uploads/')) {
+      return `${serverBase}/static${cleanUrl}`;
+    }
+
+    if (cleanUrl.startsWith('uploads/')) {
+      return `${serverBase}/static/${cleanUrl}`;
+    }
+
+    // Si es un asset local de frontend aseguramos slash inicial
+    if (cleanUrl.startsWith('assets/')) {
+      return `/${cleanUrl}`;
+    }
+
+    if (cleanUrl.startsWith('/assets/')) {
+      return cleanUrl;
+    }
+
+    if (cleanUrl.startsWith('/') && !cleanUrl.startsWith('http')) {
+      return `${serverBase}${cleanUrl}`;
     }
 
     return cleanUrl;

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { ConfigService } from 'src/app/services/config.service';
 
 import { Multimedia } from '../../../../../models/inventario/producto.model';
 
@@ -33,7 +34,8 @@ export class ImagenLightboxComponent {
 
   constructor(
     public dialogRef: MatDialogRef<ImagenLightboxComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: LightboxData
+    @Inject(MAT_DIALOG_DATA) public data: LightboxData,
+    private configService: ConfigService
   ) {
     const total = data.images?.length ?? 0;
     const safeIndex = total > 0 ? Math.max(0, Math.min(data.startIndex ?? 0, total - 1)) : 0;
@@ -49,7 +51,15 @@ export class ImagenLightboxComponent {
   }
 
   get imagenActualUrl(): string | null {
-    return this.data.images?.[this.index]?.archivo_url || null;
+    const rawUrl = this.data.images?.[this.index]?.archivo_url;
+    if (!rawUrl) return '/assets/images/products/product-1.png';
+    return this.configService.formatImageUrl(rawUrl) || '/assets/images/products/product-1.png';
+  }
+
+  onImgError(event: any): void {
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = '/assets/images/products/product-1.png';
+    }
   }
 
   siguiente(): void {

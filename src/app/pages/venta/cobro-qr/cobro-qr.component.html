@@ -1,75 +1,232 @@
 <div class="cobro-qr-container p-24">
   <!-- Cabecera Oficial CU-11 -->
-  <mat-card class="header-card m-b-24">
+  <mat-card class="header-card m-b-24 shadow-sm border">
     <mat-card-header class="d-flex align-items-center justify-content-between flex-wrap gap-16">
       <div>
         <div class="d-flex align-items-center gap-8 flex-wrap">
-          <mat-card-title class="m-0 font-weight-bold" style="font-size: 1.35rem; color: #0f172a;">
+          <mat-card-title class="m-0 font-weight-bold" style="font-size: 1.4rem; color: #0f172a;">
             [CU-11] Procesar Cobros con Código QR Simple
           </mat-card-title>
-          <span class="badge" style="background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 16px; font-size: 0.78rem; font-weight: 600;">
-            INTEROPERABLE ASOBAN / BCB
-          </span>
-          <span class="badge" style="background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 16px; font-size: 0.78rem; font-weight: 600;">
-            WEB & MÓVIL
-          </span>
+          <span class="badge badge-success">INTEROPERABLE BCB / ASOBAN</span>
+          <span class="badge badge-primary">WEB & MÓVIL (EMVCo)</span>
+          <span class="badge badge-purple">FACTURACIÓN SIAT</span>
         </div>
-        <p class="text-muted m-t-4 m-b-0" style="font-size: 0.88rem;">
-          Cobro ágil e interoperable en mostrador físico y canales digitales • Validación en tiempo real y facturación fiscal computarizada
+        <p class="text-muted m-t-4 m-b-0" style="font-size: 0.9rem;">
+          Cobro ágil en mostrador físico y canales digitales • Polling y acreditación asíncrona en tiempo real • Facturación computarizada automática
         </p>
       </div>
 
-      <div class="d-flex align-items-center gap-12">
+      <div class="d-flex align-items-center gap-12 flex-wrap">
         <button mat-stroked-button color="default" routerLink="/ventas">
-          <mat-icon>arrow_back</mat-icon>
-          Volver a Ventas
+          <mat-icon>arrow_back</mat-icon> Volver a Ventas
         </button>
         <button mat-stroked-button color="primary" routerLink="/ventas/nueva">
-          <mat-icon>point_of_sale</mat-icon>
-          Terminal POS Offline (CU-09)
+          <mat-icon>point_of_sale</mat-icon> Terminal POS Offline (CU-09)
+        </button>
+        <button mat-flat-button color="primary" (click)="nuevoCobro()">
+          <mat-icon>add</mat-icon> Nuevo Cobro
         </button>
       </div>
     </mat-card-header>
   </mat-card>
 
-  <!-- Cuerpo de Operación (2 Columnas) -->
+  <!-- Métricas KPI en Vivo del Día -->
+  <div class="row g-3 m-b-24">
+    <div class="col-xl-3 col-sm-6">
+      <div class="kpi-card bg-emerald">
+        <div class="kpi-icon"><mat-icon>monetization_on</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-title">Recaudado Hoy (QR)</span>
+          <h3 class="kpi-value">Bs. {{ (metricas.total_recaudado_hoy || 0) | number:'1.2-2' }}</h3>
+          <span class="kpi-sub">Acreditación directa en cuenta</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <div class="kpi-card bg-blue">
+        <div class="kpi-icon"><mat-icon>task_alt</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-title">Cobros Exitosos</span>
+          <h3 class="kpi-value">{{ metricas.pagados_count || 0 }} transacciones</h3>
+          <span class="kpi-sub">{{ metricas.total_transacciones || 0 }} generadas hoy</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <div class="kpi-card bg-amber">
+        <div class="kpi-icon"><mat-icon>hourglass_top</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-title">En Espera / Activos</span>
+          <h3 class="kpi-value">{{ metricas.pendientes_count || 0 }} en mostrador</h3>
+          <span class="kpi-sub">Vigencia máxima 3 min</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <div class="kpi-card bg-indigo">
+        <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-title">Tasa de Éxito</span>
+          <h3 class="kpi-value">{{ metricas.tasa_efectividad_porcentaje || 100 }}%</h3>
+          <span class="kpi-sub">Confirmación promedio ~3.8s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zona de Operación Principal (2 Columnas) -->
   <div class="row g-4">
-    <!-- Columna Izquierda: Formulario de Emisión -->
+    <!-- Columna Izquierda: Configuración del Cobro -->
     <div class="col-lg-5 col-md-12">
-      <mat-card class="h-100 shadow-sm border">
+      <mat-card class="shadow-sm border h-100">
         <mat-card-header class="border-bottom p-b-12">
-          <mat-card-title style="font-size: 1.1rem; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-            <mat-icon color="primary">qr_code_scanner</mat-icon>
-            Generar Orden de Cobro QR
+          <mat-card-title style="font-size: 1.15rem; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+            <mat-icon color="primary">qr_code_scanner</mat-icon> Configurar Cobro
           </mat-card-title>
         </mat-card-header>
 
-        <mat-card-content class="p-t-20">
-          <!-- Monto a cobrar -->
-          <mat-form-field appearance="outline" class="w-full m-b-16">
-            <mat-label>Importe a Cobrar (Bs.)</mat-label>
-            <span matPrefix class="font-weight-bold m-r-8" style="color: #1e293b; font-size: 1.1rem;">Bs.</span>
-            <input 
-              matInput 
-              type="number" 
-              [(ngModel)]="monto" 
-              placeholder="0.00" 
-              step="0.50" 
-              min="0.50"
-              [disabled]="isGenerando">
-            <mat-icon matSuffix color="primary">payments</mat-icon>
-          </mat-form-field>
-
-          <!-- Botones rápidos de importe -->
-          <div class="d-flex gap-8 m-b-16 flex-wrap">
-            <button mat-stroked-button (click)="monto = 50.00" [disabled]="isGenerando">Bs. 50</button>
-            <button mat-stroked-button (click)="monto = 100.00" [disabled]="isGenerando">Bs. 100</button>
-            <button mat-stroked-button (click)="monto = 150.00" [disabled]="isGenerando">Bs. 150</button>
-            <button mat-stroked-button (click)="monto = 250.00" [disabled]="isGenerando">Bs. 250</button>
+        <mat-card-content class="p-t-16">
+          <!-- Selector de Modo de Cobro -->
+          <div class="mode-selector m-b-20 d-flex gap-8">
+            <button 
+              type="button"
+              class="mode-btn flex-1" 
+              [class.active]="modoCobro === 'RAPIDO'" 
+              (click)="modoCobro = 'RAPIDO'">
+              <mat-icon>flash_on</mat-icon>
+              <span>Importe Rápido</span>
+            </button>
+            <button 
+              type="button"
+              class="mode-btn flex-1" 
+              [class.active]="modoCobro === 'PRENDAS'" 
+              (click)="modoCobro = 'PRENDAS'">
+              <mat-icon>checkroom</mat-icon>
+              <span>Prendas Catálogo</span>
+            </button>
+            <button 
+              type="button"
+              class="mode-btn flex-1" 
+              [class.active]="modoCobro === 'VENTA_PENDIENTE'" 
+              (click)="modoCobro = 'VENTA_PENDIENTE'">
+              <mat-icon>receipt_long</mat-icon>
+              <span>Venta Pendiente</span>
+            </button>
           </div>
 
-          <!-- Glosa / Concepto -->
-          <mat-form-field appearance="outline" class="w-full m-b-16">
+          <!-- MODO 1: IMPORTE RÁPIDO / MOSTRADOR -->
+          <div *ngIf="modoCobro === 'RAPIDO'">
+            <mat-form-field appearance="outline" class="w-full m-b-12">
+              <mat-label>Importe a Cobrar (Bs.)</mat-label>
+              <span matPrefix class="font-weight-bold m-r-8" style="color: #1e293b; font-size: 1.2rem;">Bs.</span>
+              <input 
+                matInput 
+                type="number" 
+                [(ngModel)]="monto" 
+                placeholder="0.00" 
+                step="0.50" 
+                min="0.50"
+                [disabled]="isGenerando">
+              <mat-icon matSuffix color="primary">payments</mat-icon>
+            </mat-form-field>
+
+            <!-- Botones de incremento táctil rápido -->
+            <div class="quick-amounts-grid m-b-16">
+              <button mat-stroked-button type="button" (click)="ajustarMonto(50)">Bs. 50</button>
+              <button mat-stroked-button type="button" (click)="ajustarMonto(100)">Bs. 100</button>
+              <button mat-stroked-button type="button" (click)="ajustarMonto(150)">Bs. 150</button>
+              <button mat-stroked-button type="button" (click)="ajustarMonto(250)">Bs. 250</button>
+              <button mat-stroked-button type="button" (click)="sumarMonto(10)">+10</button>
+              <button mat-stroked-button type="button" (click)="sumarMonto(50)">+50</button>
+              <button mat-stroked-button type="button" (click)="sumarMonto(100)">+100</button>
+              <button mat-stroked-button type="button" (click)="ajustarMonto(0)">Borrar</button>
+            </div>
+          </div>
+
+          <!-- MODO 2: PRENDAS DE CATÁLOGO FASHIONSTORE -->
+          <div *ngIf="modoCobro === 'PRENDAS'" class="m-b-16">
+            <mat-form-field appearance="outline" class="w-full m-b-10">
+              <mat-label>Buscar prenda en catálogo...</mat-label>
+              <input matInput [(ngModel)]="busquedaPrenda" placeholder="Ej: Parka, Polera, Vestido...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+
+            <!-- Lista scrolleable de prendas disponibles -->
+            <div class="catalog-items-box border rounded p-8 m-b-12" style="max-height: 180px; overflow-y: auto;">
+              <div *ngIf="cargandoPrendas" class="text-center p-12">
+                <mat-spinner diameter="24"></mat-spinner>
+              </div>
+              <div *ngIf="!cargandoPrendas && prendasFiltradas.length === 0" class="text-center p-12 text-muted">
+                No se encontraron prendas con ese término.
+              </div>
+              <div *ngFor="let p of prendasFiltradas" class="catalog-row d-flex align-items-center justify-content-between p-8 border-bottom">
+                <div class="d-flex align-items-center gap-10">
+                  <img [src]="p.imagen_principal || 'assets/images/products/product-1.png'" 
+                       alt="Prenda" 
+                       style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px;">
+                  <div>
+                    <strong style="font-size: 0.85rem; color: #1e293b;">{{ p.nombre }}</strong>
+                    <div class="text-muted" style="font-size: 0.75rem;">Bs. {{ (p.precio || p.precio_base || 120) | number:'1.2-2' }}</div>
+                  </div>
+                </div>
+                <button mat-stroked-button color="primary" class="btn-sm" (click)="agregarPrenda(p)">
+                  <mat-icon>add</mat-icon> Agregar
+                </button>
+              </div>
+            </div>
+
+            <!-- Prendas seleccionadas para el cobro -->
+            <div *ngIf="itemsSeleccionados.length > 0" class="selected-items-card p-12 bg-light rounded m-b-12 border">
+              <div class="d-flex justify-content-between align-items-center m-b-8">
+                <strong style="font-size: 0.85rem; color: #0f172a;">Prendas en la Orden ({{ itemsSeleccionados.length }}):</strong>
+                <strong style="color: #16a34a; font-size: 1rem;">Total: Bs. {{ monto | number:'1.2-2' }}</strong>
+              </div>
+              <div *ngFor="let item of itemsSeleccionados; let i = index" class="d-flex justify-content-between align-items-center py-4 border-bottom">
+                <div>
+                  <span style="font-weight: 600; font-size: 0.82rem;">{{ item.nombre }}</span>
+                  <div class="text-muted" style="font-size: 0.72rem;">{{ item.cantidad }}x Bs. {{ item.precio_unitario }} = Bs. {{ item.subtotal }}</div>
+                </div>
+                <div class="d-flex align-items-center gap-4">
+                  <button mat-icon-button class="btn-micro" (click)="modificarCantidadItem(i, -1)"><mat-icon>remove</mat-icon></button>
+                  <span style="font-weight: bold; font-size: 0.85rem;">{{ item.cantidad }}</span>
+                  <button mat-icon-button class="btn-micro" (click)="modificarCantidadItem(i, 1)"><mat-icon>add</mat-icon></button>
+                  <button mat-icon-button color="warn" class="btn-micro" (click)="eliminarItem(i)"><mat-icon>delete</mat-icon></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODO 3: VENTA POS / PEDIDO PENDIENTE -->
+          <div *ngIf="modoCobro === 'VENTA_PENDIENTE'" class="m-b-16">
+            <div class="d-flex justify-content-between align-items-center m-b-8">
+              <span class="text-muted" style="font-size: 0.82rem;">Seleccione una orden pendiente registrada en POS:</span>
+              <button mat-icon-button class="btn-sm" (click)="cargarVentasPendientes()" matTooltip="Actualizar lista">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+            <div class="border rounded p-8" style="max-height: 200px; overflow-y: auto;">
+              <div *ngIf="cargandoVentasPendientes" class="text-center p-12">
+                <mat-spinner diameter="24"></mat-spinner>
+              </div>
+              <div *ngIf="!cargandoVentasPendientes && ventasPendientes.length === 0" class="text-center p-16 text-muted">
+                No hay ventas pendientes de pago registradas.
+              </div>
+              <div *ngFor="let v of ventasPendientes" 
+                   class="venta-item p-10 m-b-6 border rounded cursor-pointer"
+                   [class.selected-order]="ventaPendienteSeleccionadaId === v.venta_id"
+                   (click)="seleccionarVentaPendiente(v)">
+                <div class="d-flex justify-content-between">
+                  <strong style="color: #2563eb;">Orden #{{ v.venta_id }}</strong>
+                  <strong style="color: #16a34a;">Bs. {{ v.monto_total | number:'1.2-2' }}</strong>
+                </div>
+                <div class="text-muted" style="font-size: 0.75rem;">Cliente: {{ v.cliente_nombre }} (NIT: {{ v.cliente_nit }})</div>
+                <div class="text-muted" style="font-size: 0.72rem;">{{ v.fecha | date:'dd/MM/yyyy HH:mm' }} • {{ v.items_count }} prenda(s)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Glosa o Concepto -->
+          <mat-form-field appearance="outline" class="w-full m-b-12">
             <mat-label>Glosa o Concepto del Pago</mat-label>
             <input 
               matInput 
@@ -79,27 +236,41 @@
             <mat-icon matSuffix>description</mat-icon>
           </mat-form-field>
 
-          <!-- Datos de Facturación -->
-          <div class="row g-2 m-b-16">
-            <div class="col-md-7">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Cliente / Razón Social</mat-label>
-                <input 
-                  matInput 
-                  [(ngModel)]="clienteNombre" 
-                  placeholder="Consumidor Final"
-                  [disabled]="isGenerando">
-              </mat-form-field>
+          <!-- Datos de Facturación del Cliente -->
+          <div class="p-12 border rounded bg-white m-b-16">
+            <div class="d-flex justify-content-between align-items-center m-b-8">
+              <strong style="font-size: 0.85rem; color: #334155;">Datos del Cliente (Facturación SIAT):</strong>
+              <button mat-button color="primary" class="btn-xs" (click)="setConsumidorFinal()">
+                <mat-icon style="font-size: 14px; width: 14px; height: 14px;">person</mat-icon> Consumidor Final
+              </button>
             </div>
-            <div class="col-md-5">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>NIT / CI</mat-label>
-                <input 
-                  matInput 
-                  [(ngModel)]="clienteNit" 
-                  placeholder="0"
-                  [disabled]="isGenerando">
-              </mat-form-field>
+            <div class="row g-2">
+              <div class="col-7">
+                <mat-form-field appearance="outline" class="w-full" style="font-size: 0.85rem;">
+                  <mat-label>Nombre / Razón Social</mat-label>
+                  <input matInput [(ngModel)]="clienteNombre" placeholder="Consumidor Final" [disabled]="isGenerando">
+                </mat-form-field>
+              </div>
+              <div class="col-5">
+                <mat-form-field appearance="outline" class="w-full" style="font-size: 0.85rem;">
+                  <mat-label>NIT / CI</mat-label>
+                  <input matInput [(ngModel)]="clienteNit" placeholder="0" [disabled]="isGenerando">
+                </mat-form-field>
+              </div>
+              <div class="col-6">
+                <mat-form-field appearance="outline" class="w-full" style="font-size: 0.85rem;">
+                  <mat-label>Teléfono (WhatsApp)</mat-label>
+                  <input matInput [(ngModel)]="clienteTelefono" placeholder="77123456" [disabled]="isGenerando">
+                  <mat-icon matSuffix>phone</mat-icon>
+                </mat-form-field>
+              </div>
+              <div class="col-6">
+                <mat-form-field appearance="outline" class="w-full" style="font-size: 0.85rem;">
+                  <mat-label>Correo Electrónico</mat-label>
+                  <input matInput [(ngModel)]="clienteEmail" placeholder="cliente@correo.com" [disabled]="isGenerando">
+                  <mat-icon matSuffix>email</mat-icon>
+                </mat-form-field>
+              </div>
             </div>
           </div>
 
@@ -108,82 +279,101 @@
             <mat-label>Tiempo de Vigencia del Código QR</mat-label>
             <mat-select [(ngModel)]="tiempoExpiracionMinutos" [disabled]="isGenerando">
               <mat-option [value]="1">1 Minuto (Rápido en mostrador)</mat-option>
-              <mat-option [value]="3">3 Minutos (Estándar recomendado)</mat-option>
+              <mat-option [value]="2">2 Minutos (Mostrador ágil)</mat-option>
+              <mat-option [value]="3">3 Minutos (Estándar recomendado BCB)</mat-option>
               <mat-option [value]="5">5 Minutos (E-commerce / Reserva)</mat-option>
             </mat-select>
             <mat-icon matSuffix>timer</mat-icon>
           </mat-form-field>
 
-          <!-- Botón de Acción -->
+          <!-- Botón de Generar Código QR -->
           <button 
             mat-raised-button 
             color="primary" 
-            class="w-full py-16" 
-            style="font-size: 1rem; font-weight: 600;"
+            class="w-full btn-generar py-14" 
             [disabled]="isGenerando || !monto || monto <= 0"
             (click)="generarCodigoQR()">
-            <mat-spinner *ngIf="isGenerando" diameter="20" class="m-r-8 inline-spinner"></mat-spinner>
-            <mat-icon *ngIf="!isGenerando">qr_code</mat-icon>
+            <mat-spinner *ngIf="isGenerando" diameter="22" class="m-r-8 inline-spinner"></mat-spinner>
+            <mat-icon *ngIf="!isGenerando">qr_code_2</mat-icon>
             {{ isGenerando ? 'Generando QR Interoperable...' : 'Generar Código QR Simple' }}
           </button>
         </mat-card-content>
       </mat-card>
     </div>
 
-    <!-- Columna Derecha: Visor del Código QR y Confirmación -->
+    <!-- Columna Derecha: Terminal / Visor del QR y Confirmación Fiscal -->
     <div class="col-lg-7 col-md-12">
-      <mat-card class="h-100 shadow-sm border text-center">
-        <!-- Estado 1: No generado aún -->
+      <mat-card class="shadow-sm border h-100 text-center terminal-card">
+        <!-- ESTADO 1: NINGUNO (Terminal en espera) -->
         <div *ngIf="estadoActual === 'NINGUNO'" class="p-40 d-flex flex-column align-items-center justify-content-center h-100">
-          <div class="p-20 m-b-16" style="background: #f1f5f9; border-radius: 50%; color: #64748b;">
-            <mat-icon style="font-size: 64px; width: 64px; height: 64px;">qr_code_2</mat-icon>
+          <div class="idle-icon-circle m-b-16">
+            <mat-icon>qr_code_scanner</mat-icon>
           </div>
-          <h3 style="color: #334155; font-weight: 600;">Terminal Lista para Cobro con QR</h3>
-          <p class="text-muted" style="max-width: 420px; font-size: 0.92rem;">
-            Ingrese el importe a cobrar en la columna izquierda y presione <strong>"Generar Código QR Simple"</strong> para desplegar el código dinámico compatible con cualquier banco de Bolivia.
+          <h3 style="color: #1e293b; font-weight: 700;">Terminal POS Lista para Cobro QR Simple</h3>
+          <p class="text-muted" style="max-width: 440px; font-size: 0.92rem; line-height: 1.5;">
+            Configure el importe, seleccione prendas o cargue una orden pendiente a la izquierda. 
+            Al presionar <strong>"Generar Código QR Simple"</strong> se emitirá el código dinámico interoperable 
+            estándar ASOBAN/BCB con escucha en tiempo real.
           </p>
         </div>
 
-        <!-- Estado 2: QR PENDIENTE de pago -->
-        <div *ngIf="estadoActual === 'PENDIENTE' && qrData" class="p-24">
-          <!-- Banner Superior del QR -->
-          <div class="d-flex align-items-center justify-content-between p-12 m-b-16" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <!-- ESTADO 2: QR PENDIENTE DE PAGO -->
+        <div *ngIf="estadoActual === 'PENDIENTE' && qrData" class="p-20">
+          <!-- Barra Superior del QR -->
+          <div class="qr-status-header d-flex justify-content-between align-items-center p-12 m-b-16 border rounded">
             <div class="text-start">
-              <span class="text-muted" style="font-size: 0.8rem;">IDENTIFICADOR DE COBRO:</span><br>
-              <strong style="font-family: monospace; color: #1e293b;">{{ qrData.qr_id }}</strong>
+              <span class="text-muted" style="font-size: 0.75rem;">IDENTIFICADOR DE PAGO BCB:</span>
+              <div style="font-family: monospace; font-weight: bold; color: #0f172a; font-size: 0.9rem;">
+                {{ qrData.qr_id }}
+              </div>
             </div>
-            <div class="text-end">
-              <span class="badge" style="background: #fef3c7; color: #b45309; padding: 4px 12px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                <mat-spinner diameter="12"></mat-spinner>
-                ESPERANDO PAGO
-              </span>
+            <div class="d-flex align-items-center gap-8">
+              <span class="pulse-radar"></span>
+              <span class="badge badge-warning">ESPERANDO ACREDITACIÓN</span>
             </div>
           </div>
 
-          <!-- Monto destacado -->
-          <div class="m-b-16">
-            <span class="text-muted" style="font-size: 0.9rem;">Total a Pagar por el Cliente:</span>
-            <h1 class="m-0 font-weight-bold" style="color: #0f172a; font-size: 2.3rem;">
-              Bs. {{ qrData.monto | number:'1.2-2' }}
-            </h1>
-            <p class="text-muted m-t-4" style="font-size: 0.85rem;">{{ qrData.glosa }}</p>
+          <!-- Monto y Concepto Destacado -->
+          <div class="m-b-12">
+            <span class="text-muted" style="font-size: 0.85rem;">Total a Cobrar al Cliente:</span>
+            <h1 class="qr-amount m-0">Bs. {{ qrData.monto | number:'1.2-2' }}</h1>
+            <p class="text-muted m-t-4 m-b-0" style="font-size: 0.88rem;">{{ qrData.glosa }}</p>
+            <div *ngIf="qrData.cliente_nombre" class="text-muted" style="font-size: 0.8rem;">
+              Cliente: <strong>{{ qrData.cliente_nombre }}</strong> (NIT: {{ qrData.cliente_nit }})
+            </div>
           </div>
 
-          <!-- Imagen QR Scannable -->
-          <div class="qr-frame-box d-flex justify-content-center m-b-16">
-            <div class="qr-wrapper p-16" style="background: white; border: 2px solid #0f172a; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
-              <img [src]="qrData.qr_image_base64" alt="Código QR Simple" style="width: 220px; height: 220px; display: block;">
-              <div class="d-flex align-items-center justify-content-center gap-8 m-t-8" style="color: #475569; font-size: 0.75rem; font-weight: 600;">
-                <mat-icon style="font-size: 14px; width: 14px; height: 14px;">verified</mat-icon>
-                ASOBAN / BCB SIMPLE
+          <!-- Marco del Código QR -->
+          <div class="qr-display-wrapper d-flex justify-content-center m-b-14">
+            <div class="qr-card-box p-16 bg-white border rounded shadow">
+              <img [src]="qrData.qr_image_base64" alt="Código QR Simple" class="qr-img-canvas">
+              <div class="d-flex align-items-center justify-content-center gap-6 m-t-8 text-muted" style="font-size: 0.75rem; font-weight: 600;">
+                <mat-icon style="font-size: 14px; width: 14px; height: 14px; color: #16a34a;">verified</mat-icon>
+                ASOBAN / BCB SIMPLE INTEROPERABLE
               </div>
             </div>
           </div>
 
-          <!-- Temporizador dinámico y barra de progreso -->
-          <div class="timer-box p-12 m-b-20" style="background: #f8fafc; border-radius: 8px;">
+          <!-- Botones de Acción con el QR -->
+          <div class="d-flex justify-content-center gap-8 m-b-16 flex-wrap">
+            <button mat-stroked-button color="default" (click)="copiarCadenaEMVCo()" matTooltip="Copiar código EMVCo">
+              <mat-icon>content_copy</mat-icon> Copiar Cadena
+            </button>
+            <button mat-stroked-button color="default" (click)="descargarQR()" matTooltip="Descargar imagen en PNG">
+              <mat-icon>download</mat-icon> Descargar PNG
+            </button>
+            <button mat-stroked-button color="accent" (click)="compartirPorWhatsApp()" matTooltip="Enviar enlace por WhatsApp">
+              <mat-icon>share</mat-icon> WhatsApp
+            </button>
+            <button mat-stroked-button color="primary" (click)="togglePantallaCliente()" matTooltip="Mostrar solo el QR al cliente">
+              <mat-icon>fullscreen</mat-icon> Pantalla Cliente
+            </button>
+          </div>
+
+          <!-- Temporizador y Barra de Progreso Regresiva -->
+          <div class="timer-box p-12 border rounded bg-light m-b-16">
             <div class="d-flex justify-content-between m-b-6" style="font-size: 0.85rem;">
-              <span class="text-muted">Tiempo restante de validez:</span>
+              <span class="text-muted">Tiempo restante de vigencia bancaria:</span>
               <strong [style.color]="segundosRestantes < 30 ? '#dc2626' : '#2563eb'">
                 ⏱️ {{ tiempoFormateado }}
               </strong>
@@ -193,20 +383,31 @@
               [value]="porcentajeTiempo"
               [color]="segundosRestantes < 30 ? 'warn' : 'primary'">
             </mat-progress-bar>
+            <div class="d-flex justify-content-between align-items-center m-t-8">
+              <button mat-button color="primary" class="btn-xs" (click)="consultarEstadoManual()">
+                <mat-icon style="font-size: 14px; width: 14px; height: 14px;">sync</mat-icon> Verificar Estado Ahora
+              </button>
+              <button mat-button color="warn" class="btn-xs" (click)="cancelarCobro()">
+                <mat-icon style="font-size: 14px; width: 14px; height: 14px;">close</mat-icon> Cancelar Cobro
+              </button>
+            </div>
           </div>
 
-          <!-- Panel de Simulación Bancaria para Demostración al Docente -->
-          <div class="simulacion-card p-16 text-start" style="background: #faf5ff; border: 1px dashed #a855f7; border-radius: 10px;">
-            <div class="d-flex align-items-center gap-8 m-b-8">
-              <mat-icon style="color: #7e22ce;">smartphone</mat-icon>
-              <strong style="color: #581c87; font-size: 0.92rem;">Simulador de Banca Móvil (Evaluación / Tribunal)</strong>
+          <!-- Simulador de Banca Móvil (Para Evaluación del Docente y Tribunal) -->
+          <div class="bank-simulator-box p-16 text-start rounded border border-purple bg-purple-light">
+            <div class="d-flex align-items-center justify-content-between m-b-8">
+              <div class="d-flex align-items-center gap-8">
+                <mat-icon style="color: #7e22ce;">smartphone</mat-icon>
+                <strong style="color: #581c87; font-size: 0.95rem;">Simulador de Banca Móvil (Evaluación / Tribunal)</strong>
+              </div>
+              <span class="badge badge-purple">INTEROPERABILIDAD</span>
             </div>
-            <p class="m-b-12" style="font-size: 0.82rem; color: #6b21a8;">
-              Simula el escaneo del QR desde cualquier aplicación bancaria nacional para verificar la respuesta asíncrona inmediata:
+            <p class="m-b-12 text-muted" style="font-size: 0.82rem; color: #6b21a8;">
+              Simula el escaneo y confirmación desde cualquier app bancaria de Bolivia para evaluar la respuesta asíncrona:
             </p>
 
-            <div class="d-flex gap-12 align-items-center flex-wrap">
-              <mat-form-field appearance="outline" class="flex-grow-1" style="font-size: 0.85rem;">
+            <div class="d-flex gap-8 align-items-center flex-wrap">
+              <mat-form-field appearance="outline" class="flex-1 m-0" style="font-size: 0.85rem;">
                 <mat-label>Banco Emisor del Cliente</mat-label>
                 <mat-select [(ngModel)]="bancoSeleccionado" [disabled]="isSimulando">
                   <mat-option *ngFor="let b of bancosDisponibles" [value]="b">{{ b }}</mat-option>
@@ -215,113 +416,214 @@
 
               <button 
                 mat-flat-button 
-                color="accent" 
-                style="height: 52px; padding: 0 20px;"
+                color="primary" 
+                class="btn-simulate"
                 [disabled]="isSimulando"
-                (click)="simularPagoCliente()">
+                (click)="simularPagoExitoso()">
                 <mat-spinner *ngIf="isSimulando" diameter="18" class="m-r-6 inline-spinner"></mat-spinner>
                 <mat-icon *ngIf="!isSimulando">check_circle</mat-icon>
-                Simular Pago Bancario
+                Acreditar Pago Exitoso
+              </button>
+
+              <button 
+                mat-stroked-button 
+                color="warn" 
+                class="btn-simulate-warn"
+                [disabled]="isSimulando"
+                (click)="simularRechazo()">
+                <mat-icon>cancel</mat-icon>
+                Simular Rechazo
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Estado 3: PAGO CONFIRMADO -->
-        <div *ngIf="estadoActual === 'PAGADO' && pagoConfirmado" class="p-32 text-center animate-fade-in">
-          <div class="success-badge m-b-16 d-flex justify-content-center">
-            <div style="background: #dcfce7; color: #15803d; border-radius: 50%; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;">
-              <mat-icon style="font-size: 42px; width: 42px; height: 42px;">verified</mat-icon>
+        <!-- ESTADO 3: PAGO CONFIRMADO Y FACTURA FISCAL SIAT -->
+        <div *ngIf="estadoActual === 'PAGADO' && pagoConfirmado" class="p-24 animate-fade-in">
+          <div class="success-banner d-flex align-items-center justify-content-center flex-column m-b-16">
+            <div class="success-circle m-b-10">
+              <mat-icon>check</mat-icon>
             </div>
+            <h2 class="m-0 font-weight-bold" style="color: #166534; font-size: 1.5rem;">
+              ¡PAGO ACREDITADO EXITOSAMENTE!
+            </h2>
+            <p class="text-muted m-t-4 m-b-0" style="font-size: 0.9rem;">
+              Los fondos fueron transferidos mediante el Sistema de Pagos Inmediatos del BCB.
+            </p>
           </div>
 
-          <h2 class="font-weight-bold m-0" style="color: #166534; font-size: 1.6rem;">
-            ¡PAGO QR CONFIRMADO EXITOSAMENTE!
-          </h2>
-          <p class="text-muted m-t-4 m-b-20" style="font-size: 0.95rem;">
-            La entidad financiera acreditó los fondos y se emitió la factura fiscal computarizada.
-          </p>
+          <!-- FACTURA FISCAL COMPUTARIZADA SIAT -->
+          <div class="invoice-box p-20 m-b-20 text-start bg-white border rounded shadow-sm">
+            <div class="d-flex justify-content-between align-items-start border-bottom p-b-12 m-b-12">
+              <div>
+                <h4 class="m-0 font-weight-bold" style="color: #0f172a;">FASHIONSTORE BOLIVIA S.R.L.</h4>
+                <div class="text-muted" style="font-size: 0.8rem;">Casa Matriz: Av. San Martín #450 • Santa Cruz</div>
+                <div class="text-muted" style="font-size: 0.8rem;">Tel: +591 3 3456789 • Santa Cruz de la Sierra - Bolivia</div>
+              </div>
+              <div class="text-end">
+                <div style="font-size: 0.82rem; font-weight: bold; color: #334155;">NIT: 1029384025</div>
+                <div style="font-size: 0.82rem; font-weight: bold; color: #2563eb; font-family: monospace;">
+                  FACTURA N°: {{ pagoConfirmado.nro_factura || 'FAC-QR-2026' }}
+                </div>
+                <div style="font-size: 0.72rem; color: #64748b; font-family: monospace;">
+                  AUTORIZACIÓN: {{ pagoConfirmado.nro_autorizacion || 'AUT-SIAT-2026' }}
+                </div>
+              </div>
+            </div>
 
-          <!-- Recibo Fiscal Emitido -->
-          <div class="receipt-box p-20 m-b-24 text-start" style="background: white; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 0.9rem;">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <span class="text-muted">Importe Cobrado:</span><br>
-                <strong style="font-size: 1.25rem; color: #16a34a;">Bs. {{ (pagoConfirmado.monto || monto) | number:'1.2-2' }}</strong>
-              </div>
-              <div class="col-md-6">
-                <span class="text-muted">N° Factura Fiscal:</span><br>
-                <strong style="color: #2563eb; font-family: monospace;">{{ pagoConfirmado.nro_factura || 'FAC-QR-2026-OK' }}</strong>
-              </div>
-              <div class="col-md-6">
-                <span class="text-muted">Autorización Bancaria (ASOBAN):</span><br>
-                <span style="font-family: monospace; font-size: 0.85rem; color: #475569;">{{ pagoConfirmado.comprobante_bancario }}</span>
-              </div>
-              <div class="col-md-6">
-                <span class="text-muted">Banco Pagador:</span><br>
-                <span style="font-weight: 600; color: #334155;">{{ pagoConfirmado.banco_emisor || bancoSeleccionado }}</span>
-              </div>
-              <div class="col-md-6">
-                <span class="text-muted">Cliente / Razón Social:</span><br>
-                <span>{{ clienteNombre }} (NIT: {{ clienteNit }})</span>
-              </div>
-              <div class="col-md-6">
+            <!-- Datos del Comprador -->
+            <div class="row g-2 m-b-12" style="font-size: 0.85rem;">
+              <div class="col-6">
                 <span class="text-muted">Fecha y Hora:</span><br>
-                <span>{{ pagoConfirmado.fecha || (qrData?.creado_en | date:'dd/MM/yyyy HH:mm:ss') }}</span>
+                <strong>{{ pagoConfirmado.fecha || (qrData?.creado_en | date:'dd/MM/yyyy HH:mm:ss') }}</strong>
               </div>
+              <div class="col-6">
+                <span class="text-muted">Señor(es):</span><br>
+                <strong>{{ clienteNombre }}</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted">NIT / CI del Cliente:</span><br>
+                <strong style="font-family: monospace;">{{ clienteNit }}</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted">Método de Cobro:</span><br>
+                <span class="badge badge-success">QR Simple Interoperable (BCB)</span>
+              </div>
+            </div>
+
+            <!-- Comprobante Bancario -->
+            <div class="p-10 bg-light rounded m-b-12" style="font-size: 0.82rem;">
+              <div class="d-flex justify-content-between">
+                <span>Banco Emisor: <strong>{{ pagoConfirmado.banco_emisor || bancoSeleccionado }}</strong></span>
+                <span>Autorización: <strong style="font-family: monospace; color: #0284c7;">{{ pagoConfirmado.comprobante_bancario }}</strong></span>
+              </div>
+            </div>
+
+            <!-- Importe Total y Literal -->
+            <div class="d-flex justify-content-between align-items-center border-top p-t-10 m-b-10">
+              <div>
+                <span class="text-muted" style="font-size: 0.75rem;">SON:</span><br>
+                <strong style="font-size: 0.85rem; color: #1e293b;">
+                  {{ pagoConfirmado.total_literal || 'CIENTO CINCUENTA 00/100 BOLIVIANOS' }}
+                </strong>
+              </div>
+              <div class="text-end">
+                <span class="text-muted" style="font-size: 0.8rem;">TOTAL FACTURADO:</span><br>
+                <strong style="font-size: 1.4rem; color: #16a34a;">
+                  Bs. {{ (pagoConfirmado.monto || monto) | number:'1.2-2' }}
+                </strong>
+              </div>
+            </div>
+
+            <div class="border-top p-t-8 text-center text-muted" style="font-size: 0.7rem; font-style: italic;">
+              "ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY."
+              <br>Código de Control: <strong>{{ pagoConfirmado.codigo_control || 'A1-B2-C3' }}</strong>
             </div>
           </div>
 
-          <!-- Acciones posteriores -->
+          <!-- Acciones posteriores a la venta -->
           <div class="d-flex justify-content-center gap-12 flex-wrap">
             <button mat-stroked-button color="primary" (click)="imprimirComprobante()">
-              <mat-icon>print</mat-icon>
-              Imprimir Comprobante Fiscal
+              <mat-icon>print</mat-icon> Imprimir Ticket / Factura
+            </button>
+            <button mat-stroked-button color="accent" (click)="compartirPorWhatsApp()">
+              <mat-icon>send</mat-icon> Enviar Recibo WhatsApp
             </button>
             <button mat-flat-button color="primary" (click)="nuevoCobro()">
-              <mat-icon>add</mat-icon>
-              Nuevo Cobro QR
+              <mat-icon>add</mat-icon> Registrar Otro Cobro
             </button>
           </div>
         </div>
 
-        <!-- Estado 4: QR EXPIRADO -->
+        <!-- ESTADO 4: QR EXPIRADO -->
         <div *ngIf="estadoActual === 'EXPIRADO'" class="p-40 d-flex flex-column align-items-center justify-content-center h-100">
-          <div class="p-20 m-b-16" style="background: #fef2f2; border-radius: 50%; color: #dc2626;">
-            <mat-icon style="font-size: 54px; width: 54px; height: 54px;">timer_off</mat-icon>
+          <div class="expired-circle m-b-16">
+            <mat-icon>timer_off</mat-icon>
           </div>
-          <h3 style="color: #991b1b; font-weight: 600;">Código QR Expirado</h3>
-          <p class="text-muted" style="max-width: 400px; font-size: 0.9rem;">
-            El tiempo límite de 3 minutos para el escaneo del cliente ha concluido por políticas de seguridad bancaria.
+          <h3 style="color: #991b1b; font-weight: 700;">Código QR Simple Expirado</h3>
+          <p class="text-muted" style="max-width: 420px; font-size: 0.9rem; line-height: 1.5;">
+            El tiempo límite de 3 minutos para el escaneo del cliente ha concluido por políticas de seguridad bancaria del BCB.
           </p>
-          <button mat-raised-button color="primary" class="m-t-12" (click)="generarCodigoQR()">
-            <mat-icon>refresh</mat-icon>
-            Regenerar Código QR
+          <div class="d-flex gap-10 m-t-12">
+            <button mat-raised-button color="primary" (click)="regenerarQR()">
+              <mat-icon>refresh</mat-icon> Regenerar Código QR
+            </button>
+            <button mat-stroked-button (click)="nuevoCobro()">
+              <mat-icon>clear</mat-icon> Cancelar
+            </button>
+          </div>
+        </div>
+
+        <!-- ESTADO 5: PAGO RECHAZADO -->
+        <div *ngIf="estadoActual === 'RECHAZADO'" class="p-40 d-flex flex-column align-items-center justify-content-center h-100">
+          <div class="rejected-circle m-b-16">
+            <mat-icon>cancel</mat-icon>
+          </div>
+          <h3 style="color: #b91c1c; font-weight: 700;">Pago Bancario Declinado</h3>
+          <p class="text-muted" style="max-width: 420px; font-size: 0.9rem;">
+            Motivo reportado por la red bancaria: <strong style="color: #dc2626;">{{ motivoRechazo }}</strong>
+          </p>
+          <div class="d-flex gap-10 m-t-12">
+            <button mat-raised-button color="primary" (click)="regenerarQR()">
+              <mat-icon>refresh</mat-icon> Reintentar Cobro
+            </button>
+            <button mat-stroked-button (click)="nuevoCobro()">
+              Cambiar Método de Pago
+            </button>
+          </div>
+        </div>
+
+        <!-- ESTADO 6: CANCELADO POR EL CAJERO -->
+        <div *ngIf="estadoActual === 'CANCELADO'" class="p-40 d-flex flex-column align-items-center justify-content-center h-100">
+          <div class="idle-icon-circle m-b-16" style="background: #f1f5f9; color: #64748b;">
+            <mat-icon>do_not_disturb</mat-icon>
+          </div>
+          <h3 style="color: #475569; font-weight: 700;">Cobro QR Cancelado</h3>
+          <p class="text-muted" style="max-width: 400px; font-size: 0.9rem;">
+            La orden de cobro en mostrador fue anulada antes de confirmarse.
+          </p>
+          <button mat-raised-button color="primary" class="m-t-12" (click)="nuevoCobro()">
+            <mat-icon>add</mat-icon> Iniciar Nuevo Cobro
           </button>
         </div>
       </mat-card>
     </div>
   </div>
 
-  <!-- Sección Inferior: Historial de Cobros Recientes -->
+  <!-- SECCIÓN INFERIOR: HISTORIAL DE COBROS RECIENTES -->
   <mat-card class="m-t-24 shadow-sm border">
-    <mat-card-header class="d-flex justify-content-between align-items-center border-bottom p-b-12">
-      <mat-card-title style="font-size: 1.1rem; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-        <mat-icon color="primary">history</mat-icon>
-        Historial de Cobros QR Recientes (Sesión Actual)
-      </mat-card-title>
-      <button mat-icon-button (click)="cargarHistorial()" matTooltip="Actualizar historial">
-        <mat-icon>refresh</mat-icon>
-      </button>
+    <mat-card-header class="d-flex justify-content-between align-items-center border-bottom p-b-12 flex-wrap gap-12">
+      <div class="d-flex align-items-center gap-10 flex-wrap">
+        <mat-card-title style="font-size: 1.15rem; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+          <mat-icon color="primary">history</mat-icon> Historial de Cobros QR Recientes
+        </mat-card-title>
+        <!-- Filtros por estado -->
+        <div class="filter-chips d-flex gap-6">
+          <button mat-button class="chip-filter" [class.active]="filtroEstadoHistorial === 'TODOS'" (click)="filtroEstadoHistorial = 'TODOS'; cargarHistorial()">Todos</button>
+          <button mat-button class="chip-filter" [class.active]="filtroEstadoHistorial === 'PAGADO'" (click)="filtroEstadoHistorial = 'PAGADO'; cargarHistorial()">Pagados</button>
+          <button mat-button class="chip-filter" [class.active]="filtroEstadoHistorial === 'PENDIENTE'" (click)="filtroEstadoHistorial = 'PENDIENTE'; cargarHistorial()">Pendientes</button>
+          <button mat-button class="chip-filter" [class.active]="filtroEstadoHistorial === 'EXPIRADO'" (click)="filtroEstadoHistorial = 'EXPIRADO'; cargarHistorial()">Expirados</button>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-10">
+        <mat-form-field appearance="outline" class="search-mini m-0" style="font-size: 0.85rem;">
+          <input matInput [(ngModel)]="busquedaHistorial" (keyup.enter)="cargarHistorial()" placeholder="Buscar por QR, cliente, factura...">
+          <mat-icon matSuffix (click)="cargarHistorial()" class="cursor-pointer">search</mat-icon>
+        </mat-form-field>
+        <button mat-icon-button (click)="cargarHistorial()" matTooltip="Actualizar historial">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
     </mat-card-header>
 
     <mat-card-content class="p-0">
-      <div *ngIf="historialCobros.length === 0" class="p-24 text-center text-muted">
-        No se han generado cobros QR en la sesión actual.
+      <div *ngIf="historialCobros.length === 0" class="p-32 text-center text-muted">
+        No se encontraron registros de cobros QR con los filtros seleccionados.
       </div>
 
       <table *ngIf="historialCobros.length > 0" mat-table [dataSource]="historialCobros" class="w-full">
-        <!-- QR ID -->
+        <!-- Código QR -->
         <ng-container matColumnDef="qr_id">
           <th mat-header-cell *matHeaderCellDef>Código QR</th>
           <td mat-cell *matCellDef="let row" style="font-family: monospace; font-weight: bold; color: #334155;">
@@ -329,7 +631,7 @@
           </td>
         </ng-container>
 
-        <!-- Monto -->
+        <!-- Importe -->
         <ng-container matColumnDef="monto">
           <th mat-header-cell *matHeaderCellDef>Importe</th>
           <td mat-cell *matCellDef="let row" style="font-weight: bold; color: #0f172a;">
@@ -337,11 +639,11 @@
           </td>
         </ng-container>
 
-        <!-- Cliente -->
+        <!-- Cliente / Glosa -->
         <ng-container matColumnDef="cliente">
           <th mat-header-cell *matHeaderCellDef>Cliente / Glosa</th>
           <td mat-cell *matCellDef="let row">
-            <div><strong>{{ row.cliente || 'Consumidor Final' }}</strong></div>
+            <div><strong>{{ row.cliente || 'Consumidor Final' }}</strong> (NIT: {{ row.nit || '0' }})</div>
             <span class="text-muted" style="font-size: 0.78rem;">{{ row.glosa }}</span>
           </td>
         </ng-container>
@@ -350,32 +652,42 @@
         <ng-container matColumnDef="estado">
           <th mat-header-cell *matHeaderCellDef>Estado</th>
           <td mat-cell *matCellDef="let row">
-            <span [ngStyle]="{
-              'background-color': row.estado === 'PAGADO' ? '#dcfce7' : (row.estado === 'EXPIRADO' ? '#fee2e2' : '#fef3c7'),
-              'color': row.estado === 'PAGADO' ? '#15803d' : (row.estado === 'EXPIRADO' ? '#991b1b' : '#b45309'),
-              'padding': '3px 8px',
-              'border-radius': '12px',
-              'font-size': '0.75rem',
-              'font-weight': '600'
+            <span [ngClass]="{
+              'badge-pagado': row.estado === 'PAGADO',
+              'badge-pendiente': row.estado === 'PENDIENTE',
+              'badge-expirado': row.estado === 'EXPIRADO',
+              'badge-rechazado': row.estado === 'RECHAZADO' || row.estado === 'CANCELADO'
             }">
               {{ row.estado }}
             </span>
           </td>
         </ng-container>
 
-        <!-- Comprobante -->
+        <!-- Comprobante / Factura -->
         <ng-container matColumnDef="comprobante">
           <th mat-header-cell *matHeaderCellDef>Comprobante Bancario</th>
           <td mat-cell *matCellDef="let row" style="font-family: monospace; font-size: 0.8rem; color: #475569;">
-            {{ row.comprobante || 'Pendiente de pago' }}
+            <div *ngIf="row.comprobante"><strong>{{ row.comprobante }}</strong></div>
+            <div *ngIf="row.nro_factura" style="color: #2563eb;">{{ row.nro_factura }}</div>
+            <span *ngIf="!row.comprobante" class="text-muted">Pendiente de pago</span>
           </td>
         </ng-container>
 
-        <!-- Fecha -->
+        <!-- Fecha / Hora -->
         <ng-container matColumnDef="fecha">
           <th mat-header-cell *matHeaderCellDef>Fecha / Hora</th>
           <td mat-cell *matCellDef="let row" style="font-size: 0.82rem; color: #64748b;">
             {{ row.creado_en | date:'dd/MM/yyyy HH:mm' }}
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef style="text-align: center;">Acciones</th>
+          <td mat-cell *matCellDef="let row" style="text-align: center;">
+            <button mat-icon-button color="primary" matTooltip="Ver Comprobante Fiscal" (click)="verDetalleComprobante(row)">
+              <mat-icon>receipt</mat-icon>
+            </button>
           </td>
         </ng-container>
 
@@ -384,4 +696,60 @@
       </table>
     </mat-card-content>
   </mat-card>
+
+  <!-- MODAL / OVERLAY PANTALLA CLIENTE -->
+  <div *ngIf="mostrarPantallaCliente" class="fullscreen-customer-overlay" (click)="togglePantallaCliente()">
+    <div class="customer-qr-box text-center p-32 bg-white rounded shadow-lg" (click)="$event.stopPropagation()">
+      <div class="d-flex justify-content-between align-items-center m-b-16">
+        <strong style="color: #0f172a; font-size: 1.1rem;">FASHIONSTORE BOLIVIA - COBRO QR SIMPLE</strong>
+        <button mat-icon-button (click)="togglePantallaCliente()"><mat-icon>close</mat-icon></button>
+      </div>
+      <img [src]="qrData?.qr_image_base64" alt="QR Cliente" style="width: 320px; height: 320px; display: block; margin: 0 auto;">
+      <h1 class="m-t-16 font-weight-bold" style="color: #0f172a; font-size: 2.4rem;">Bs. {{ qrData?.monto | number:'1.2-2' }}</h1>
+      <p class="text-muted" style="font-size: 1rem;">Escanea desde la app de cualquier banco o billetera móvil nacional</p>
+      <div class="badge badge-success p-8 m-t-8" style="font-size: 0.9rem;">
+        ⏱️ Tiempo restante: {{ tiempoFormateado }}
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE DE COMPROBANTE -->
+  <div *ngIf="mostrarModalComprobante && comprobanteDetallado" class="fullscreen-customer-overlay" (click)="cerrarModalComprobante()">
+    <div class="customer-qr-box text-start p-24 bg-white rounded shadow-lg" style="max-width: 520px; width: 90%;" (click)="$event.stopPropagation()">
+      <div class="d-flex justify-content-between align-items-center border-bottom p-b-10 m-b-12">
+        <strong style="font-size: 1.1rem; color: #0f172a;">Comprobante de Cobro QR #{{ comprobanteDetallado.qr_id }}</strong>
+        <button mat-icon-button (click)="cerrarModalComprobante()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <div class="receipt-content font-monospace" style="font-size: 0.85rem; line-height: 1.6;">
+        <div class="text-center m-b-8">
+          <strong>{{ comprobanteDetallado.empresa }}</strong><br>
+          NIT: {{ comprobanteDetallado.nit_emisor }}<br>
+          {{ comprobanteDetallado.direccion }}
+        </div>
+        <hr>
+        <div><strong>FACTURA N°:</strong> {{ comprobanteDetallado.nro_factura }}</div>
+        <div><strong>AUTORIZACIÓN:</strong> {{ comprobanteDetallado.nro_autorizacion }}</div>
+        <div><strong>FECHA:</strong> {{ comprobanteDetallado.fecha }}</div>
+        <div><strong>CLIENTE:</strong> {{ comprobanteDetallado.cliente_nombre }} (NIT: {{ comprobanteDetallado.cliente_nit }})</div>
+        <div><strong>BANCO PAGADOR:</strong> {{ comprobanteDetallado.banco_emisor }}</div>
+        <div><strong>AUTORIZACIÓN BANCARIA:</strong> {{ comprobanteDetallado.comprobante_bancario }}</div>
+        <hr>
+        <div class="d-flex justify-content-between font-weight-bold" style="font-size: 1.1rem;">
+          <span>TOTAL:</span>
+          <span>Bs. {{ comprobanteDetallado.monto | number:'1.2-2' }}</span>
+        </div>
+        <div style="font-size: 0.78rem;">SON: {{ comprobanteDetallado.total_literal }}</div>
+        <hr>
+        <div class="text-center text-muted" style="font-size: 0.7rem;">
+          {{ comprobanteDetallado.leyenda_fiscal }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-10 m-t-16">
+        <button mat-stroked-button (click)="imprimirComprobante()"><mat-icon>print</mat-icon> Imprimir</button>
+        <button mat-flat-button color="primary" (click)="cerrarModalComprobante()">Cerrar</button>
+      </div>
+    </div>
+  </div>
 </div>

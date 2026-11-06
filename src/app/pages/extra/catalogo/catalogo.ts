@@ -224,7 +224,7 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
       descripcion: 'Chaqueta denim clasica estilo vintage con costuras reforzadas.',
       categoria_nombre: 'Denim & Jeans',
       categoria: 1,
-      imagen_principal: 'assets/images/products/product-1.png',
+      imagen_principal: '/assets/images/products/chaqueta_denim_clasica.jpg',
       precio_minimo: 349.99,
       calificacion_promedio: 4.8,
       total_resenas: 12,
@@ -236,7 +236,7 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
       descripcion: 'Parka tecnica ultra resistente con aislamiento termico.',
       categoria_nombre: 'Invierno Actualizado',
       categoria: 5,
-      imagen_principal: 'assets/images/products/product-1.png',
+      imagen_principal: '/assets/images/products/media_30_24c173db.webp',
       precio_minimo: 599.99,
       calificacion_promedio: 4.9,
       total_resenas: 8,
@@ -248,7 +248,7 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
       descripcion: 'Edicion especial algodon peinado con acabados premium.',
       categoria_nombre: 'PARO AURA',
       categoria: 8,
-      imagen_principal: 'assets/images/products/product-1.png',
+      imagen_principal: '/assets/images/products/polera_sport_azul.jpg',
       precio_minimo: 180.00,
       calificacion_promedio: 5.0,
       total_resenas: 4,
@@ -536,14 +536,14 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getImagenUrl(url: string | null): string {
-    if (!url) return 'assets/images/products/product-1.png';
+    if (!url) return '/assets/images/products/product-1.png';
     const formatted = this.configService.formatImageUrl(url);
-    return formatted || 'assets/images/products/product-1.png';
+    return formatted || '/assets/images/products/product-1.png';
   }
 
   onImgError(event: any): void {
     if (event && event.target && !event.target.src.includes('product-1.png')) {
-      event.target.src = 'assets/images/products/product-1.png';
+      event.target.src = '/assets/images/products/product-1.png';
     }
   }
 

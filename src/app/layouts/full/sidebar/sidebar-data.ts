@@ -137,7 +137,7 @@ export const navItems: NavItem[] = [
       {
         displayName: '[CU-14] Sincronización Automática y Resolución Conflictos',
         iconName: 'solar:refresh-circle-line-duotone',
-        route: '/inventario/fisico',
+        route: '/inventario/sincronizacion',
         permiso: PermisosService.INVENTARIO_VIEW_PRODUCTO,
       },
     ],

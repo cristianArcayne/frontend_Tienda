@@ -47,7 +47,7 @@
         <mat-icon>warning</mat-icon>
         <span>{{ captureError }}</span>
       </div>
-      <img *ngIf="!isModelView && imagenActualUrl" [src]="imagenActualUrl" alt="Imagen" />
+      <img *ngIf="!isModelView && imagenActualUrl" [src]="imagenActualUrl" (error)="onImgError($event)" alt="Imagen" />
       <div *ngIf="!isModelView && !imagenActualUrl" class="empty">
         <mat-icon>image</mat-icon>
         <span>Sin imagen</span>
