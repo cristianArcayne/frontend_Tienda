@@ -46,7 +46,7 @@
       <mat-tab>
         <ng-template mat-tab-label>
           <mat-icon style="margin-right: 6px;">person_pin_circle</mat-icon>
-          Mis Reservas ({{ misReservas.length }})
+          Mis Reservas ({{ conteoMisReservas }})
         </ng-template>
 
         <div class="p-20">
@@ -174,7 +174,7 @@
       <mat-tab *ngIf="esPersonal">
         <ng-template mat-tab-label>
           <mat-icon style="margin-right: 6px;">point_of_sale</mat-icon>
-          Gestión de Tienda / Retiro Presencial ({{ todasReservas.length }})
+          Gestión de Tienda / Retiro Presencial ({{ conteoTodasReservas }})
         </ng-template>
 
         <div class="p-20">

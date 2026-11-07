@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -66,13 +66,22 @@ export class ReservasComponent implements OnInit {
     private authService: AuthService,
     private permisosService: PermisosService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {
     this.usuarioActual = this.authService.getUsername() || 'admin';
     const roles = this.authService.getRoles() || [];
     this.esPersonal = this.authService.isSuperuser() || roles.some(r =>
       r && ['administrador', 'admin', 'cajero pos', 'vendedor'].includes(r.toLowerCase())
     );
+  }
+
+  get conteoMisReservas(): number {
+    return Array.isArray(this.misReservas) ? this.misReservas.length : 0;
+  }
+
+  get conteoTodasReservas(): number {
+    return Array.isArray(this.todasReservas) ? this.todasReservas.length : 0;
   }
 
   ngOnInit(): void {
@@ -85,13 +94,17 @@ export class ReservasComponent implements OnInit {
 
   cargarSucursales(): void {
     this.reservasService.getSucursales().subscribe({
-      next: (res) => { this.sucursales = res; },
+      next: (res) => {
+        this.sucursales = res;
+        this.cdr.detectChanges();
+      },
       error: () => {
         this.sucursales = [
           { id: 1, nombre: 'Sucursal Central' },
           { id: 2, nombre: 'Sucursal Equipetrol' },
           { id: 3, nombre: 'Sucursal Ventura Mall' }
         ];
+        this.cdr.detectChanges();
       }
     });
   }
@@ -100,12 +113,14 @@ export class ReservasComponent implements OnInit {
     this.isLoadingMis = true;
     this.reservasService.getMisReservas(this.usuarioActual).subscribe({
       next: (data) => {
-        this.misReservas = data;
+        this.misReservas = Array.isArray(data) ? data : [];
         this.isLoadingMis = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingMis = false;
         this.snackBar.open('Error al cargar mis reservas', 'Cerrar', { duration: 3000 });
+        this.cdr.detectChanges();
       }
     });
   }
@@ -114,13 +129,15 @@ export class ReservasComponent implements OnInit {
     this.isLoadingTodas = true;
     this.reservasService.getTodasReservas().subscribe({
       next: (data) => {
-        this.todasReservas = data;
+        this.todasReservas = Array.isArray(data) ? data : [];
         this.aplicarFiltros();
         this.isLoadingTodas = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingTodas = false;
         this.snackBar.open('Error al cargar reservas de la cadena', 'Cerrar', { duration: 3000 });
+        this.cdr.detectChanges();
       }
     });
   }
