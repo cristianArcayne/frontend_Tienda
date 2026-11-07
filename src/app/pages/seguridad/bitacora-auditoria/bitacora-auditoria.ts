@@ -15,17 +15,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
-import { BitacoraAuditoria } from 'src/app/models/bitacora-auditoria.model';
 import { ConfigService } from 'src/app/services/config.service';
-
-interface BitacoraPaginatedResponse {
-  count?: number;
-  total?: number;
-  next?: string | null;
-  previous?: string | null;
-  results?: BitacoraAuditoria[];
-  registros?: BitacoraAuditoria[];
-}
 
 interface EstadisticasDev {
   total_eventos_sistema: number;
@@ -71,17 +61,8 @@ interface ConfidencialDevResponse {
   styleUrl: './bitacora-auditoria.scss',
 })
 export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
-  // Columnas de la tabla (en modo normal vs modo desarrollador forense)
-  displayedColumnsNormal: string[] = [
-    'fecha',
-    'hora',
-    'usuario_username',
-    'accion',
-    'ip_cliente',
-    'detalles',
-  ];
-
-  displayedColumnsDev: string[] = [
+  // Columnas forenses completas del Caso de Uso 17
+  displayedColumns: string[] = [
     'fecha',
     'hora',
     'usuario_username',
@@ -92,26 +73,22 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
     'detalles',
   ];
 
-  get displayedColumns(): string[] {
-    return this.isDevUnlocked ? this.displayedColumnsDev : this.displayedColumnsNormal;
-  }
-
   dataSource: any[] = [];
   totalItems = 0;
-  pageSize = 10;
+  pageSize = 15;
   currentPage = 0;
   isLoading = false;
 
-  // Llave del Desarrollador (CU-17)
+  // Control de Acceso: Llave del Desarrollador (CU-17)
   readonly LLAVE_OFICIAL_DEFECTO = 'DEV-KEY-FASHIONSTORE-SECURE-2026';
   developerKeyInput: string = 'DEV-KEY-FASHIONSTORE-SECURE-2026';
-  hideDevKey: boolean = true;
-  isDevUnlocked: boolean = false;
+  hideDevKey: boolean = false;
+  isDevUnlocked: boolean = false; // Comienza bloqueado estrictamente
   isDevLoading: boolean = false;
   isDownloadingLog: boolean = false;
   devErrorMsg: string | null = null;
 
-  // Datos criptográficos y forenses
+  // Datos criptográficos forenses
   devSecurityInfo: SeguridadDev | null = null;
   devEstadisticas: EstadisticasDev | null = null;
   sha256Hash: string = '';
@@ -150,7 +127,10 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadBitacora();
+    // Por requerimiento estricto de CU-17, la bitácora inicia protegida y bloqueada
+    // Debe pedirse primero la Llave del Desarrollador para poder acceder y visualizarla
+    this.dataSource = [];
+    this.isDevUnlocked = false;
   }
 
   ngOnDestroy(): void {
@@ -159,38 +139,10 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Carga la bitácora pública u operacional estándar
-   */
-  loadBitacora(): void {
-    if (this.isDevUnlocked) {
-      this.consultarModoDev();
-      return;
-    }
-
-    this.isLoading = true;
-    const url = `${this.configService.getApiBaseUrl()}/bitacora/`;
-
-    this.http.get<BitacoraPaginatedResponse>(url, { params: this.getParams() })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.dataSource = this.getRegistros(data);
-          this.totalItems = this.getTotalRegistros(data, this.dataSource.length);
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error al cargar bitacora:', error);
-          this.snackBar.open('Error al cargar la bitácora de auditoría', 'Cerrar', { duration: 4000 });
-          this.isLoading = false;
-        }
-      });
-  }
-
-  /**
    * Desbloquea la bitácora confidencial usando la Llave del Desarrollador (CU-17)
    */
   desbloquearConLlaveDev(): void {
-    const key = this.developerKeyInput.trim();
+    const key = (this.developerKeyInput || '').trim();
     if (!key) {
       this.devErrorMsg = 'Por favor ingrese la Llave del Desarrollador.';
       return;
@@ -204,7 +156,11 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
       'X-Developer-Key': key
     });
 
-    const params = new HttpParams().set('limite', '100');
+    let params = new HttpParams().set('limite', '100');
+    const accion = this.filtrosForm.get('accion')?.value;
+    if (accion) {
+      params = params.set('filtro_accion', accion);
+    }
 
     this.http.get<ConfidencialDevResponse>(url, { headers, params })
       .pipe(takeUntil(this.destroy$))
@@ -219,7 +175,7 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
           this.totalItems = resp.estadisticas_confidenciales.total_eventos_sistema || this.dataSource.length;
 
           this.snackBar.open(
-            `Acceso Confidencial Autorizado con Llave de Desarrollador. Sello SHA-256 Verificado.`,
+            `¡Acceso Autorizado con Llave del Desarrollador! Sello SHA-256 verificado.`,
             'OK',
             { duration: 4500 }
           );
@@ -227,9 +183,9 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.isDevLoading = false;
           if (err.status === 403) {
-            this.devErrorMsg = 'Acceso Denegado (403 Forbidden): La Llave de Desarrollador es inválida o no autorizada.';
+            this.devErrorMsg = `Acceso Denegado (403 Forbidden): La llave ingresada '${key}' no es válida. Utilice la llave oficial autorizada: DEV-KEY-FASHIONSTORE-SECURE-2026 (o DEV2026).`;
           } else {
-            this.devErrorMsg = `Error al consultar bitácora confidencial: ${err.statusText || 'Servidor no disponible'}`;
+            this.devErrorMsg = `Error al conectar con la bóveda forense: ${err.statusText || 'Servidor no disponible'}`;
           }
           this.snackBar.open(this.devErrorMsg || 'Error de autenticación forense', 'Cerrar', { duration: 5000 });
         }
@@ -237,32 +193,26 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Consulta de actualización en Modo Dev
-   */
-  consultarModoDev(): void {
-    if (!this.isDevUnlocked) return;
-    this.desbloquearConLlaveDev();
-  }
-
-  /**
-   * Bloquea el modo desarrollador y vuelve a la vista estándar
+   * Bloquea el acceso y vuelve al candado de seguridad
    */
   bloquearModoDev(): void {
     this.isDevUnlocked = false;
+    this.dataSource = [];
+    this.totalItems = 0;
     this.devSecurityInfo = null;
     this.devEstadisticas = null;
     this.sha256Hash = '';
     this.devErrorMsg = null;
-    this.loadBitacora();
-    this.snackBar.open('Modo Desarrollador cerrado. Bitácora devuelta al modo operacional estándar.', 'Cerrar', { duration: 3000 });
+    this.snackBar.open('Bóveda bloqueada. Ingrese la Llave del Desarrollador para volver a consultar.', 'Cerrar', { duration: 3000 });
   }
 
   /**
-   * Coloca la llave oficial en el input
+   * Coloca la llave oficial autorizada en el input y desbloquea en un solo clic
    */
   usarLlaveOficial(): void {
     this.developerKeyInput = this.LLAVE_OFICIAL_DEFECTO;
     this.devErrorMsg = null;
+    this.desbloquearConLlaveDev();
   }
 
   /**
@@ -332,7 +282,7 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.simulandoInyeccion = false;
-          this.snackBar.open('Evento forense inyectado con éxito. Recalculando integridad SHA-256...', 'OK', { duration: 3000 });
+          this.snackBar.open('Evento forense registrado. Recalculando integridad SHA-256...', 'OK', { duration: 3000 });
           this.desbloquearConLlaveDev();
         },
         error: (err) => {
@@ -344,8 +294,9 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   }
 
   consultar(): void {
-    this.currentPage = 0;
-    this.loadBitacora();
+    if (this.isDevUnlocked) {
+      this.desbloquearConLlaveDev();
+    }
   }
 
   limpiarFiltros(): void {
@@ -358,15 +309,7 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   actualizar(): void {
     if (this.isDevUnlocked) {
       this.desbloquearConLlaveDev();
-    } else {
-      this.loadBitacora();
     }
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadBitacora();
   }
 
   getUsuario(registro: any): string {
@@ -469,49 +412,5 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
     if (registro.timestamp) return registro.timestamp;
     if (registro.fecha && registro.hora) return `${registro.fecha}T${registro.hora}Z`;
     return null;
-  }
-
-  private getParams(): HttpParams {
-    const raw = this.filtrosForm.getRawValue();
-    let params = new HttpParams()
-      .set('page', String(this.currentPage + 1))
-      .set('page_size', String(this.pageSize));
-
-    Object.entries(raw).forEach(([key, value]) => {
-      if (value) {
-        params = params.set(key, value);
-      }
-    });
-
-    return params;
-  }
-
-  private getRegistros(response: unknown): any[] {
-    if (Array.isArray(response)) {
-      return response;
-    }
-    if (this.isObjectResponse(response)) {
-      const results = response['results'];
-      const data = response['data'];
-      const registros = response['registros'];
-      if (Array.isArray(results)) return results;
-      if (Array.isArray(data)) return data;
-      if (Array.isArray(registros)) return registros;
-    }
-    return [];
-  }
-
-  private getTotalRegistros(response: unknown, fallback: number): number {
-    if (this.isObjectResponse(response)) {
-      const total = response['count'] ?? response['total'] ?? response['totalItems'];
-      if (typeof total === 'number') {
-        return total;
-      }
-    }
-    return fallback;
-  }
-
-  private isObjectResponse(response: unknown): response is Record<string, unknown> {
-    return typeof response === 'object' && response !== null;
   }
 }
