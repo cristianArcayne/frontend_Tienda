@@ -9,15 +9,10 @@
             <mat-icon class="header-icon">storage</mat-icon>
           </div>
           <div>
-            <div class="badge-row">
-              <span class="cu-tag">[CU-18] GESTIÓN DE COPIAS DE SEGURIDAD Y RESTAURACIÓN</span>
-              <span class="tenant-badge" *ngIf="politicaPlan">
-                🏢 {{ politicaPlan.empresa_nombre }} &bull; {{ politicaPlan.plan_nombre }}
-              </span>
-            </div>
+            <div class="cu-tag">[CU-18] GESTIÓN DE COPIAS DE SEGURIDAD Y RESTAURACIÓN</div>
             <mat-card-title class="title-text">Centro de Respaldo y Contingencia de Base de Datos</mat-card-title>
             <mat-card-subtitle class="subtitle-text">
-              Respaldo Manual bajo demanda y Programación Automática (hora, día y fecha) con políticas según el Plan SaaS y firma criptográfica SHA-256.
+              Respaldo manual bajo demanda, automatización por hora y día (Cron 01:00 AM) y cuotas diferenciadas por Plan SaaS.
             </mat-card-subtitle>
           </div>
         </div>
@@ -26,82 +21,103 @@
           <button
             mat-stroked-button
             class="btn-refresh"
-            (click)="cargarCatalogoBackups(); cargarPoliticaPlan(); cargarProgramacion();"
-            [disabled]="cargandoLista || generandoBackup"
+            (click)="cargarCatalogoBackups()"
+            [disabled]="cargandoLista || generandoBackup || ejecutandoCronAuto"
           >
             <mat-icon class="m-r-4">refresh</mat-icon>
             Actualizar
           </button>
+
+          <button
+            mat-flat-button
+            class="btn-action-primary"
+            (click)="seccionActiva = 'MANUAL'"
+          >
+            <mat-icon class="m-r-4">add_circle</mat-icon>
+            Nuevo Backup Manual
+          </button>
         </div>
-      </div>
-
-      <!-- PESTAÑAS DE NAVEGACIÓN -->
-      <div class="nav-tabs-bar">
-        <button
-          type="button"
-          class="tab-pill-btn"
-          [class.active]="seccionActiva === 'catalogo'"
-          (click)="cambiarSeccion('catalogo')"
-        >
-          <mat-icon class="tab-icon">inventory_2</mat-icon>
-          <span>Catálogo de Respaldos</span>
-          <span class="tab-badge">{{ backups.length }}</span>
-        </button>
-
-        <button
-          type="button"
-          class="tab-pill-btn"
-          [class.active]="seccionActiva === 'programacion'"
-          (click)="cambiarSeccion('programacion')"
-        >
-          <mat-icon class="tab-icon">alarm_on</mat-icon>
-          <span>Backup Automático Programado</span>
-          <span class="feature-active-dot" *ngIf="programacion.activo"></span>
-        </button>
-
-        <button
-          type="button"
-          class="tab-pill-btn"
-          [class.active]="seccionActiva === 'manual'"
-          (click)="cambiarSeccion('manual')"
-        >
-          <mat-icon class="tab-icon">touch_app</mat-icon>
-          <span>Generar Respaldo Manual / Cierre</span>
-        </button>
-
-        <button
-          type="button"
-          class="tab-pill-btn"
-          [class.active]="seccionActiva === 'externo'"
-          (click)="cambiarSeccion('externo')"
-        >
-          <mat-icon class="tab-icon">upload_file</mat-icon>
-          <span>Restauración Externa</span>
-        </button>
       </div>
     </mat-card-header>
 
     <mat-card-content class="card-content-body">
 
-      <!-- 4 TARJETAS DE MÉTRICAS EJECUTIVAS -->
+      <!-- ====================================================================
+           1. GOBERNANZA Y DIFERENCIACIÓN POR PLAN SAAS (REGLA DOCENTE)
+           ==================================================================== -->
+      <div class="plan-governance-banner" [ngClass]="{'plan-pro': esPlanProfesional, 'plan-basic': !esPlanProfesional}">
+        <div class="plan-left">
+          <div class="plan-badge">
+            <mat-icon class="plan-icon">{{ esPlanProfesional ? 'verified' : 'info' }}</mat-icon>
+            <span>{{ esPlanProfesional ? 'EMPRESA CON PLAN PROFESIONAL ACTIVO' : 'EMPRESA CON PLAN BÁSICO (FREEMIUM / RESTRINGIDO)' }}</span>
+          </div>
+          <h4 class="plan-title">
+            {{ esPlanProfesional ? 'Automatización y Retención Ampliada Habilitada' : 'Servicio Libre: Cuotas de Almacenamiento y Frecuencia Restringidas' }}
+          </h4>
+          <p class="plan-quote">
+            <em>"Como indicaba la Ing. Angélica Garzón Cuéllar: Los planes de pago permiten programar copias automáticas diarias (01:00 AM) con retención de hasta 30 copias; los planes básicos tienen cuota reducida de 5 copias para evitar saturación de servidor."</em>
+          </p>
+
+          <div class="plan-specs-row">
+            <div class="spec-chip">
+              <mat-icon>schedule</mat-icon>
+              <span>Backups Automáticos: <strong>{{ esPlanProfesional ? 'Diario (01:00 AM)' : 'Semanal (Restringido)' }}</strong></span>
+            </div>
+            <div class="spec-chip">
+              <mat-icon>folder_special</mat-icon>
+              <span>Cuota en Nube: <strong>{{ cuotaMaximaPlan }} copias (con rotación)</strong></span>
+            </div>
+            <div class="spec-chip">
+              <mat-icon>history_edu</mat-icon>
+              <span>Cierres de Gestión: <strong>{{ esPlanProfesional ? 'Permitido' : 'No incluido' }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-right">
+          <span class="simulator-label">Simular Gobernanza de Plan:</span>
+          <div class="plan-switch-group">
+            <button
+              mat-flat-button
+              class="btn-plan-toggle"
+              [ngClass]="{'active': esPlanProfesional}"
+              (click)="cambiarPlanSimulado('PROFESIONAL')"
+            >
+              Plan Profesional
+            </button>
+            <button
+              mat-flat-button
+              class="btn-plan-toggle"
+              [ngClass]="{'active': !esPlanProfesional}"
+              (click)="cambiarPlanSimulado('BASICO')"
+            >
+              Plan Básico
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           2. CUATRO TARJETAS DE MÉTRICAS EJECUTIVAS
+           ==================================================================== -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-icon-wrap bg-blue">
             <mat-icon>inventory_2</mat-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-val">{{ backups.length }}</span>
-            <span class="kpi-lbl">Respaldos en Almacén</span>
+            <span class="kpi-val">{{ backups.length }} / {{ cuotaMaximaPlan }}</span>
+            <span class="kpi-lbl">Respaldos en Nube (Cuota Plan)</span>
           </div>
         </div>
 
         <div class="kpi-card">
           <div class="kpi-icon-wrap bg-purple">
-            <mat-icon>dns</mat-icon>
+            <mat-icon>alarm_on</mat-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-val text-sm">PostgreSQL 16</span>
-            <span class="kpi-lbl">Motor Neon Cloud / Local</span>
+            <span class="kpi-val text-sm">{{ configAuto.hora }} AM</span>
+            <span class="kpi-lbl">Cron Automático ({{ configAuto.frecuencia | titlecase }})</span>
           </div>
         </div>
 
@@ -110,7 +126,7 @@
             <mat-icon>table_chart</mat-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-val">35 Tablas</span>
+            <span class="kpi-val">34 Tablas</span>
             <span class="kpi-lbl">Esquema Relacional DDL/DML</span>
           </div>
         </div>
@@ -121,128 +137,335 @@
           </div>
           <div class="kpi-info">
             <span class="kpi-val text-emerald text-sm">SHA-256</span>
-            <span class="kpi-lbl">Firma de Integridad Inmutable</span>
+            <span class="kpi-lbl">Firma Criptográfica Inmutable</span>
           </div>
         </div>
       </div>
 
-      <!-- =====================================================================
-           PESTAÑA 1: CATÁLOGO Y RESTAURACIÓN FORENSE
-           ===================================================================== -->
-      <div *ngIf="seccionActiva === 'catalogo'" class="animate-fade-in">
+      <!-- ====================================================================
+           3. SELECTOR DE PESTAÑAS / VISTAS
+           ==================================================================== -->
+      <div class="nav-tabs-bar">
+        <button
+          mat-button
+          class="tab-btn"
+          [class.active]="seccionActiva === 'CATALOGO'"
+          (click)="seccionActiva = 'CATALOGO'"
+        >
+          <mat-icon class="m-r-6">folder</mat-icon>
+          Catálogo de Respaldos ({{ backups.length }})
+        </button>
 
-        <!-- BANNER DE REPORTE DE RESTAURACIÓN EXITOSA -->
-        <div *ngIf="ultimoResultadoRestauracion" class="restauracion-report-banner animate-fade-in">
-          <div class="report-icon-box">
-            <mat-icon>check_circle</mat-icon>
+        <button
+          mat-button
+          class="tab-btn"
+          [class.active]="seccionActiva === 'AUTOMATIZACION'"
+          (click)="seccionActiva = 'AUTOMATIZACION'"
+        >
+          <mat-icon class="m-r-6">schedule</mat-icon>
+          Programación Automática (Cron 01:00 AM)
+        </button>
+
+        <button
+          mat-button
+          class="tab-btn"
+          [class.active]="seccionActiva === 'MANUAL'"
+          (click)="seccionActiva = 'MANUAL'"
+        >
+          <mat-icon class="m-r-6">play_circle</mat-icon>
+          Generar Backup Manual / Cierre de Mes
+        </button>
+      </div>
+
+      <!-- ====================================================================
+           SECCIÓN A: PROGRAMACIÓN AUTOMÁTICA (HORA, DÍA, FRECUENCIA - CRON)
+           ==================================================================== -->
+      <div *ngIf="seccionActiva === 'AUTOMATIZACION'" class="auto-config-section animate-fade-in">
+        <div class="config-card-header">
+          <div class="header-icon-circle">
+            <mat-icon>smart_toy</mat-icon>
           </div>
-          <div class="report-details">
-            <div class="report-title-row">
-              <h4>Restauración Integral del Sistema Completada con Éxito</h4>
-              <span class="badge-status-operativo">{{ ultimoResultadoRestauracion.estado_sistema }}</span>
-            </div>
-            <p class="report-msg">{{ ultimoResultadoRestauracion.mensaje }}</p>
-            <div class="report-meta-grid">
-              <div class="meta-item">
-                <span class="meta-label">Archivo Restaurado:</span>
-                <span class="meta-val"><code>{{ ultimoResultadoRestauracion.archivo_restaurado }}</code></span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Líneas SQL Procesadas:</span>
-                <span class="meta-val font-bold">{{ ultimoResultadoRestauracion.lineas_sql_procesadas | number }} sentencias</span>
-              </div>
-              <div class="meta-item full-width">
-                <span class="meta-label">Hash SHA-256 Verificado:</span>
-                <span class="meta-val hash-val"><code>{{ ultimoResultadoRestauracion.hash_sha256_verificado }}</code></span>
-              </div>
+          <div>
+            <h3 class="config-title">Configuración del Demonio Automático de Copias de Seguridad</h3>
+            <p class="config-sub">
+              Define la hora exacta (por defecto 01:00 AM como solicitó la docente), frecuencia y regla de rotación de retención en la nube.
+            </p>
+          </div>
+        </div>
+
+        <div class="config-grid">
+          <!-- Toggle Activo -->
+          <div class="config-field-box">
+            <label class="field-label">Estado de la Automatización</label>
+            <mat-slide-toggle [(ngModel)]="configAuto.activo" color="primary">
+              {{ configAuto.activo ? 'Cron Automático Activado' : 'Cron Automático Pausado' }}
+            </mat-slide-toggle>
+          </div>
+
+          <!-- Selector de Hora -->
+          <div class="config-field-box">
+            <label class="field-label">Hora de Ejecución Programada</label>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Seleccione la Hora</mat-label>
+              <mat-select [(ngModel)]="configAuto.hora">
+                <mat-option value="01:00">01:00 AM (Recomendado - Instrucción Docente)</mat-option>
+                <mat-option value="02:00">02:00 AM (Horario de Bajo Tráfico)</mat-option>
+                <mat-option value="03:00">03:00 AM (Cierre de Lote Nocturno)</mat-option>
+                <mat-option value="00:00">00:00 Medianoche</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Selector de Frecuencia -->
+          <div class="config-field-box">
+            <label class="field-label">Frecuencia de Respaldo</label>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Frecuencia</mat-label>
+              <mat-select [(ngModel)]="configAuto.frecuencia">
+                <mat-option value="diario" [disabled]="!esPlanProfesional">
+                  Diario (Todos los días) {{ !esPlanProfesional ? '🔒 Requiere Plan Profesional' : '' }}
+                </mat-option>
+                <mat-option value="semanal">Semanal (Una vez por semana)</mat-option>
+                <mat-option value="mensual">Mensual (Cierre de mes)</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Selector de Día -->
+          <div class="config-field-box">
+            <label class="field-label">Día de Ejecución</label>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Día</mat-label>
+              <mat-select [(ngModel)]="configAuto.dia_semana">
+                <mat-option value="todos">Todos los días (Diario)</mat-option>
+                <mat-option value="lunes">Lunes</mat-option>
+                <mat-option value="viernes">Viernes (Cierre semanal)</mat-option>
+                <mat-option value="domingo">Domingo</mat-option>
+                <mat-option value="fin_mes">Último día del mes (Cierre contable)</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Retención Máxima (Rotación de la Ingeniera) -->
+          <div class="config-field-box">
+            <label class="field-label">Retención Máxima (Rotación de Cuota)</label>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Máximo de Copias en Almacén</mat-label>
+              <input matInput type="number" [(ngModel)]="configAuto.max_retencion" [max]="cuotaMaximaPlan" min="1" />
+              <mat-hint>Límite permitido por su plan: {{ cuotaMaximaPlan }} copias</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <!-- Próxima Ejecución -->
+          <div class="config-field-box info-highlight">
+            <label class="field-label">Próxima Ejecución Automática Estimada</label>
+            <div class="next-run-badge">
+              <mat-icon>event</mat-icon>
+              <span>{{ configAuto.proxima_ejecucion ? (configAuto.proxima_ejecucion | date:'dd/MM/yyyy HH:mm') : 'Próximas 24 horas' }} (a las {{ configAuto.hora }} AM)</span>
             </div>
           </div>
         </div>
 
-        <!-- PANEL DE PROCEDIMIENTO CRÍTICO DE RESTAURACIÓN ANTE CONTINGENCIA -->
-        <div *ngIf="backupSeleccionadoParaRestaurar" class="contingencia-box animate-fade-in">
-          <div class="contingencia-header">
-            <mat-icon class="warn-icon">warning_amber</mat-icon>
-            <div>
-              <h3 class="contingencia-title">Procedimiento Crítico de Restauración ante Contingencia</h3>
-              <p class="contingencia-subtitle">
-                Se restaurará el estado integral de la base de datos a partir del archivo <strong>{{ backupSeleccionadoParaRestaurar.nombre }}</strong>.
-              </p>
-            </div>
+        <div class="config-actions-row">
+          <button
+            mat-flat-button
+            class="btn-save-config"
+            (click)="guardarConfiguracionProgramacion()"
+            [disabled]="guardandoProgramacion"
+          >
+            <mat-icon *ngIf="!guardandoProgramacion" class="m-r-6">save</mat-icon>
+            <mat-spinner *ngIf="guardandoProgramacion" diameter="18" class="m-r-6"></mat-spinner>
+            <span>{{ guardandoProgramacion ? 'Guardando...' : 'Guardar Programación Automática' }}</span>
+          </button>
+
+          <!-- Botón de Simulación para Evaluación -->
+          <button
+            mat-stroked-button
+            class="btn-simulate-cron"
+            (click)="simularCronAutomatico()"
+            [disabled]="ejecutandoCronAuto"
+            matTooltip="Ejecuta en vivo el ciclo del cron simulando la activación de las 01:00 AM para verificarlo de inmediato sin esperar a la madrugada"
+          >
+            <mat-icon *ngIf="!ejecutandoCronAuto" class="m-r-6 text-purple">bolt</mat-icon>
+            <mat-spinner *ngIf="ejecutandoCronAuto" diameter="18" class="m-r-6"></mat-spinner>
+            <span>{{ ejecutandoCronAuto ? 'Simulando Cron 01:00 AM...' : 'Simular Ejecución del Cron (01:00 AM Ahora)' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           SECCIÓN B: GENERACIÓN MANUAL BAJO DEMANDA Y CIERRES DE GESTIÓN
+           ==================================================================== -->
+      <div *ngIf="seccionActiva === 'MANUAL'" class="manual-config-section animate-fade-in">
+        <div class="config-card-header">
+          <div class="header-icon-circle bg-emerald-light">
+            <mat-icon class="text-emerald">touch_app</mat-icon>
           </div>
-
-          <div class="contingencia-body">
-            <div class="alert-box">
-              <mat-icon class="alert-icon">info</mat-icon>
-              <span>
-                Para evitar pérdidas involuntarias de información en producción, debe ingresar exactamente el código de autorización:
-                <strong>CONFIRMAR_RESTAURACION</strong>.
-              </span>
-            </div>
-
-            <div class="auth-input-row">
-              <mat-form-field appearance="outline" class="confirm-field">
-                <mat-label>Código de Autorización</mat-label>
-                <input
-                  matInput
-                  [(ngModel)]="codigoConfirmacion"
-                  placeholder="Escriba CONFIRMAR_RESTAURACION"
-                  (keyup.enter)="ejecutarRestauracionSegura()"
-                />
-              </mat-form-field>
-
-              <button
-                mat-stroked-button
-                type="button"
-                class="btn-helper-code"
-                (click)="usarCodigoOficial()"
-                matTooltip="Cargar código de autorización oficial para evaluación"
-              >
-                <mat-icon class="m-r-4">key</mat-icon>
-                Rellenar Código Oficial
-              </button>
-            </div>
-
-            <div class="contingencia-actions">
-              <button
-                mat-stroked-button
-                (click)="cancelarRestauracion()"
-                [disabled]="restaurando"
-              >
-                Cancelar
-              </button>
-
-              <button
-                mat-flat-button
-                color="warn"
-                class="btn-confirm-restore"
-                (click)="ejecutarRestauracionSegura()"
-                [disabled]="restaurando || !codigoConfirmacion"
-              >
-                <mat-icon *ngIf="!restaurando" class="m-r-6">restore</mat-icon>
-                <mat-spinner *ngIf="restaurando" diameter="18" class="m-r-6"></mat-spinner>
-                <span>{{ restaurando ? 'Restaurando Sistema...' : 'Autorizar y Ejecutar Restauración' }}</span>
-              </button>
-            </div>
+          <div>
+            <h3 class="config-title">Generación de Copia de Seguridad Manual (Bajo Demanda)</h3>
+            <p class="config-sub">
+              <em>"Ahorita yo decido hacer una copia de seguridad y lo hago"</em>. Elige el propósito del respaldo: punto de control operativo, cierre de mes o fin de gestión.
+            </p>
           </div>
         </div>
 
-        <!-- SECCIÓN DE ACCIONES RÁPIDAS SUPERIOR -->
-        <div class="quick-action-strip">
-          <div class="strip-text">
-            <h4>Catálogo Central de Copias de Seguridad (Disponibles en el Servidor)</h4>
-            <p>Archivos volcados con firmas inmutables SHA-256 para auditoría de no repudio y contingencias.</p>
+        <div class="manual-form-grid">
+          <div class="manual-field-box">
+            <label class="field-label">Tipo de Copia de Seguridad</label>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Seleccione el Tipo</mat-label>
+              <mat-select [(ngModel)]="tipoManualSeleccionado">
+                <mat-option value="MANUAL_OPERATIVO">Respaldo Operativo Preventivo (Punto de Control)</mat-option>
+                <mat-option value="CIERRE_MES" [disabled]="!esPlanProfesional">
+                  Cierre de Mes (Histórico / Solo Lectura para Auditoría) {{ !esPlanProfesional ? '🔒 Plan Profesional' : '' }}
+                </mat-option>
+                <mat-option value="FIN_GESTION" [disabled]="!esPlanProfesional">
+                  Fin de Gestión Anual (Cierre Contable y Balances) {{ !esPlanProfesional ? '🔒 Plan Profesional' : '' }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
-          <div class="strip-buttons">
+
+          <div class="manual-field-box">
+            <label class="field-label">Nota / Justificación del Respaldo</label>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Descripción técnica</mat-label>
+              <input matInput [(ngModel)]="descripcionManual" placeholder="Ej: Respaldo previo a actualización de catálogo" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="manual-actions-row">
+          <button
+            mat-flat-button
+            class="btn-execute-manual"
+            (click)="generarBackupManual()"
+            [disabled]="generandoBackup"
+          >
+            <mat-icon *ngIf="!generandoBackup" class="m-r-6">cloud_upload</mat-icon>
+            <mat-spinner *ngIf="generandoBackup" diameter="18" class="m-r-6"></mat-spinner>
+            <span>{{ generandoBackup ? 'Generando Dump SQL...' : 'Generar Backup Inmediato Ahora' }}</span>
+          </button>
+
+          <button
+            mat-stroked-button
+            (click)="seccionActiva = 'CATALOGO'"
+          >
+            Cancelar y Ver Catálogo
+          </button>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           BANLLE DE REPORTE DE RESTAURACIÓN EXITOSA
+           ==================================================================== -->
+      <div *ngIf="ultimoResultadoRestauracion" class="restauracion-report-banner animate-fade-in">
+        <div class="report-icon-box">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="report-details">
+          <div class="report-title-row">
+            <h4>Restauración Integral del Sistema Completada con Éxito</h4>
+            <span class="badge-status-operativo">{{ ultimoResultadoRestauracion.estado_sistema }}</span>
+          </div>
+          <p class="report-msg">{{ ultimoResultadoRestauracion.mensaje }}</p>
+          <div class="report-meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Archivo Restaurado:</span>
+              <span class="meta-val"><code>{{ ultimoResultadoRestauracion.archivo_restaurado }}</code></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Líneas SQL Procesadas:</span>
+              <span class="meta-val font-bold">{{ ultimoResultadoRestauracion.lineas_sql_procesadas | number }} sentencias</span>
+            </div>
+            <div class="meta-item full-width">
+              <span class="meta-label">Hash SHA-256 Verificado:</span>
+              <span class="meta-val hash-val"><code>{{ ultimoResultadoRestauracion.hash_sha256_verificado }}</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           PANEL DE CONTINGENCIA (RESTAURACIÓN SEGURA CON CÓDIGO)
+           ==================================================================== -->
+      <div *ngIf="backupSeleccionadoParaRestaurar" class="contingencia-box animate-fade-in">
+        <div class="contingencia-header">
+          <mat-icon class="warn-icon">warning_amber</mat-icon>
+          <div>
+            <h3 class="contingencia-title">Procedimiento Crítico de Restauración ante Contingencia</h3>
+            <p class="contingencia-subtitle">
+              Se restaurará el estado integral de la base de datos a partir del archivo <strong>{{ backupSeleccionadoParaRestaurar.nombre }}</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="contingencia-body">
+          <div class="alert-box">
+            <mat-icon class="alert-icon">info</mat-icon>
+            <span>
+              Para evitar pérdidas involuntarias de información en producción, debe ingresar exactamente el código de autorización:
+              <strong>CONFIRMAR_RESTAURACION</strong>.
+            </span>
+          </div>
+
+          <div class="auth-input-row">
+            <mat-form-field appearance="outline" class="confirm-field">
+              <mat-label>Código de Autorización</mat-label>
+              <input
+                matInput
+                [(ngModel)]="codigoConfirmacion"
+                placeholder="Escriba CONFIRMAR_RESTAURACION"
+                (keyup.enter)="ejecutarRestauracionSegura()"
+              />
+            </mat-form-field>
+
             <button
-              mat-flat-button
-              class="btn-new-backup"
-              (click)="cambiarSeccion('manual')"
+              mat-stroked-button
+              type="button"
+              class="btn-helper-code"
+              (click)="usarCodigoOficial()"
+              matTooltip="Cargar código de autorización oficial para evaluación"
             >
-              <mat-icon class="m-r-6">add_circle</mat-icon>
-              Nuevo Respaldo Manual
+              <mat-icon class="m-r-4">key</mat-icon>
+              Rellenar Código Oficial
             </button>
           </div>
+
+          <div class="contingencia-actions">
+            <button
+              mat-stroked-button
+              (click)="cancelarRestauracion()"
+              [disabled]="restaurando"
+            >
+              Cancelar
+            </button>
+
+            <button
+              mat-flat-button
+              color="warn"
+              class="btn-confirm-restore"
+              (click)="ejecutarRestauracionSegura()"
+              [disabled]="restaurando || !codigoConfirmacion"
+            >
+              <mat-icon *ngIf="!restaurando" class="m-r-6">restore</mat-icon>
+              <mat-spinner *ngIf="restaurando" diameter="18" class="m-r-6"></mat-spinner>
+              <span>{{ restaurando ? 'Restaurando Sistema...' : 'Autorizar y Ejecutar Restauración' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           SECCIÓN C: CATÁLOGO DE COPIAS DE SEGURIDAD DISPONIBLES EN EL SERVIDOR
+           ==================================================================== -->
+      <div *ngIf="seccionActiva === 'CATALOGO'" class="catalog-section animate-fade-in">
+        <div class="section-title-row">
+          <div class="title-with-pill">
+            <h3 class="section-heading">Catálogo de Copias de Seguridad Disponibles en el Servidor</h3>
+            <span class="count-pill">{{ backups.length }} archivos .sql</span>
+          </div>
+          <span class="section-subtext">Inventario clasificado por origen: Manual Bajo Demanda, Automático (Cron 01:00 AM) y Cierres Históricos con sello SHA-256</span>
         </div>
 
         <!-- Indicador de Carga -->
@@ -253,22 +476,7 @@
         <!-- Tabla de Backups -->
         <div *ngIf="!cargandoLista && backups.length > 0" class="table-container">
           <table mat-table [dataSource]="backups" class="w-full backup-table">
-
-            <!-- Tipo de Backup -->
-            <ng-container matColumnDef="tipo">
-              <th mat-header-cell *matHeaderCellDef class="th-type">Modalidad</th>
-              <td mat-cell *matCellDef="let element" class="td-type">
-                <span class="type-pill" [ngClass]="{
-                  'pill-auto': element.tipo?.includes('AUTOMÁTICO'),
-                  'pill-cierre': element.tipo?.includes('CIERRE'),
-                  'pill-manual': !element.tipo?.includes('AUTOMÁTICO') && !element.tipo?.includes('CIERRE')
-                }">
-                  <mat-icon class="type-icon">{{ element.icono || 'storage' }}</mat-icon>
-                  <span>{{ element.tipo || 'MANUAL' }}</span>
-                </span>
-              </td>
-            </ng-container>
-
+            
             <!-- Archivo -->
             <ng-container matColumnDef="archivo">
               <th mat-header-cell *matHeaderCellDef class="th-file">Archivo de Respaldo</th>
@@ -282,6 +490,19 @@
                     <span class="file-format-badge">PostgreSQL Dump (.sql)</span>
                   </div>
                 </div>
+              </td>
+            </ng-container>
+
+            <!-- Tipo / Origen -->
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef class="th-tipo">Modalidad / Origen</th>
+              <td mat-cell *matCellDef="let element" class="td-tipo">
+                <span class="tipo-badge" [ngClass]="element.badge_class || 'badge-manual'">
+                  <mat-icon class="tipo-icon">
+                    {{ element.tipo === 'AUTOMATICO' ? 'alarm_on' : (element.tipo === 'CIERRE_MES' ? 'calendar_month' : 'touch_app') }}
+                  </mat-icon>
+                  <span>{{ element.etiqueta }}</span>
+                </span>
               </td>
             </ng-container>
 
@@ -319,17 +540,6 @@
                     <mat-icon>{{ hashCopiado === element.hash_sha256 ? 'check' : 'content_copy' }}</mat-icon>
                   </button>
                 </div>
-              </td>
-            </ng-container>
-
-            <!-- Estado -->
-            <ng-container matColumnDef="estado">
-              <th mat-header-cell *matHeaderCellDef class="th-state">Estado</th>
-              <td mat-cell *matCellDef="let element" class="td-state">
-                <span class="badge-integro">
-                  <mat-icon class="badge-icon">verified</mat-icon>
-                  <span>Íntegro</span>
-                </span>
               </td>
             </ng-container>
 
@@ -373,296 +583,63 @@
         <div *ngIf="!cargandoLista && backups.length === 0" class="empty-state">
           <mat-icon class="empty-icon">storage</mat-icon>
           <p class="empty-text">No se encontraron copias de seguridad en el servidor</p>
-          <span class="empty-subtext">Haga clic en "Nuevo Respaldo Manual" para crear el primer punto de control estructurado.</span>
+          <span class="empty-subtext">Haga clic en "Nuevo Backup Manual" o active el cron automático para crear el primer punto de control estructurado.</span>
         </div>
       </div>
 
-      <!-- =====================================================================
-           PESTAÑA 2: BACKUP AUTOMÁTICO PROGRAMADO (SCHEDULER / CRON)
-           ===================================================================== -->
-      <div *ngIf="seccionActiva === 'programacion'" class="animate-fade-in">
-        
-        <!-- TARJETA DE POLÍTICA SEGÚN PLAN SAAS -->
-        <div class="saas-plan-policy-box" [ngClass]="{'policy-pro': politicaPlan?.soporta_backup_automatico, 'policy-basic': !politicaPlan?.soporta_backup_automatico}">
-          <div class="policy-header">
-            <div class="policy-icon-box">
-              <mat-icon>{{ politicaPlan?.soporta_backup_automatico ? 'workspace_premium' : 'info' }}</mat-icon>
-            </div>
-            <div class="policy-info">
-              <div class="policy-badge-row">
-                <span class="plan-pill">{{ politicaPlan?.plan_nombre || 'Plan Profesional' }}</span>
-                <span class="state-pill" [class.state-ok]="politicaPlan?.soporta_backup_automatico">
-                  {{ politicaPlan?.soporta_backup_automatico ? 'Backup Automático Habilitado' : 'Solo Manual' }}
-                </span>
-              </div>
-              <h3 class="policy-title">Políticas de Copia de Seguridad para {{ politicaPlan?.empresa_nombre || empresaNombre }}</h3>
-              <p class="policy-desc">{{ politicaPlan?.mensaje_politica }}</p>
-            </div>
-          </div>
+      <mat-divider class="m-y-28"></mat-divider>
 
-          <div class="policy-specs-grid">
-            <div class="spec-item">
-              <span class="spec-label">Cuota de Backups:</span>
-              <span class="spec-val font-bold">{{ politicaPlan?.limite_backups_mes }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">Periodo de Retención:</span>
-              <span class="spec-val font-bold">{{ politicaPlan?.retencion_dias }} días</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">Frecuencias Permitidas:</span>
-              <span class="spec-val font-bold">{{ politicaPlan?.frecuencias_permitidas?.join(', ') || 'DIARIO, SEMANAL, MENSUAL' }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">Cierre de Gestión Anual:</span>
-              <span class="spec-val text-emerald font-bold">Incluido</span>
-            </div>
+      <!-- ====================================================================
+           RESTAURACIÓN MANUAL DESDE ARCHIVO EXTERNO LOCAL
+           ==================================================================== -->
+      <div class="external-restore-section">
+        <div class="section-header">
+          <div class="section-icon restore-icon">
+            <mat-icon>upload_file</mat-icon>
+          </div>
+          <div class="section-info">
+            <h3 class="section-title">Restauración Manual desde Archivo Externo</h3>
+            <p class="section-desc">
+              Permite cargar un archivo de volcado <code>.sql</code> o <code>.dump</code> almacenado en su estación de trabajo local para casos de recuperación ante desastres sin conectividad al catálogo central.
+            </p>
           </div>
         </div>
 
-        <!-- FORMULARIO DE PROGRAMACIÓN AUTOMÁTICA -->
-        <div class="scheduler-config-card">
-          <div class="scheduler-card-header">
-            <div class="sched-icon-box">
-              <mat-icon>alarm_on</mat-icon>
-            </div>
-            <div>
-              <h3 class="sched-card-title">Configuración del Demonio de Respaldo Programado</h3>
-              <p class="sched-card-subtitle">
-                Establezca la hora exacta y el día para que el servidor ejecute automáticamente el volcado de la base de datos sin intervención manual.
-              </p>
-            </div>
-          </div>
+        <div class="external-actions-row">
+          <input
+            #fileInput
+            type="file"
+            accept=".sql,.dump"
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
 
-          <div class="scheduler-form-body">
-            
-            <!-- Switch Activo / Desactivado -->
-            <div class="toggle-row m-b-20">
-              <mat-slide-toggle [(ngModel)]="programacion.activo" color="primary">
-                <span class="toggle-label font-bold">
-                  {{ programacion.activo ? 'Programación Automática ACTIVA (El demonio se ejecutará según el horario)' : 'Programación Automática PAUSADA' }}
-                </span>
-              </mat-slide-toggle>
-            </div>
+          <button
+            mat-stroked-button
+            class="btn-select-file"
+            (click)="abrirSelectorArchivo()"
+            [disabled]="restaurando"
+          >
+            <mat-icon class="m-r-6">attach_file</mat-icon>
+            Seleccionar Archivo Local (.sql / .dump)
+          </button>
 
-            <!-- Controles de Frecuencia y Horario -->
-            <div class="form-row-grid">
-              
-              <!-- Frecuencia -->
-              <mat-form-field appearance="outline" class="form-col">
-                <mat-label>Frecuencia de Respaldo</mat-label>
-                <mat-select [(ngModel)]="programacion.frecuencia">
-                  <mat-option value="DIARIO">Todos los días (Diario)</mat-option>
-                  <mat-option value="SEMANAL">Semanal (Día específico)</mat-option>
-                  <mat-option value="MENSUAL">Mensual (Cierre de mes)</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <!-- Hora exacta -->
-              <mat-form-field appearance="outline" class="form-col">
-                <mat-label>Hora de Ejecución (HH:MM)</mat-label>
-                <input matInput type="time" [(ngModel)]="programacion.hora" placeholder="01:00" />
-                <mat-hint>Horario sugerido de baja concurrencia (ej: 01:00 AM)</mat-hint>
-              </mat-form-field>
-
-              <!-- Día de Semana (si es SEMANAL) -->
-              <mat-form-field appearance="outline" class="form-col" *ngIf="programacion.frecuencia === 'SEMANAL'">
-                <mat-label>Día de la Semana</mat-label>
-                <mat-select [(ngModel)]="programacion.dia_semana">
-                  <mat-option *ngFor="let d of diasSemana" [value]="d.value">{{ d.label }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <!-- Día del Mes (si es MENSUAL) -->
-              <mat-form-field appearance="outline" class="form-col" *ngIf="programacion.frecuencia === 'MENSUAL'">
-                <mat-label>Día del Mes (1 al 31)</mat-label>
-                <input matInput type="number" min="1" max="31" [(ngModel)]="programacion.dia_mes" />
-                <mat-hint>Ej: Día 1 o Día 30 para cierre de mes</mat-hint>
-              </mat-form-field>
-
-              <!-- Tipo de Cierre -->
-              <mat-form-field appearance="outline" class="form-col">
-                <mat-label>Tipo de Etiqueta Automática</mat-label>
-                <mat-select [(ngModel)]="programacion.tipo_cierre">
-                  <mat-option value="REGULAR">Copia de Seguridad Regular</mat-option>
-                  <mat-option value="CIERRE_MENSUAL">Cierre Mensual Automatizado</mat-option>
-                  <mat-option value="CIERRE_GESTION">Cierre de Gestión Fiscal Anual</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="toggle-row m-b-24">
-              <mat-slide-toggle [(ngModel)]="programacion.notificar_correo" color="primary">
-                <span>Enviar notificación por correo electrónico al administrador al completar el respaldo</span>
-              </mat-slide-toggle>
-            </div>
-
-            <!-- Panel de Monitoreo del Demonio -->
-            <div class="daemon-status-panel">
-              <div class="daemon-status-item">
-                <div class="daemon-icon"><mat-icon>update</mat-icon></div>
-                <div>
-                  <span class="d-label">Próxima Ejecución Programada:</span>
-                  <span class="d-val text-primary font-bold">
-                    {{ (programacion.proxima_ejecucion | date:'dd/MM/yyyy HH:mm:ss') || 'Calculando...' }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="daemon-status-item">
-                <div class="daemon-icon"><mat-icon>history</mat-icon></div>
-                <div>
-                  <span class="d-label">Última Ejecución Registrada:</span>
-                  <span class="d-val font-bold">
-                    {{ (programacion.ultima_ejecucion | date:'dd/MM/yyyy HH:mm:ss') || 'Aún no ejecutada en este ciclo' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Botonera de Acción -->
-            <div class="scheduler-actions-bar">
-              <button
-                mat-flat-button
-                class="btn-save-sched"
-                (click)="guardarProgramacion()"
-                [disabled]="guardandoProgramacion"
-              >
-                <mat-icon *ngIf="!guardandoProgramacion" class="m-r-6">save</mat-icon>
-                <mat-spinner *ngIf="guardandoProgramacion" diameter="18" class="m-r-6"></mat-spinner>
-                <span>{{ guardandoProgramacion ? 'Guardando...' : 'Guardar Configuración de Programación' }}</span>
-              </button>
-
-              <button
-                mat-stroked-button
-                class="btn-trigger-sched"
-                (click)="dispararTareaProgramada()"
-                [disabled]="ejecutandoProgramado"
-                matTooltip="Dispara la tarea del demonio en este instante para verificar la generación automática"
-              >
-                <mat-icon *ngIf="!ejecutandoProgramado" class="m-r-6">play_circle_filled</mat-icon>
-                <mat-spinner *ngIf="ejecutandoProgramado" diameter="18" class="m-r-6"></mat-spinner>
-                <span>{{ ejecutandoProgramado ? 'Ejecutando Demonio...' : 'Simular / Ejecutar Tarea Programada Ahora' }}</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-
-      <!-- =====================================================================
-           PESTAÑA 3: GENERAR BACKUP MANUAL / CIERRE DE GESTIÓN
-           ===================================================================== -->
-      <div *ngIf="seccionActiva === 'manual'" class="animate-fade-in">
-        <div class="manual-backup-card">
-          <div class="manual-card-header">
-            <div class="manual-icon-box">
-              <mat-icon>touch_app</mat-icon>
-            </div>
-            <div>
-              <h3 class="manual-card-title">Generación de Copia de Seguridad Bajo Demanda</h3>
-              <p class="manual-card-subtitle">
-                Genere un respaldo inmediato en cualquier momento o registre un <strong>Cierre de Gestión</strong> como lo requiere la metodología docente.
-              </p>
-            </div>
-          </div>
-
-          <div class="manual-form-body">
-            <div class="form-row-grid">
-              <mat-form-field appearance="outline" class="form-col">
-                <mat-label>Modalidad de la Copia Manual</mat-label>
-                <mat-select [(ngModel)]="manualForm.tipo">
-                  <mat-option value="MANUAL">Copia de Seguridad Inmediata Estándar</mat-option>
-                  <mat-option value="CIERRE_MENSUAL">Cierre de Mes (Histórico Mensual)</mat-option>
-                  <mat-option value="CIERRE_GESTION">Cierre de Gestión Fiscal Anual (Auditoría)</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="form-col" style="flex: 2;">
-                <mat-label>Etiqueta / Motivo del Respaldo</mat-label>
-                <input matInput [(ngModel)]="manualForm.etiqueta" placeholder="Ej: Cierre de Mes Octubre 2026 - Auditoría Docente" />
-                <mat-hint>Permite identificar el objetivo de este punto de control en el catálogo histórico.</mat-hint>
-              </mat-form-field>
-            </div>
-
-            <div class="manual-actions-row">
-              <button
-                mat-flat-button
-                class="btn-execute-manual"
-                (click)="generarBackupManual()"
-                [disabled]="generandoBackup"
-              >
-                <mat-icon *ngIf="!generandoBackup" class="m-r-6">cloud_upload</mat-icon>
-                <mat-spinner *ngIf="generandoBackup" diameter="18" class="m-r-6"></mat-spinner>
-                <span>{{ generandoBackup ? 'Generando Dump PostgreSQL...' : 'Generar y Firmar Respaldo Manualmente' }}</span>
-              </button>
-
-              <button
-                mat-stroked-button
-                type="button"
-                (click)="cambiarSeccion('catalogo')"
-              >
-                Volver al Catálogo
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- =====================================================================
-           PESTAÑA 4: RESTAURACIÓN MANUAL DESDE ARCHIVO EXTERNO
-           ===================================================================== -->
-      <div *ngIf="seccionActiva === 'externo'" class="animate-fade-in">
-        <div class="external-restore-card">
-          <div class="section-header">
-            <div class="section-icon restore-icon">
-              <mat-icon>upload_file</mat-icon>
-            </div>
-            <div class="section-info">
-              <h3 class="section-title">Restauración Manual desde Archivo Externo</h3>
-              <p class="section-desc">
-                Permite cargar un archivo de volcado <code>.sql</code> o <code>.dump</code> almacenado en su estación de trabajo local para casos de recuperación ante desastres sin conectividad al catálogo central.
-              </p>
-            </div>
-          </div>
-
-          <div class="external-actions-row">
-            <input
-              #fileInput
-              type="file"
-              accept=".sql,.dump"
-              (change)="onFileSelected($event)"
-              style="display: none"
-            />
+          <div *ngIf="archivoSeleccionado" class="selected-file-pill">
+            <mat-icon class="file-pill-icon">description</mat-icon>
+            <span class="file-pill-name">{{ archivoSeleccionado.name }}</span>
+            <span class="file-pill-size">({{ (archivoSeleccionado.size / 1024).toFixed(1) }} KB)</span>
 
             <button
-              mat-stroked-button
-              class="btn-select-file"
-              (click)="abrirSelectorArchivo()"
+              mat-flat-button
+              color="warn"
+              class="btn-upload-restore"
+              (click)="confirmarYRestaurarArchivoLocal()"
               [disabled]="restaurando"
             >
-              <mat-icon class="m-r-6">attach_file</mat-icon>
-              Seleccionar Archivo Local (.sql / .dump)
+              <mat-icon *ngIf="!restaurando" class="m-r-4">warning</mat-icon>
+              <mat-spinner *ngIf="restaurando" diameter="16" class="m-r-4"></mat-spinner>
+              <span>{{ restaurando ? 'Procesando...' : 'Subir y Sobrescribir Base de Datos' }}</span>
             </button>
-
-            <div *ngIf="archivoSeleccionado" class="selected-file-pill">
-              <mat-icon class="file-pill-icon">description</mat-icon>
-              <span class="file-pill-name">{{ archivoSeleccionado.name }}</span>
-              <span class="file-pill-size">({{ (archivoSeleccionado.size / 1024).toFixed(1) }} KB)</span>
-
-              <button
-                mat-flat-button
-                color="warn"
-                class="btn-upload-restore"
-                (click)="confirmarYRestaurarArchivoLocal()"
-                [disabled]="restaurando"
-              >
-                <mat-icon *ngIf="!restaurando" class="m-r-4">warning</mat-icon>
-                <mat-spinner *ngIf="restaurando" diameter="16" class="m-r-4"></mat-spinner>
-                <span>{{ restaurando ? 'Procesando...' : 'Subir y Sobrescribir Base de Datos' }}</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>

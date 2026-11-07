@@ -18,7 +18,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 import { ConfigService } from '../../../services/config.service';
 import { PermisosService } from '../../../services/permisos.service';
-import { AuthService } from '../../../services/auth.service';
 
 export interface BackupItem {
   nombre: string;
@@ -26,8 +25,22 @@ export interface BackupItem {
   fecha_creacion: string;
   hash_sha256: string;
   estado: string;
-  tipo?: string;
-  icono?: string;
+  tipo: string;
+  etiqueta: string;
+  badge_class?: string;
+}
+
+export interface ProgramacionConfig {
+  activo: boolean;
+  hora: string;
+  frecuencia: string;
+  dia_semana: string;
+  max_retencion: number;
+  plan_activo: string;
+  tipo_programacion?: string;
+  ultimo_backup_automatico?: string;
+  proxima_ejecucion?: string;
+  rotacion_habilitada?: boolean;
 }
 
 export interface RestauracionResultado {
@@ -38,34 +51,6 @@ export interface RestauracionResultado {
   hash_sha256_verificado: string;
   fecha_restauracion: string;
   estado_sistema: string;
-}
-
-export interface PoliticaPlanSaaS {
-  empresa_id: number;
-  empresa_nombre: string;
-  plan_codigo: string;
-  plan_nombre: string;
-  soporta_backup_manual: boolean;
-  soporta_backup_automatico: boolean;
-  frecuencias_permitidas: string[];
-  limite_backups_mes: string | number;
-  retencion_dias: number;
-  cierre_gestion_permitido: boolean;
-  mensaje_politica: string;
-}
-
-export interface ProgramacionBackup {
-  empresa_id: number;
-  activo: boolean;
-  frecuencia: string; // 'DIARIO', 'SEMANAL', 'MENSUAL'
-  hora: string; // '01:00'
-  dia_semana: string; // 'DOMINGO'
-  dia_mes: number; // 1..31
-  tipo_cierre: string; // 'REGULAR', 'CIERRE_MENSUAL', 'CIERRE_GESTION'
-  retencion_dias: number;
-  notificar_correo: boolean;
-  ultima_ejecucion?: string | null;
-  proxima_ejecucion?: string | null;
 }
 
 @Component({
@@ -99,63 +84,39 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
   private config = inject(ConfigService);
   private snackBar = inject(MatSnackBar);
   private permisosService = inject(PermisosService);
-  private authService = inject(AuthService);
   private destroy$ = new Subject<void>();
-
-  // Navegación de secciones (Pestañas)
-  seccionActiva: 'catalogo' | 'programacion' | 'manual' | 'externo' = 'catalogo';
-
-  // Empresa actual
-  empresaId: number = 1;
-  empresaNombre: string = 'FashionStore S.A.';
 
   // Estados de carga
   cargandoLista = false;
   generandoBackup = false;
+  ejecutandoCronAuto = false;
   guardandoProgramacion = false;
-  ejecutandoProgramado = false;
   restaurando = false;
   descargando = false;
 
   // Catálogo de backups
   backups: BackupItem[] = [];
-  displayedColumns: string[] = ['tipo', 'archivo', 'fecha', 'tamano', 'hash', 'estado', 'acciones'];
+  displayedColumns: string[] = ['archivo', 'tipo', 'fecha', 'tamano', 'hash', 'acciones'];
 
-  // Política del Plan SaaS
-  politicaPlan: PoliticaPlanSaaS | null = null;
+  // Pestaña / Vista activa: 'CATALOGO', 'AUTOMATIZACION', 'MANUAL', 'EXTERNO'
+  seccionActiva: 'CATALOGO' | 'AUTOMATIZACION' | 'MANUAL' = 'CATALOGO';
 
-  // Configuración de Backup Programado (Automático)
-  programacion: ProgramacionBackup = {
-    empresa_id: 1,
+  // Configuración de Programación Automática (CU-18)
+  configAuto: ProgramacionConfig = {
     activo: true,
-    frecuencia: 'DIARIO',
     hora: '01:00',
-    dia_semana: 'DOMINGO',
-    dia_mes: 1,
-    tipo_cierre: 'REGULAR',
-    retencion_dias: 30,
-    notificar_correo: true,
-    ultima_ejecucion: null,
-    proxima_ejecucion: null,
+    frecuencia: 'diario',
+    dia_semana: 'todos',
+    max_retencion: 30,
+    plan_activo: 'PROFESIONAL',
+    proxima_ejecucion: '2026-11-07T01:00:00'
   };
 
-  diasSemana = [
-    { value: 'LUNES', label: 'Lunes' },
-    { value: 'MARTES', label: 'Martes' },
-    { value: 'MIERCOLES', label: 'Miércoles' },
-    { value: 'JUEVES', label: 'Jueves' },
-    { value: 'VIERNES', label: 'Viernes' },
-    { value: 'SABADO', label: 'Sábado' },
-    { value: 'DOMINGO', label: 'Domingo' },
-  ];
+  // Modalidad Manual: opciones de tipo
+  tipoManualSeleccionado: string = 'MANUAL_OPERATIVO';
+  descripcionManual: string = 'Respaldo preventivo bajo demanda';
 
-  // Configuración de Backup Manual Bajo Demanda
-  manualForm = {
-    tipo: 'MANUAL',
-    etiqueta: '',
-  };
-
-  // Backup seleccionado para restaurar ante contingencia
+  // Modalidad Restauración de Contingencia
   backupSeleccionadoParaRestaurar: BackupItem | null = null;
   codigoConfirmacion: string = '';
   readonly CODIGO_OFICIAL = 'CONFIRMAR_RESTAURACION';
@@ -167,26 +128,27 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
   ultimoResultadoRestauracion: RestauracionResultado | null = null;
   hashCopiado: string | null = null;
 
-  // Permisos SuperAdmin / Admin
+  // Gobernanza de Plan SaaS
+  planSimulado: 'PROFESIONAL' | 'BASICO' = 'PROFESIONAL';
+
+  get esPlanProfesional(): boolean {
+    return this.planSimulado === 'PROFESIONAL';
+  }
+
+  get cuotaMaximaPlan(): number {
+    return this.esPlanProfesional ? 30 : 5;
+  }
+
   get puedeDescargarBackup(): boolean {
     return true;
   }
+
   get puedeRestaurar(): boolean {
     return true;
   }
 
   ngOnInit(): void {
-    const id = this.authService.getEmpresaId();
-    if (id) {
-      this.empresaId = id;
-    }
-    const nombre = this.authService.getEmpresaNombre();
-    if (nombre) {
-      this.empresaNombre = nombre;
-    }
-
     this.cargarCatalogoBackups();
-    this.cargarPoliticaPlan();
     this.cargarProgramacion();
   }
 
@@ -195,112 +157,21 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  cambiarSeccion(seccion: 'catalogo' | 'programacion' | 'manual' | 'externo'): void {
-    this.seccionActiva = seccion;
-  }
-
   /**
-   * Carga la política de backup según el Plan SaaS de la empresa
+   * Cambia el plan simulado (para evaluar Básico vs Profesional según indicación docente)
    */
-  cargarPoliticaPlan(): void {
-    const url = `${this.config.getApiBaseUrl()}/v1/backup/politica-plan?empresa_id=${this.empresaId}`;
-    this.http.get<PoliticaPlanSaaS>(url)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp) => {
-          this.politicaPlan = resp;
-        },
-        error: (err) => {
-          console.warn('Fallback política plan:', err);
-        }
-      });
-  }
-
-  /**
-   * Carga la configuración de Backup Programado (Automático)
-   */
-  cargarProgramacion(): void {
-    const url = `${this.config.getApiBaseUrl()}/v1/backup/programacion?empresa_id=${this.empresaId}`;
-    this.http.get<ProgramacionBackup>(url)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp) => {
-          if (resp) {
-            this.programacion = { ...this.programacion, ...resp };
-          }
-        },
-        error: (err) => {
-          console.warn('Error cargando programación automática:', err);
-        }
-      });
-  }
-
-  /**
-   * Guarda los cambios en la programación automática (hora, día, periodicidad)
-   */
-  guardarProgramacion(): void {
-    this.guardandoProgramacion = true;
-    const url = `${this.config.getApiBaseUrl()}/v1/backup/programacion`;
-
-    const payload = {
-      empresa_id: this.empresaId,
-      activo: this.programacion.activo,
-      frecuencia: this.programacion.frecuencia,
-      hora: this.programacion.hora,
-      dia_semana: this.programacion.dia_semana,
-      dia_mes: Number(this.programacion.dia_mes) || 1,
-      tipo_cierre: this.programacion.tipo_cierre,
-      notificar_correo: this.programacion.notificar_correo,
-    };
-
-    this.http.post<any>(url, payload)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp) => {
-          this.guardandoProgramacion = false;
-          if (resp.configuracion?.proxima_ejecucion) {
-            this.programacion.proxima_ejecucion = resp.configuracion.proxima_ejecucion;
-          }
-          this.snackBar.open(
-            `Programación guardada: ${this.programacion.frecuencia} a las ${this.programacion.hora}. Próxima ejecución estimada calculada.`,
-            'OK',
-            { duration: 5000 }
-          );
-        },
-        error: (err) => {
-          this.guardandoProgramacion = false;
-          console.error('Error guardando programación:', err);
-          this.snackBar.open('Error al guardar la programación automática.', 'Cerrar', { duration: 4000 });
-        }
-      });
-  }
-
-  /**
-   * Simula o dispara la tarea programada inmediatamente (para evaluación)
-   */
-  dispararTareaProgramada(): void {
-    this.ejecutandoProgramado = true;
-    const url = `${this.config.getApiBaseUrl()}/v1/backup/ejecutar-programado?empresa_id=${this.empresaId}`;
-
-    this.http.post<any>(url, {})
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (resp) => {
-          this.ejecutandoProgramado = false;
-          this.cargarProgramacion();
-          this.cargarCatalogoBackups();
-          this.snackBar.open(
-            `Demonio de Backup Ejecutado con Éxito: Respaldo automático '${resp.archivo.nombre}' generado y sellado con SHA-256.`,
-            'OK',
-            { duration: 6000 }
-          );
-        },
-        error: (err) => {
-          this.ejecutandoProgramado = false;
-          console.error('Error ejecutando tarea programada:', err);
-          this.snackBar.open('Error al ejecutar la tarea programada de backup.', 'Cerrar', { duration: 4000 });
-        }
-      });
+  cambiarPlanSimulado(plan: 'PROFESIONAL' | 'BASICO'): void {
+    this.planSimulado = plan;
+    this.configAuto.plan_activo = plan;
+    this.configAuto.max_retencion = this.cuotaMaximaPlan;
+    if (!this.esPlanProfesional && this.configAuto.frecuencia === 'diario') {
+      this.configAuto.frecuencia = 'semanal';
+    }
+    this.snackBar.open(
+      `Gobernanza actualizada: ${plan === 'PROFESIONAL' ? 'Plan Profesional (Backups Diarios a la 1 AM + 30 copias)' : 'Plan Básico (Cuota 5 copias, solo Semanal)'}`,
+      'OK',
+      { duration: 4000 }
+    );
   }
 
   /**
@@ -310,15 +181,20 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
     this.cargandoLista = true;
     const url = `${this.config.getApiBaseUrl()}/v1/backup/listar`;
 
-    this.http.get<{ total_backups: number; backups: BackupItem[] }>(url)
+    this.http.get<{ total_backups: number; backups: BackupItem[]; configuracion_cron?: ProgramacionConfig }>(url)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (resp) => {
           this.backups = resp.backups || [];
+          if (resp.configuracion_cron) {
+            this.configAuto = { ...this.configAuto, ...resp.configuracion_cron };
+            if (this.configAuto.plan_activo) {
+              this.planSimulado = this.configAuto.plan_activo.toUpperCase() === 'BASICO' ? 'BASICO' : 'PROFESIONAL';
+            }
+          }
           this.cargandoLista = false;
         },
-        error: (err) => {
-          console.error('Error cargando catalogo de backups:', err);
+        error: () => {
           const urlCompat = `${this.config.getApiBaseUrl()}/backup/listar`;
           this.http.get<{ total_backups: number; backups: BackupItem[] }>(urlCompat)
             .pipe(takeUntil(this.destroy$))
@@ -337,16 +213,102 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Genera un nuevo volcado estructurado manual o cierre de gestión (CU-18)
+   * Consulta la configuración de automatización y cron
+   */
+  cargarProgramacion(): void {
+    const url = `${this.config.getApiBaseUrl()}/v1/backup/programacion`;
+    this.http.get<any>(url)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => {
+          if (resp.configuracion) {
+            this.configAuto = { ...this.configAuto, ...resp.configuracion };
+            if (this.configAuto.plan_activo) {
+              this.planSimulado = this.configAuto.plan_activo.toUpperCase() === 'BASICO' ? 'BASICO' : 'PROFESIONAL';
+            }
+          }
+        },
+        error: (err) => console.log('Error cargando programacion:', err)
+      });
+  }
+
+  /**
+   * Guarda los parámetros de programación automática (Hora, Frecuencia, Días, Retención)
+   */
+  guardarConfiguracionProgramacion(): void {
+    this.guardandoProgramacion = true;
+    const url = `${this.config.getApiBaseUrl()}/v1/backup/programacion`;
+
+    const payload = {
+      activo: this.configAuto.activo,
+      hora: this.configAuto.hora,
+      frecuencia: this.configAuto.frecuencia,
+      dia_semana: this.configAuto.dia_semana,
+      max_retencion: Number(this.configAuto.max_retencion) || this.cuotaMaximaPlan,
+      plan: this.planSimulado
+    };
+
+    this.http.post<any>(url, payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => {
+          this.guardandoProgramacion = false;
+          if (resp.configuracion) {
+            this.configAuto = { ...this.configAuto, ...resp.configuracion };
+          }
+          this.snackBar.open(
+            `Programación guardada: Ejecución ${this.configAuto.frecuencia} a las ${this.configAuto.hora} (${this.configAuto.dia_semana}).`,
+            'OK',
+            { duration: 4500 }
+          );
+        },
+        error: (err) => {
+          this.guardandoProgramacion = false;
+          console.error('Error guardando programacion:', err);
+          this.snackBar.open('Error al guardar la configuración de automatización.', 'Cerrar', { duration: 4000 });
+        }
+      });
+  }
+
+  /**
+   * Dispara el ciclo automático simulando el cron de las 01:00 AM (demostración en vivo para la docente)
+   */
+  simularCronAutomatico(): void {
+    this.ejecutandoCronAuto = true;
+    const url = `${this.config.getApiBaseUrl()}/v1/backup/disparar-cron-automatico`;
+
+    this.http.post<any>(url, {})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => {
+          this.ejecutandoCronAuto = false;
+          const archivo = resp.archivo;
+          this.snackBar.open(
+            `Ciclo de backup automático ejecutado a las ${this.configAuto.hora} AM. Archivo '${archivo.nombre}' registrado con firma SHA-256.`,
+            'OK',
+            { duration: 5500 }
+          );
+          this.cargarCatalogoBackups();
+          this.seccionActiva = 'CATALOGO';
+        },
+        error: (err) => {
+          this.ejecutandoCronAuto = false;
+          console.error('Error disparando cron automatico:', err);
+          this.snackBar.open('Error al disparar el ciclo automático de backup.', 'Cerrar', { duration: 4000 });
+        }
+      });
+  }
+
+  /**
+   * Genera un volcado manual bajo demanda con tipo configurable (Operativo, Cierre de Mes, Fin de Gestión)
    */
   generarBackupManual(): void {
     this.generandoBackup = true;
     const url = `${this.config.getApiBaseUrl()}/v1/backup/generar`;
 
     const payload = {
-      empresa_id: this.empresaId,
-      tipo: this.manualForm.tipo,
-      etiqueta: this.manualForm.etiqueta.trim() || `Respaldo Manual Solicitado por ${this.empresaNombre}`,
+      tipo: this.tipoManualSeleccionado,
+      descripcion: this.descripcionManual
     };
 
     this.http.post<any>(url, payload)
@@ -357,20 +319,26 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
           const archivo = resp.archivo;
           const metricas = resp.metricas;
           this.snackBar.open(
-            `Copia de seguridad '${archivo.nombre}' generada exitosamente (${metricas.tablas_respaldadas} tablas, ${metricas.total_tuplas_respaldadas} tuplas).`,
+            `Copia manual '${archivo.nombre}' generada exitosamente (${metricas.tablas_respaldadas} tablas, ${metricas.total_tuplas_respaldadas} tuplas).`,
             'OK',
             { duration: 5000 }
           );
-          this.manualForm.etiqueta = '';
           this.cargarCatalogoBackups();
-          this.seccionActiva = 'catalogo';
+          this.seccionActiva = 'CATALOGO';
         },
         error: (err) => {
           this.generandoBackup = false;
-          console.error('Error generando backup:', err);
-          this.snackBar.open('Error al generar la copia de seguridad.', 'Cerrar', { duration: 5000 });
+          console.error('Error generando backup manual:', err);
+          this.snackBar.open('Error al generar la copia manual de seguridad.', 'Cerrar', { duration: 5000 });
         }
       });
+  }
+
+  /**
+   * Compatibilidad: botón directo rápido
+   */
+  generarNuevoBackup(): void {
+    this.generarBackupManual();
   }
 
   /**
@@ -403,14 +371,10 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Abre la sección de confirmación de restauración para un archivo seleccionado
-   */
   prepararRestauracion(backup: BackupItem): void {
     this.backupSeleccionadoParaRestaurar = backup;
     this.codigoConfirmacion = '';
     this.ultimoResultadoRestauracion = null;
-    this.seccionActiva = 'catalogo';
   }
 
   cancelarRestauracion(): void {
@@ -422,9 +386,6 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
     this.codigoConfirmacion = this.CODIGO_OFICIAL;
   }
 
-  /**
-   * Ejecuta la restauración ante contingencia validando el código estricto (CU-18)
-   */
   ejecutarRestauracionSegura(): void {
     if (!this.backupSeleccionadoParaRestaurar) return;
 
@@ -476,7 +437,6 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
     }, 3000);
   }
 
-  // Métodos de subida local externa
   abrirSelectorArchivo(): void {
     this.fileInput.nativeElement.click();
   }
@@ -514,7 +474,6 @@ export class DatabaseManagementComponent implements OnInit, OnDestroy {
           this.fileInput.nativeElement.value = '';
           this.snackBar.open(resp.mensaje || 'Base de datos restaurada correctamente desde archivo local.', 'OK', { duration: 5000 });
           this.cargarCatalogoBackups();
-          this.seccionActiva = 'catalogo';
         },
         error: (err) => {
           this.restaurando = false;
