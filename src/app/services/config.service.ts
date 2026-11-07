@@ -25,16 +25,21 @@ export class ConfigService {
    * Si es multitenant, detecta el subdominio del hostname actual
    */
   private buildApiBaseUrl(): string {
+    const hostname = window.location.hostname;
+    // Si está desplegado en Vercel, forzar conexión HTTPS a Render
+    if (hostname.endsWith('vercel.app')) {
+      return 'https://tienda-backend-kvfk.onrender.com/api';
+    }
+
     if (!environment.isMultitenant) {
       return environment.apiBaseUrl;
     }
 
-    const hostname = window.location.hostname;
     const protocol = window.location.protocol;
     let port = window.location.port;
 
-    // Si está en localhost o desplegado en Vercel, usar la URL del backend configurada
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('vercel.app')) {
+    // Si está en localhost, usar la URL del backend configurada
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return environment.apiBaseUrl;
     }
 
