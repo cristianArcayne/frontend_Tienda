@@ -171,12 +171,13 @@ export class CrearReservaDialogComponent implements OnInit {
         // Buscar producto en el desglose omnicanal
         const pMatch = catalogoDisponibilidad.find((item: any) => item.id === prodId);
         if (pMatch && pMatch.variantes) {
-          const vMatch = pMatch.variantes.find((v: any) => v.variante_id === varId);
-          if (vMatch && vMatch.existencias_por_sucursal) {
+          const vMatch = pMatch.variantes.find((v: any) => v.variante_id === varId || v.id === varId);
+          const existencias = vMatch?.disponibilidad_sucursales || vMatch?.existencias_por_sucursal || [];
+          if (vMatch && existencias.length > 0) {
             // Mapear stock disponible por sucursal
             this.sucursales.forEach(s => {
-              const ex = vMatch.existencias_por_sucursal.find((e: any) => e.sucursal_id === s.id);
-              s.stock_disponible = ex ? ex.stock_disponible : 0;
+              const ex = existencias.find((e: any) => e.sucursal_id === s.id);
+              s.stock_disponible = ex ? (ex.stock_disponible ?? (ex.stock_fisico - (ex.stock_reservado || 0))) : 0;
             });
 
             // Auto-seleccionar la primera sucursal con stock disponible
