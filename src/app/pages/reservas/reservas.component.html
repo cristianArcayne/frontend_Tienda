@@ -43,7 +43,7 @@
   <mat-card>
     <mat-tab-group animationDuration="200ms">
       <!-- PESTAÑA 1: Mis Reservas -->
-      <mat-tab>
+      <mat-tab [label]="'Mis Reservas (' + conteoMisReservas + ')'">
         <ng-template mat-tab-label>
           <mat-icon style="margin-right: 6px;">person_pin_circle</mat-icon>
           Mis Reservas ({{ conteoMisReservas }})
@@ -171,7 +171,7 @@
       </mat-tab>
 
       <!-- PESTAÑA 2: Gestión de Tienda (Personal / Admin / Cajero) -->
-      <mat-tab *ngIf="esPersonal">
+      <mat-tab *ngIf="esPersonal" [label]="'Gestión de Tienda / Retiro Presencial (' + conteoTodasReservas + ')'">
         <ng-template mat-tab-label>
           <mat-icon style="margin-right: 6px;">point_of_sale</mat-icon>
           Gestión de Tienda / Retiro Presencial ({{ conteoTodasReservas }})

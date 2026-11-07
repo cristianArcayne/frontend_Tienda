@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ApplicationRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -67,7 +67,8 @@ export class ReservasComponent implements OnInit {
     private permisosService: PermisosService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private appRef: ApplicationRef
   ) {
     this.usuarioActual = this.authService.getUsername() || 'admin';
     const roles = this.authService.getRoles() || [];
@@ -97,6 +98,7 @@ export class ReservasComponent implements OnInit {
       next: (res) => {
         this.sucursales = res;
         this.cdr.detectChanges();
+        this.appRef.tick();
       },
       error: () => {
         this.sucursales = [
@@ -105,6 +107,7 @@ export class ReservasComponent implements OnInit {
           { id: 3, nombre: 'Sucursal Ventura Mall' }
         ];
         this.cdr.detectChanges();
+        this.appRef.tick();
       }
     });
   }
@@ -116,11 +119,13 @@ export class ReservasComponent implements OnInit {
         this.misReservas = Array.isArray(data) ? data : [];
         this.isLoadingMis = false;
         this.cdr.detectChanges();
+        this.appRef.tick();
       },
       error: () => {
         this.isLoadingMis = false;
         this.snackBar.open('Error al cargar mis reservas', 'Cerrar', { duration: 3000 });
         this.cdr.detectChanges();
+        this.appRef.tick();
       }
     });
   }
@@ -133,11 +138,13 @@ export class ReservasComponent implements OnInit {
         this.aplicarFiltros();
         this.isLoadingTodas = false;
         this.cdr.detectChanges();
+        this.appRef.tick();
       },
       error: () => {
         this.isLoadingTodas = false;
         this.snackBar.open('Error al cargar reservas de la cadena', 'Cerrar', { duration: 3000 });
         this.cdr.detectChanges();
+        this.appRef.tick();
       }
     });
   }
