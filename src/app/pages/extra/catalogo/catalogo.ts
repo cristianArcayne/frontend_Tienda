@@ -17,6 +17,7 @@ import { ComparadorService } from 'src/app/services/comparador.service';
 import { FavoritosService } from 'src/app/services/favoritos.service';
 import { CartService } from 'src/app/services/cart.service';
 import { PermisosService } from 'src/app/services/permisos.service';
+import { EvaluationModeService } from 'src/app/services/evaluation-mode.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MaterialModule } from 'src/app/material.module';
@@ -115,7 +116,8 @@ export class CatalogoComponent implements OnInit, AfterViewInit, OnDestroy {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router,
-    private permisosService: PermisosService
+    private permisosService: PermisosService,
+    public evalMode: EvaluationModeService
   ) {
     this.puedeVerDetalle = this.permisosService.tiene(PermisosService.INVENTARIO_VIEW_PRODUCTO_DETALLE);
     this.searchSubject.pipe(

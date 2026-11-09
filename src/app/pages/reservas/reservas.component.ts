@@ -17,6 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ReservasService, Reserva } from '../../services/reservas.service';
 import { AuthService } from '../../services/auth.service';
 import { PermisosService } from '../../services/permisos.service';
+import { EvaluationModeService } from '../../services/evaluation-mode.service';
 import { CrearReservaDialogComponent } from './crear-reserva-dialog/crear-reserva-dialog.component';
 import { ConfirmDialogComponent } from '../inventario/confirm-dialog/confirm-dialog.component';
 

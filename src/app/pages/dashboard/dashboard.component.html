@@ -478,5 +478,187 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- ======================================================================= -->
+    <!-- 4. COMPUTER VISION: CLASIFICACIÓN CON REDES CONVOLUCIONALES (CNN)       -->
+    <!-- ======================================================================= -->
+    <mat-card class="chart-card m-t-24 vision-cnn-card">
+      <mat-card-header class="chart-header-row">
+        <div>
+          <div class="d-flex align-items-center gap-10">
+            <mat-icon class="chart-main-icon" style="color: #9c27b0;">center_focus_strong</mat-icon>
+            <mat-card-title>Computer Vision & Machine Learning: Clasificador CNN (MobileNetV2)</mat-card-title>
+          </div>
+          <mat-card-subtitle>
+            Reconocimiento y clasificación visual de prendas en tiempo real (&lt; 150 ms) y vinculación con stock en PostgreSQL
+          </mat-card-subtitle>
+        </div>
+
+        <div class="chart-header-controls">
+          <div class="model-toggle-pill">
+            <button mat-button [class.active-pill]="modeloVision() === 'ropa'" (click)="onModeloVisionChange('ropa')">
+              <mat-icon>checkroom</mat-icon>
+              <span>👗 Ropa & Prendas (8 clases)</span>
+            </button>
+            <button mat-button [class.active-pill]="modeloVision() === 'calzado'" (click)="onModeloVisionChange('calzado')">
+              <mat-icon>shopping_bag</mat-icon>
+              <span>👟 Calzado Manaco (10 clases)</span>
+            </button>
+            <button mat-button [class.active-pill]="modeloVision() === 'objetos'" (click)="onModeloVisionChange('objetos')">
+              <mat-icon>recycling</mat-icon>
+              <span>🍾 Objetos & Botellas (7 clases)</span>
+            </button>
+          </div>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content class="vision-content">
+        <div class="vision-grid">
+          
+          <!-- Columna Izquierda: Input y Previsualización -->
+          <div class="vision-input-panel">
+            <div class="upload-dropzone" (click)="fileInput.click()">
+              <input #fileInput type="file" accept="image/*" class="d-none" (change)="onArchivoVisionSeleccionado($event)">
+              @if (!imagenPrevia()) {
+                <div class="dropzone-placeholder">
+                  <mat-icon class="dropzone-icon">cloud_upload</mat-icon>
+                  <p class="dropzone-title">Haz clic o arrastra una fotografía aquí</p>
+                  <span class="dropzone-hint">Formatos: JPG, PNG (resolución adaptada a 160x160 px para MobileNetV2)</span>
+                </div>
+              } @else {
+                <div class="preview-container">
+                  <img [src]="imagenPrevia()" alt="Previsualización" class="preview-img">
+                  <div class="change-photo-badge">
+                    <mat-icon>camera_alt</mat-icon> Cambiar foto
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Botones de prueba rápida (1 clic) -->
+            <div class="quick-examples-box">
+              <span class="quick-label">O prueba una prenda de ejemplo con 1 clic:</span>
+              <div class="quick-btn-group">
+                <button mat-stroked-button (click)="cargarEjemploVision('chamarra')" [disabled]="clasificandoVision()">
+                  🧥 Chamarra de Trabajo / Invierno
+                </button>
+                <button mat-stroked-button (click)="cargarEjemploVision('polera')" [disabled]="clasificandoVision()">
+                  👕 Polera Cotton Casual
+                </button>
+                <button mat-stroked-button (click)="cargarEjemploVision('vestido')" [disabled]="clasificandoVision()">
+                  👗 Vestido de Seda Gala
+                </button>
+                <button mat-stroked-button (click)="cargarEjemploVision('deportivo')" [disabled]="clasificandoVision()">
+                  👟 Zapatilla Sport
+                </button>
+                <button mat-stroked-button (click)="cargarEjemploVision('botella')" [disabled]="clasificandoVision()">
+                  🍾 Botella Reciclable
+                </button>
+              </div>
+            </div>
+
+            <button mat-raised-button color="primary" class="w-100 btn-classify m-t-16"
+                    (click)="ejecutarInferenciaVision()" [disabled]="clasificandoVision() || !imagenPrevia()">
+              @if (!clasificandoVision()) {
+                <mat-icon>psychology</mat-icon>
+                <span>Clasificar con Red Neuronal Convolucional (CNN)</span>
+              } @else {
+                <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+                <span>Ejecutando inferencia MobileNetV2...</span>
+              }
+            </button>
+          </div>
+
+          <!-- Columna Derecha: Diagnóstico y Coincidencias en Stock -->
+          <div class="vision-results-panel">
+            @if (!resultadoVision() && !clasificandoVision()) {
+              <div class="empty-results-box">
+                <mat-icon class="empty-icon">analytics</mat-icon>
+                <h3>Listo para clasificar</h3>
+                <p>Carga una imagen o presiona uno de los botones de prueba rápida para ejecutar la red neuronal convolucional.</p>
+              </div>
+            }
+
+            @if (clasificandoVision()) {
+              <div class="inferring-box">
+                <mat-spinner diameter="48"></mat-spinner>
+                <h4>Procesando tensores en TensorFlow...</h4>
+                <p>Extracción de patrones espaciales y convolución en curso.</p>
+              </div>
+            }
+
+            @if (resultadoVision(); as res) {
+              <div class="results-container">
+                
+                <!-- Tarjeta de diagnóstico de la red -->
+                <div class="diagnostic-card" [class.success-match]="res.diagnostico_ia.es_confiable">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="diag-badge">{{ res.diagnostico_ia.arquitectura }}</span>
+                      <h2 class="diag-class-title">{{ res.diagnostico_ia.clase_detectada }}</h2>
+                      <span class="diag-sku">SKU Sugerido: <strong>{{ res.diagnostico_ia.sku_sugerido }}</strong></span>
+                    </div>
+                    <div class="diag-metrics-badge">
+                      <div class="confidence-circle">
+                        <span class="confidence-val">{{ res.diagnostico_ia.confianza_porcentaje }}%</span>
+                        <span class="confidence-lbl">Confianza</span>
+                      </div>
+                      <div class="latency-pill">
+                        <mat-icon>bolt</mat-icon> {{ res.diagnostico_ia.tiempo_inferencia_red_ms }} ms
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="m-t-16">
+                    <mat-progress-bar mode="determinate" [value]="res.diagnostico_ia.confianza_porcentaje"></mat-progress-bar>
+                  </div>
+
+                  <div class="top3-container m-t-16">
+                    <span class="top3-title">Distribución de Probabilidades Softmax (Top 3):</span>
+                    <div class="top3-list">
+                      @for (item of res.diagnostico_ia.top3_predicciones; track item.clase_raw) {
+                        <div class="top3-item">
+                          <span class="top3-name">{{ item.nombre_descriptivo }}</span>
+                          <span class="top3-pct">{{ item.porcentaje }}%</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Productos coincidentes en PostgreSQL -->
+                <div class="catalog-matches-box m-t-20">
+                  <div class="d-flex justify-content-between align-items-center m-b-12">
+                    <h4 class="matches-title">
+                      <mat-icon>inventory_2</mat-icon>
+                      Prendas Coincidentes en Stock (PostgreSQL)
+                    </h4>
+                    <span class="matches-count">{{ res.catalogo_coincidente.total_encontrados }} disponibles</span>
+                  </div>
+
+                  <div class="products-mini-grid">
+                    @for (prod of res.catalogo_coincidente.productos; track prod.id) {
+                      <div class="product-mini-card">
+                        <img [src]="prod.imagen_url" alt="{{ prod.nombre }}" class="prod-thumb">
+                        <div class="prod-details">
+                          <span class="prod-category">{{ prod.categoria }}</span>
+                          <strong class="prod-name">{{ prod.nombre }}</strong>
+                          <span class="prod-price">{{ prod.precio | number:'1.2-2' }} Bs</span>
+                        </div>
+                        @if (prod.tiene_modelo_3d) {
+                          <span class="ar-badge" matTooltip="Compatible con Vestidor Virtual AR">3D AR</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+
+              </div>
+            }
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+
   }
 </div>

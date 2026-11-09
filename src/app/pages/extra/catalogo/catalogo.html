@@ -3,8 +3,14 @@
   <div class="header-section m-b-24">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-12 m-b-8">
       <div>
-        <h1 class="f-w-700 m-b-4" style="color: #1e293b; font-size: 26px;">[CU-05] Consultar Catálogo y Disponibilidad en Modo Offline</h1>
-        <p class="text-muted m-0">Consulta modelos, existencias en tiempo real por sucursal y promociones vigentes</p>
+        <h1 class="f-w-700 m-b-4" style="color: #1e293b; font-size: 26px;">
+          <span *ngIf="evalMode.esPuds">[CU11] Catálogo Web Omnicanal</span>
+          <span *ngIf="evalMode.esIconix">[CU-05] Consultar Catálogo y Disponibilidad en Modo Offline</span>
+        </h1>
+        <p class="text-muted m-0">
+          <span *ngIf="evalMode.esPuds">Línea Base PUDS - Consulta de modelos, existencias por sucursal y promociones vigentes.</span>
+          <span *ngIf="evalMode.esIconix">Consulta modelos, existencias en tiempo real por sucursal y promociones vigentes.</span>
+        </p>
       </div>
 
       <div class="catalog-actions d-flex align-items-center gap-12 flex-wrap">

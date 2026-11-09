@@ -1,6 +1,6 @@
 import { EditarEmpresaModal } from './editar-empresa-modal/editar-empresa-modal';
 import { RegistrarEmpresaModal } from './registrar-empresa-modal/registrar-empresa-modal';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -79,7 +79,8 @@ export class PanelSuperadmin implements OnInit {
     public authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -101,25 +102,25 @@ export class PanelSuperadmin implements OnInit {
 
   // KPIs
   get totalActivas(): number {
-    return this.todasEmpresas.filter((e) => e.is_active).length;
+    return this.todasEmpresas.filter((e) => e.is_active || (e.estado && e.estado.toUpperCase() === 'ACTIVA')).length;
   }
 
   get totalProfesionales(): number {
     return this.todasEmpresas.filter(
-      (e) => e.suscripcion_actual?.plan_nombre?.toLowerCase().includes('profesional')
+      (e) => (e.suscripcion_actual?.plan_nombre || (e as any).plan_nombre || '').toLowerCase().includes('profesional')
     ).length;
   }
 
   get totalBasicos(): number {
     return this.todasEmpresas.filter(
-      (e) => !e.suscripcion_actual?.plan_nombre?.toLowerCase().includes('profesional')
+      (e) => !(e.suscripcion_actual?.plan_nombre || (e as any).plan_nombre || '').toLowerCase().includes('profesional')
     ).length;
   }
 
   get mrrTotal(): number {
     return this.todasEmpresas.reduce((acc, curr) => {
-      const precio = curr.suscripcion_actual?.plan_precio || 0;
-      return acc + precio;
+      const precio = curr.suscripcion_actual?.plan_precio || (curr as any).plan_precio || 0;
+      return acc + (Number(precio) || 0);
     }, 0);
   }
 
@@ -129,17 +130,22 @@ export class PanelSuperadmin implements OnInit {
     this.apiService
       .getWithPagination<EmpresaPanel>(url, this.paginaActual, this.pageSize)
       .subscribe({
-        next: (res: Pagination<EmpresaPanel>) => {
-          this.todasEmpresas = res.results || [];
-          this.totalEmpresas = res.count || this.todasEmpresas.length;
+        next: (res: any) => {
+          const items: EmpresaPanel[] = Array.isArray(res)
+            ? res
+            : (res?.results || (Array.isArray(res?.data) ? res.data : []));
+          this.todasEmpresas = items;
+          this.totalEmpresas = (typeof res?.count === 'number') ? res.count : items.length;
           this.aplicarFiltros();
           this.isLoading = false;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.snackBar.open('Error al cargar datos de empresas y suscripciones', 'Cerrar', {
             duration: 4000,
           });
           this.isLoading = false;
+          this.cdr.detectChanges();
         },
       });
   }

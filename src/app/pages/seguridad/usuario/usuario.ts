@@ -17,6 +17,7 @@ import { ApiService } from 'src/app/services/api.service';
 import { ConfigService } from 'src/app/services/config.service';
 import { PermisosService } from 'src/app/services/permisos.service';
 import { AuthService } from 'src/app/services/auth.service';
+import { EvaluationModeService } from 'src/app/services/evaluation-mode.service';
 import { CrearUsuarioComponent } from './crear-usuario/crear-usuario';
 import { EliminarUsuarioComponent } from './eliminar-usuario/eliminar-usuario';
 
@@ -63,7 +64,8 @@ export class UsuarioComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private permisosService: PermisosService,
-    public authService: AuthService
+    public authService: AuthService,
+    public evalMode: EvaluationModeService
   ) {
     this.apiUrl = this.configService.getApiUrl('usuarios');
   }

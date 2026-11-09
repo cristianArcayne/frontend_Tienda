@@ -19,6 +19,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ConfigService } from 'src/app/services/config.service';
 import { CartService } from 'src/app/services/cart.service';
+import { EvaluationModeService } from 'src/app/services/evaluation-mode.service';
 import { CrearReservaDialogComponent } from '../../reservas/crear-reserva-dialog/crear-reserva-dialog.component';
 
 export interface TexturaVariante {
@@ -123,7 +124,8 @@ export class VestidorVirtualComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    public evalMode: EvaluationModeService
   ) {
     this.apiBase = this.configService.getApiBaseUrl().replace('/api', '/api/v1');
   }

@@ -4,7 +4,8 @@
       <div>
         <div class="d-flex align-items-center gap-8 flex-wrap">
           <mat-card-title class="m-0 font-weight-bold" style="font-size: 1.3rem; color: #1e293b;">
-            [CU-09] Procesar Ventas POS con Resiliencia Offline (Web - PWA)
+            <span *ngIf="evalMode.esPuds">[CU14] Ventas Físicas POS (Línea Base PUDS)</span>
+            <span *ngIf="evalMode.esIconix">[CU-09] Procesar Ventas POS con Resiliencia Offline (Web - PWA)</span>
           </mat-card-title>
           <span [ngStyle]="{
             'background-color': enModoOffline ? '#fef2f2' : '#f0fdf4',
@@ -23,7 +24,8 @@
           </span>
         </div>
         <p class="text-muted m-t-4 m-b-0" style="font-size: 0.85rem;">
-          Terminal de Punto de Venta en Mostrador • Facturación Fiscal con Código de Control • Tolerancia a Fallos de Red & Cola Outbox
+          <span *ngIf="evalMode.esPuds">Línea Base PUDS - Registro de órdenes de mostrador, facturación y cobro presencial en tienda física.</span>
+          <span *ngIf="evalMode.esIconix">Terminal de Punto de Venta en Mostrador • Facturación Fiscal con Código de Control • Tolerancia a Fallos de Red & Cola Outbox.</span>
         </p>
       </div>
 

@@ -31,6 +31,11 @@ export class ConfigService {
       return 'https://tienda-backend-kvfk.onrender.com/api';
     }
 
+    // Si estamos corriendo en entorno local (localhost o 127.0.0.1), conectar siempre a backend local port 8000
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000/api';
+    }
+
     if (!environment.isMultitenant) {
       return environment.apiBaseUrl;
     }

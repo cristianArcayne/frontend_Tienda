@@ -5,10 +5,12 @@
     </div>
     <div>
       <h3 class="m-0 font-weight-bold" style="color: #581c87; font-size: 18px;">
-        {{ isEditMode ? 'Editar Usuario: ' + form.get('username')?.value : 'Registrar Nuevo Usuario / Empleado' }}
+        <span *ngIf="evalMode.esPuds">{{ isEditMode ? 'Editar Usuario' : 'Registrar Nuevo Usuario - [CU01] Línea Base PUDS' }}</span>
+        <span *ngIf="evalMode.esIconix">{{ isEditMode ? 'Editar Usuario: ' + form.get('username')?.value : 'Registrar Nuevo Usuario / Empleado - [CU-02] SaaS' }}</span>
       </h3>
       <p class="m-t-2 m-b-0 text-muted" style="font-size: 12px;">
-        Asignación de credenciales JWT, datos personales, rol y empresa inquilina (SaaS).
+        <span *ngIf="evalMode.esPuds">Línea Base PUDS - Credenciales de acceso y datos personales del personal central.</span>
+        <span *ngIf="evalMode.esIconix">Asignación de credenciales JWT, datos personales, rol y empresa inquilina (SaaS).</span>
       </p>
     </div>
   </div>
@@ -20,8 +22,8 @@
 <mat-dialog-content style="max-height: 75vh; padding: 24px;">
   <form [formGroup]="form" class="d-flex flex-column gap-16">
 
-    <!-- 1. SELECCIÓN DE EMPRESA (MULTITENANT) -->
-    <div class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+    <!-- 1. SELECCIÓN DE EMPRESA (MULTITENANT - SEGUNDO PARCIAL) -->
+    <div *ngIf="evalMode.esIconix" class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
       <label class="d-block font-weight-bold m-b-8" style="color: #334155; font-size: 13px;">
         1. ASIGNACIÓN MULTI-INQUILINO (TENANT)
       </label>

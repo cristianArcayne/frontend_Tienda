@@ -4,6 +4,22 @@
     <i class="iconify icon-20" data-icon="solar:hamburger-menu-line-duotone"></i>
   </button>
 
+  <!-- Switcher de Evaluación Académica (Primer Parcial PUDS vs Segundo Parcial ICONIX) -->
+  <div class="eval-mode-toggle d-flex align-items-center m-l-12" style="background: #f1f5f9; border-radius: 20px; padding: 2px 4px; border: 1px solid #cbd5e1;">
+    <button mat-button (click)="evalMode.setModo('PUDS')" 
+            [style.background]="evalMode.esPuds ? '#0284c7' : 'transparent'"
+            [style.color]="evalMode.esPuds ? '#ffffff' : '#64748b'"
+            style="border-radius: 16px; height: 30px; line-height: 30px; font-size: 12px; font-weight: 700; padding: 0 10px; min-width: auto; transition: all 0.2s;">
+      📘 1er Parcial (PUDS)
+    </button>
+    <button mat-button (click)="evalMode.setModo('ICONIX')"
+            [style.background]="evalMode.esIconix ? '#7c3aed' : 'transparent'"
+            [style.color]="evalMode.esIconix ? '#ffffff' : '#64748b'"
+            style="border-radius: 16px; height: 30px; line-height: 30px; font-size: 12px; font-weight: 700; padding: 0 10px; min-width: auto; transition: all 0.2s;">
+      🚀 2do Parcial (ICONIX SaaS)
+    </button>
+  </div>
+
   <!-- Spacer para empujar el menú de usuario a la derecha -->
   <span class="spacer"></span>
 

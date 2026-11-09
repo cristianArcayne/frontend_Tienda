@@ -18,6 +18,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
 import { ConfigService } from '../../../../services/config.service';
 import { AuthService } from '../../../../services/auth.service';
+import { EvaluationModeService } from '../../../../services/evaluation-mode.service';
 import { Rol } from '../../../../models/seguridad/rol.model';
 import { Pagination } from '../../../../models/pagination.model';
 
@@ -89,6 +90,7 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
+    public evalMode: EvaluationModeService,
     public dialogRef: MatDialogRef<CrearUsuarioComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {

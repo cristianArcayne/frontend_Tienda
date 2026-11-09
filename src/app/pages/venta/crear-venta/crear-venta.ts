@@ -20,6 +20,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { ApiService } from '../../../services/api.service';
 import { ConfigService } from '../../../services/config.service';
+import { EvaluationModeService } from '../../../services/evaluation-mode.service';
 import { Venta } from '../../../models/venta/venta.model';
 import { Producto } from '../../../models/inventario/producto.model';
 import { ProcesarPagoDialogComponent } from '../detalle-venta/procesar-pago-dialog/procesar-pago-dialog';
@@ -142,6 +143,7 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private router: Router,
     private dialog: MatDialog,
+    public evalMode: EvaluationModeService
   ) {
     this.apiUrlVariantes = this.configService.getApiUrl('variantes');
     this.apiUrlProductos = this.configService.getApiUrl('productos');

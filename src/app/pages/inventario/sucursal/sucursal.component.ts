@@ -1,4 +1,5 @@
 import { AuthService } from 'src/app/services/auth.service';
+import { EvaluationModeService } from 'src/app/services/evaluation-mode.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -59,8 +60,14 @@ export interface EmpresaItem {
     <div class="sucursales-container">
       <div class="m-b-16 d-flex align-items-center justify-content-between flex-wrap gap-12">
         <div>
-          <h2 class="m-b-4 font-weight-bold" style="color: #1e293b;">[CU-03] Administrar Sucursales y Puntos de Caja por Empresa</h2>
-          <p class="text-muted m-0">Administración de tiendas físicas en diferentes ciudades para retiros y ventas presenciales</p>
+          <h2 class="m-b-4 font-weight-bold" style="color: #1e293b;">
+            <span *ngIf="evalMode.esPuds">[CU05] Sucursales de la Cadena</span>
+            <span *ngIf="evalMode.esIconix">[CU-03] Administrar Sucursales y Puntos de Caja por Empresa</span>
+          </h2>
+          <p class="text-muted m-0">
+            <span *ngIf="evalMode.esPuds">Línea Base PUDS - Tiendas físicas y puntos de atención de FashionStore.</span>
+            <span *ngIf="evalMode.esIconix">Administración de tiendas físicas en diferentes ciudades para retiros y ventas presenciales.</span>
+          </p>
         </div>
         <button mat-raised-button color="primary" (click)="abrirFormulario()">
           <mat-icon class="m-r-8">add_business</mat-icon>
@@ -80,7 +87,7 @@ export interface EmpresaItem {
         <mat-card-content class="p-t-16">
           
           <!-- Selector de Empresa (Tenant SaaS) -->
-          <div class="m-b-16 p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+          <div *ngIf="evalMode.esIconix" class="m-b-16 p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
             <label style="display: block; font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">
               🏢 Empresa (Tenant) a la que pertenece esta sucursal <span style="color: #ef4444;">*</span>
             </label>
@@ -107,7 +114,7 @@ export interface EmpresaItem {
           </div>
 
           <!-- Alerta Visual de Límite de Suscripción Alcanzado -->
-          <div *ngIf="estaEnLimite(getEmpresaSeleccionada())" class="m-b-16 p-16 rounded" style="background: #fff1f2; border: 2px solid #f43f5e; color: #881337;">
+          <div *ngIf="evalMode.esIconix && estaEnLimite(getEmpresaSeleccionada())" class="m-b-16 p-16 rounded" style="background: #fff1f2; border: 2px solid #f43f5e; color: #881337;">
             <div class="d-flex align-items-start gap-12">
               <mat-icon style="color: #e11d48; font-size: 28px; width: 28px; height: 28px;">error</mat-icon>
               <div style="flex: 1;">
@@ -341,7 +348,8 @@ export class SucursalComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    public evalMode: EvaluationModeService
   ) {
     const base = this.configService.getApiBaseUrl().replace('/api', '/api/v1');
     this.apiUrl = `${base}/sucursales/`;

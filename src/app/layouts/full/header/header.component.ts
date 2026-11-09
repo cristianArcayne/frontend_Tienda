@@ -21,6 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { signal } from '@angular/core';
 import { AuthService } from 'src/app/services/auth.service';
+import { EvaluationModeService } from 'src/app/services/evaluation-mode.service';
 import { CartService } from 'src/app/services/cart.service';
 import { FavoritosService } from 'src/app/services/favoritos.service';
 import { ApiService } from 'src/app/services/api.service';
@@ -85,6 +86,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private devolucionesService: DevolucionesService,
     private router: Router,
     private dialog: MatDialog,
+    public evalMode: EvaluationModeService
   ) {}
 
   ngOnInit(): void {

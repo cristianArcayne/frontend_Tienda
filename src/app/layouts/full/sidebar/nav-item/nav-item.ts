@@ -4,6 +4,7 @@ export interface NavItem {
   iconName?: string;
   navCap?: string;
   route?: string;
+  queryParams?: Record<string, any>;
   children?: NavItem[];
   chip?: boolean;
   chipContent?: string;

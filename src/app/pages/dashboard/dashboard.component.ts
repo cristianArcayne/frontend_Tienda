@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -49,6 +50,7 @@ import { Subject, takeUntil } from 'rxjs';
     MatDatepickerModule,
     MatNativeDateModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatSnackBarModule,
     MatIconModule,
     MatTooltipModule,
@@ -332,5 +334,121 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  }
+
+  // =========================================================================
+  // CU-16 PARTE 4: COMPUTER VISION Y CLASIFICACIÓN CNN (MobileNetV2)
+  // =========================================================================
+  modeloVision = signal<'ropa' | 'calzado' | 'objetos'>('ropa');
+  imagenPrevia = signal<string | null>(null);
+  clasificandoVision = signal<boolean>(false);
+  resultadoVision = signal<any | null>(null);
+  archivoSeleccionado: File | null = null;
+
+  onModeloVisionChange(tipo: 'ropa' | 'calzado' | 'objetos'): void {
+    this.modeloVision.set(tipo);
+    this.resultadoVision.set(null);
+  }
+
+  onArchivoVisionSeleccionado(event: any): void {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    this.procesarArchivoVision(file);
+  }
+
+  procesarArchivoVision(file: File): void {
+    this.archivoSeleccionado = file;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.imagenPrevia.set(e.target.result);
+    };
+    reader.readAsDataURL(file);
+    this.resultadoVision.set(null);
+  }
+
+  cargarEjemploVision(tipo: string): void {
+    this.clasificandoVision.set(true);
+    this.resultadoVision.set(null);
+
+    let nombreEjemplo = 'ejemplo.jpg';
+    let urlImagen = '';
+
+    if (tipo === 'chamarra') {
+      nombreEjemplo = 'chamarra_parka_termica.jpg';
+      urlImagen = '/assets/images/products/chamarra_usuario.jpg';
+      this.modeloVision.set('ropa');
+    } else if (tipo === 'polera') {
+      nombreEjemplo = 'polera_cotton_casual.jpg';
+      urlImagen = 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400';
+      this.modeloVision.set('ropa');
+    } else if (tipo === 'vestido') {
+      nombreEjemplo = 'vestido_gala_seda.jpg';
+      urlImagen = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400';
+      this.modeloVision.set('ropa');
+    } else if (tipo === 'deportivo') {
+      nombreEjemplo = 'calzado_deportivo_sport.jpg';
+      urlImagen = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400';
+      this.modeloVision.set('calzado');
+    } else if (tipo === 'mocasin') {
+      nombreEjemplo = 'mocasin_casual_cuero.jpg';
+      urlImagen = 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400';
+      this.modeloVision.set('calzado');
+    } else if (tipo === 'bota') {
+      nombreEjemplo = 'bota_seguridad_industrial.jpg';
+      urlImagen = 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=400';
+      this.modeloVision.set('calzado');
+    } else if (tipo === 'botella') {
+      nombreEjemplo = 'agua_botella.jpg';
+      urlImagen = 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400';
+      this.modeloVision.set('objetos');
+    }
+
+    this.imagenPrevia.set(urlImagen);
+
+    fetch(urlImagen)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], nombreEjemplo, { type: 'image/jpeg' });
+        this.archivoSeleccionado = file;
+        this.ejecutarInferenciaVision(file);
+      })
+      .catch(err => {
+        this.snackBar.open('Error al cargar imagen de ejemplo: ' + err.message, 'Cerrar', { duration: 3000 });
+        this.clasificandoVision.set(false);
+      });
+  }
+
+  ejecutarInferenciaVision(fileOverride?: File): void {
+    const file = fileOverride || this.archivoSeleccionado;
+    if (!file) {
+      this.snackBar.open('Por favor selecciona o arrastra una imagen primero', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.clasificandoVision.set(true);
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    const apiUrl = `${this.configService.getApiBaseUrl()}/v1/ia/busqueda-visual?tipo_modelo=${this.modeloVision()}`;
+
+    this.http.post<any>(apiUrl, formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.clasificandoVision.set(false);
+          this.resultadoVision.set(res);
+          const diag = res.diagnostico_ia;
+          this.snackBar.open(
+            `¡Clasificación exitosa! ${diag.clase_detectada} (${diag.confianza_porcentaje}%) en ${diag.tiempo_inferencia_red_ms} ms`,
+            'Aceptar',
+            { duration: 4500 }
+          );
+        },
+        error: (err) => {
+          this.clasificandoVision.set(false);
+          const errorMsg = err.error?.detail || err.message || 'Error al conectar con el motor de visión CNN';
+          this.snackBar.open(`Error de inferencia: ${errorMsg}`, 'Cerrar', { duration: 5000 });
+        }
+      });
   }
 }

@@ -7,11 +7,15 @@
         </div>
         <div>
           <mat-card-title class="m-0 font-weight-bold" style="font-size: 18px; color: #1e293b;">
-            [CU-02] Gestión de Usuarios y Accesos
+            <span *ngIf="evalMode.esPuds">[CU01] Personal y Usuarios</span>
+            <span *ngIf="evalMode.esIconix">[CU-02] Autenticación y Control de Acceso (JWT)</span>
           </mat-card-title>
           <p class="m-t-2 m-b-0 text-muted" style="font-size: 13px;">
-            <span *ngIf="isSuperuser">Control centralizado de cuentas de todas las empresas inquilinas (Plataforma Global).</span>
-            <span *ngIf="!isSuperuser">Gestión de personal y roles de <strong>{{ empresaNombre || 'Mi Empresa' }}</strong>.</span>
+            <span *ngIf="evalMode.esPuds">Línea Base PUDS - Registro de colaboradores, personal de ventas y cuentas de usuario del sistema central.</span>
+            <span *ngIf="evalMode.esIconix">
+              <span *ngIf="isSuperuser">Control centralizado de cuentas de todas las empresas inquilinas (Plataforma Global).</span>
+              <span *ngIf="!isSuperuser">Gestión de personal y roles de <strong>{{ empresaNombre || 'Mi Empresa' }}</strong>.</span>
+            </span>
           </p>
         </div>
       </div>

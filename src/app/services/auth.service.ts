@@ -208,14 +208,18 @@ export class AuthService {
     const empresaNombre = storage.getItem(this.EMPRESA_NOMBRE_KEY);
 
     if (accessToken && usuarioId) {
+      const isSuper = isSuperuser ? JSON.parse(isSuperuser) : false;
+      const finalUsername = isSuper ? 'superadmin' : (username || null);
+      const finalNombre = isSuper ? 'Superadmin Global (Dueño del SaaS)' : (nombreCompleto || null);
+
       this.authState.next({
         isAuthenticated: true,
         usuario_id: parseInt(usuarioId, 10),
-        username: username || null,
-        nombre_completo: nombreCompleto || null,
+        username: finalUsername,
+        nombre_completo: finalNombre,
         access_token: accessToken,
         refresh_token: refreshToken,
-        is_superuser: isSuperuser ? JSON.parse(isSuperuser) : false,
+        is_superuser: isSuper,
         roles: roles ? JSON.parse(roles) : [],
         permisos: permisos ? JSON.parse(permisos) : [],
         empresa_id: empresaIdStr ? parseInt(empresaIdStr, 10) : null,
@@ -352,6 +356,9 @@ export class AuthService {
    * Obtener Username del usuario autenticado
    */
   getUsername(): string | null {
+    if (this.isSuperuser()) {
+      return 'superadmin';
+    }
     return this.authState.value.username || this.getItem(this.USERNAME_KEY);
   }
 
@@ -359,6 +366,9 @@ export class AuthService {
    * Obtener Nombre Completo del usuario autenticado
    */
   getNombreCompleto(): string | null {
+    if (this.isSuperuser()) {
+      return 'Superadmin Global (Dueño del SaaS)';
+    }
     return this.authState.value.nombre_completo || this.getItem(this.NOMBRE_COMPLETO_KEY);
   }
 
@@ -381,9 +391,10 @@ export class AuthService {
    */
   getCurrentUser(): Observable<{ username: string; nombre_completo: string }> {
     const currentState = this.authState.value;
+    const isSuper = this.isSuperuser();
     return of({
-      username: currentState.username || '',
-      nombre_completo: currentState.nombre_completo || ''
+      username: isSuper ? 'superadmin' : (currentState.username || ''),
+      nombre_completo: isSuper ? 'Superadmin Global (Dueño del SaaS)' : (currentState.nombre_completo || '')
     });
   }
 

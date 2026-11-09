@@ -4,7 +4,8 @@
     <div class="header-content">
       <div class="header-badge">
         <mat-icon>view_in_ar</mat-icon>
-        <span>CASO DE USO CU-06 • OMNICANAL 3D & IA</span>
+        <span *ngIf="evalMode.esPuds">CASO DE USO CU16 • PROBADOR VIRTUAL (LÍNEA BASE PUDS)</span>
+        <span *ngIf="evalMode.esIconix">CASO DE USO CU-06 • VESTIDOR VIRTUAL AR (ICONIX)</span>
       </div>
       <h1>Vestidor Virtual con Realidad Aumentada y 3D</h1>
       <p>Explora prendas en 3D con rotación 360°, valida tu ajuste biométrico con inteligencia artificial y pruébatelas en tu entorno con WebXR.</p>

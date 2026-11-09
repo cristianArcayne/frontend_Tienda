@@ -149,7 +149,11 @@ export class AppNavItemComponent implements OnChanges, OnInit, OnDestroy {
     }
 
     if (item.route) {
-      this.router.navigate([item.route]);
+      if (item.queryParams) {
+        this.router.navigate([item.route], { queryParams: item.queryParams });
+      } else {
+        this.router.navigate([item.route]);
+      }
       if (window.innerWidth < 1024) {
         this.notify.emit(true);
       }
