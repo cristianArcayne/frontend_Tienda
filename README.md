@@ -1,3 +1,15 @@
+# FashionStore SaaS — Frontend Angular & POS Omnicanal
+> **Sistemas de Información II (SI2) — Segundo Parcial**  
+> **Universidad Autónoma Gabriel René Moreno (UAGRM)**  
+> **Docente:** MSc. Ing. Angélica Garzón Cuéllar | **Estudiante:** Yeison Choque León  
+
+### 🔗 Ecosistema de Repositorios Oficiales:
+- 🖥️ **Backend & Documentación Completa:** [https://github.com/yeisonCL/SI2Parcial-2-Backend](https://github.com/yeisonCL/SI2Parcial-2-Backend)
+- 🌐 **Frontend Web (Este Repositorio):** [https://github.com/yeisonCL/SI2Parcial-2-Frontend](https://github.com/yeisonCL/SI2Parcial-2-Frontend)
+- 📱 **App Móvil Flutter:** [https://github.com/yeisonCL/SI2Parcial-2-Mobile](https://github.com/yeisonCL/SI2Parcial-2-Mobile)
+
+---
+
 # Frontend Tienda - Proyecto Angular
 
 Aplicación frontend desarrollada con **Angular 19** y **Angular Material** para la gestión de una tienda en línea. Incluye módulos de seguridad, administración de usuarios, roles y más.
