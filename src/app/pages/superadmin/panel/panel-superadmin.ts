@@ -80,7 +80,7 @@ export class PanelSuperadmin implements OnInit {
 
   // Telemetría DevOps y Broadcast
   telemetria: any = null;
-  mostrarTelemetria = true;
+  mostrarTelemetria = false;
   cargandoTelemetria = false;
   mostrarModalAnuncio = false;
   anuncioForm = {
