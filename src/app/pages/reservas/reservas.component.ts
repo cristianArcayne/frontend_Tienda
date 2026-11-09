@@ -69,7 +69,8 @@ export class ReservasComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-    private appRef: ApplicationRef
+    private appRef: ApplicationRef,
+    public evalMode: EvaluationModeService
   ) {
     this.usuarioActual = this.authService.getUsername() || 'admin';
     const roles = this.authService.getRoles() || [];
