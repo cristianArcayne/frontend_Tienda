@@ -25,7 +25,7 @@
                    [src]="getImagenSeleccionadaUrl()"
                    [alt]="producto.nombre"
                    (click)="abrirLightbox(imagenSeleccionadaIndex)"
-                   style="max-width: 100%; max-height: 234px; object-fit: contain; border-radius: 4px; cursor: zoom-in;">
+                   style="max-width: 100%; max-height: 234px; object-fit: contain; border-radius: 4px; cursor: zoom-in;" (error)="onImgError($event)">
               <mat-icon *ngIf="!getImagenSeleccionadaUrl()"
                        style="font-size: 64px; width: 64px; height: 64px; color: #ccc;">
                 image
@@ -113,7 +113,7 @@
                   <img *ngIf="tipoMultimedia === 'imagen'"
                        [src]="previewUrl"
                        alt="Preview"
-                       style="max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 4px;">
+                       style="max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 4px;" (error)="onImgError($event)">
                   <video *ngIf="tipoMultimedia === 'video'"
                          [src]="previewUrl"
                          style="max-width: 150px; max-height: 150px; border-radius: 4px;"
@@ -161,7 +161,7 @@
                        style="position: relative; border: 2px solid; border-radius: 4px; padding: 6px; background: white; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;">
                     <img [src]="formatImgUrl(img.archivo_url)"
                       alt="Imagen"
-                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 2px; display: block;">
+                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 2px; display: block;" (error)="onImgError($event)">
                     <mat-icon *ngIf="img.es_principal && !isCliente"
                             style="position: absolute; top: -8px; right: -8px; font-size: 18px; width: 18px; height: 18px; background: #4caf50; color: white; border-radius: 50%; padding: 2px;">
                       check
@@ -212,7 +212,7 @@
             <div class="recomendado-img">
               <img *ngIf="rec.imagen_principal"
                    [src]="formatImgUrl(rec.imagen_principal)"
-                   [alt]="rec.nombre">
+                   [alt]="rec.nombre" (error)="onImgError($event)">
               <mat-icon *ngIf="!rec.imagen_principal">image</mat-icon>
             </div>
             <div class="recomendado-info">
@@ -254,7 +254,7 @@
                        class="rounded border shadow-xs"
                        style="width: 44px; height: 44px; object-fit: cover; cursor: pointer;"
                        (click)="verVariante(element)"
-                       matTooltip="Ver foto ampliada de la variante">
+                       matTooltip="Ver foto ampliada de la variante" (error)="onImgError($event)">
                   <div *ngIf="!element.imagen_url"
                        class="rounded border bg-light d-flex align-items-center justify-content-center"
                        style="width: 44px; height: 44px; cursor: pointer;"

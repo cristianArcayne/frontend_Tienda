@@ -722,6 +722,10 @@ export class DetallesProductoPageComponent implements OnInit, OnDestroy {
     const sum = this.resenas.reduce((acc, r) => acc + (r.calificacion || r.puntuacion_estrellas || 0), 0);
     return Math.round((sum / this.resenas.length) * 10) / 10;
   }
+
+  onImgError(event: any): void {
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = 'assets/images/products/product-1.png';
+    }
+  }
 }
-
-
