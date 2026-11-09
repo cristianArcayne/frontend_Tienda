@@ -136,7 +136,7 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
       sucursal_id: [
         usuarioEdit?.sucursal_id || null
       ],
-      grupo_id: ['', Validators.required]
+      grupo_id: [usuarioEdit?.rol_id || '', Validators.required]
     });
 
     if (this.isEditMode) {
@@ -228,13 +228,17 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
           this.previousRolesUrl = data.previous;
           this.isLoading = false;
           
-          if (this.isEditMode && this.data?.usuario?.grupos && this.data.usuario.grupos.length > 0) {
-            const grupoNombre = this.data.usuario.grupos[0];
-            const rolEncontrado = this.roles.find(r => r.name === grupoNombre || r.nombre === grupoNombre);
-            if (rolEncontrado) {
-              this.grupoIdUsuario = rolEncontrado.id;
-              this.rolesSeleccionadosPorDefecto = [rolEncontrado.id];
-              this.form.patchValue({ grupo_id: rolEncontrado.id });
+          if (this.isEditMode && this.data?.usuario) {
+            let rolId = this.data.usuario.rol_id;
+            if (!rolId && this.data.usuario.grupos && this.data.usuario.grupos.length > 0) {
+              const grupoNombre = this.data.usuario.grupos[0];
+              const rolEncontrado = this.roles.find(r => r.name === grupoNombre || r.nombre === grupoNombre);
+              rolId = rolEncontrado?.id;
+            }
+            if (rolId) {
+              this.grupoIdUsuario = rolId;
+              this.rolesSeleccionadosPorDefecto = [rolId];
+              this.form.patchValue({ grupo_id: rolId });
             }
           } else if (this.roles.length > 0 && !this.form.get('grupo_id')?.value) {
             // Preseleccionar por defecto Vendedor o el primero disponible
@@ -360,6 +364,64 @@ export class CrearUsuarioComponent implements OnInit, OnDestroy {
             this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
           }
         });
+    }
+  }
+
+    getRolIcon(rolName: string | undefined): string {
+    const name = (rolName || '').toLowerCase();
+    if (name.includes('cliente')) return 'shopping_bag';
+    if (name.includes('vendedor')) return 'point_of_sale';
+    if (name.includes('cajero')) return 'receipt_long';
+    if (name.includes('encargado')) return 'storefront';
+    if (name.includes('admin')) return 'admin_panel_settings';
+    return 'badge';
+  }
+
+  getRolColor(rolName: string | undefined): string {
+    const name = (rolName || '').toLowerCase();
+    if (name.includes('cliente')) return '#0284c7';
+    if (name.includes('vendedor')) return '#16a34a';
+    if (name.includes('cajero')) return '#059669';
+    if (name.includes('encargado')) return '#ea580c';
+    if (name.includes('admin')) return '#9333ea';
+    return '#64748b';
+  }
+
+  getRolBadgeBg(rolName: string | undefined): string {
+    const name = (rolName || '').toLowerCase();
+    if (name.includes('cliente')) return '#e0f2fe';
+    if (name.includes('vendedor')) return '#dcfce7';
+    if (name.includes('cajero')) return '#ecfdf5';
+    if (name.includes('encargado')) return '#ffedd5';
+    if (name.includes('admin')) return '#f3e8ff';
+    return '#f1f5f9';
+  }
+
+  getRolDescripcion(rolName: string | undefined): string {
+    const name = (rolName || '').toLowerCase();
+    if (name.includes('cliente')) return 'Acceso a catálogo, compras en línea y vestidor AR';
+    if (name.includes('vendedor')) return 'Atención en mostrador, ventas POS y cobros QR';
+    if (name.includes('cajero')) return 'Gestión de caja y cobros directos';
+    if (name.includes('encargado')) return 'Control de inventario, sucursal y traspasos';
+    if (name.includes('admin')) return 'Administración total de la empresa inquilina';
+    return 'Operativo de la empresa';
+  }
+
+  get rolSeleccionado(): Rol | undefined {
+    const selectedId = this.form.get('grupo_id')?.value;
+    return this.roles.find(r => r.id === selectedId);
+  }
+
+  get esRolEmpleado(): boolean {
+    const rol = this.rolSeleccionado;
+    if (!rol) return true;
+    return !(rol.name || rol.nombre || '').toLowerCase().includes('cliente');
+  }
+
+  onRolChange(rolId: number): void {
+    this.form.patchValue({ grupo_id: rolId });
+    if (!this.esRolEmpleado) {
+      this.form.patchValue({ sucursal_id: null });
     }
   }
 

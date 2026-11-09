@@ -136,41 +136,67 @@
       </div>
     </div>
 
-    <!-- 4. ROL Y SUCURSAL ASIGNADA -->
+    <!-- 4. ROL OPERATIVO Y SUCURSAL ASIGNADA -->
     <div class="p-16 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
       <label class="d-block font-weight-bold m-b-8" style="color: #334155; font-size: 13px;">
-        4. ROL OPERATIVO Y SUCURSAL ASIGNADA
+        4. PERFIL DE ACCESO Y ROL (CLIENTE / VENDEDOR / ADMIN)
       </label>
 
-      <!-- Selector de Sucursal Física -->
+      <!-- Selector de Rol Destacado -->
       <mat-form-field appearance="outline" class="w-100 m-b-12">
-        <mat-label>Sucursal Física Asignada (Punto de Venta / Caja)</mat-label>
-        <mat-select formControlName="sucursal_id">
-          <mat-option [value]="null">-- Sin Sucursal Específica (Global de la Empresa) --</mat-option>
-          <mat-option *ngFor="let suc of sucursales" [value]="suc.id">
-            🏪 {{ suc.nombre }} ({{ suc.ciudad }}) - {{ suc.direccion }}
+        <mat-label>Rol Asignado *</mat-label>
+        <mat-select formControlName="grupo_id" (selectionChange)="onRolChange($event.value)" required>
+          <mat-select-trigger>
+            <div *ngIf="rolSeleccionado" style="display: flex; align-items: center; gap: 8px;">
+              <span [style.background]="getRolBadgeBg(rolSeleccionado.name)" [style.color]="getRolColor(rolSeleccionado.name)" style="padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                <mat-icon style="font-size: 16px; width: 16px; height: 16px;">{{ getRolIcon(rolSeleccionado.name) }}</mat-icon>
+                {{ rolSeleccionado.name }}
+              </span>
+              <span style="font-size: 12px; color: #64748b;">— {{ getRolDescripcion(rolSeleccionado.name) }}</span>
+            </div>
+          </mat-select-trigger>
+          <mat-option *ngFor="let rol of roles" [value]="rol.id" style="padding: 10px 16px; height: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; padding: 4px 0;">
+              <span [style.background]="getRolBadgeBg(rol.name)" [style.color]="getRolColor(rol.name)" style="padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                <mat-icon style="font-size: 16px; width: 16px; height: 16px;">{{ getRolIcon(rol.name) }}</mat-icon>
+                {{ rol.name }}
+              </span>
+              <span style="font-size: 11px; color: #64748b;">
+                {{ getRolDescripcion(rol.name) }}
+              </span>
+            </div>
           </mat-option>
         </mat-select>
+        <mat-hint>Selecciona si el usuario es un Cliente comprador o un Empleado (Vendedor, Cajero, Admin).</mat-hint>
+        <mat-error *ngIf="form.get('grupo_id')?.hasError('required')">El rol es obligatorio</mat-error>
       </mat-form-field>
 
-      <label class="d-block font-weight-bold m-t-8 m-b-4" style="color: #475569; font-size: 12px;">
-        Selecciona el Rol / Perfil de Acceso:
-      </label>
-
-      <div *ngIf="isLoading" class="text-center p-12">
-        <mat-spinner diameter="24" style="margin: 0 auto;"></mat-spinner>
+      <!-- Banner Informativo del Rol Seleccionado -->
+      <div *ngIf="rolSeleccionado" class="p-12 rounded m-b-12" [style.background]="getRolBadgeBg(rolSeleccionado.name)" style="border-left: 4px solid; display: flex; align-items: center; gap: 12px;" [style.border-color]="getRolColor(rolSeleccionado.name)">
+        <mat-icon [style.color]="getRolColor(rolSeleccionado.name)">{{ getRolIcon(rolSeleccionado.name) }}</mat-icon>
+        <div style="font-size: 12px;" [style.color]="getRolColor(rolSeleccionado.name)">
+          <strong>{{ rolSeleccionado.name }}:</strong> {{ getRolDescripcion(rolSeleccionado.name) }}
+        </div>
       </div>
 
-      <mat-selection-list #rolesList (selectionChange)="onRolSelected($event)" style="max-height: 180px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 8px;">
-        <mat-list-option *ngFor="let rol of roles" [value]="rol.id" [selected]="rolesSeleccionadosPorDefecto.includes(rol.id)">
-          <div class="d-flex align-items-center justify-content-between w-100">
-            <strong>{{ rol.name }}</strong>
-            <span class="text-muted" style="font-size: 11px;">
-              {{ (rol.name || '').toLowerCase().includes('vendedor') ? 'Ventas POS y Caja' : ((rol.name || '').toLowerCase().includes('admin') ? 'Acceso Administrativo' : 'Operativo') }}
-            </span>
-          </div>
-        </mat-list-option>
-      </mat-selection-list>
+      <!-- Selector de Sucursal Física (solo para Empleados: Vendedor, Cajero, Encargado) -->
+      <div *ngIf="esRolEmpleado" class="m-t-8">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Sucursal Física Asignada (Tienda / Punto de Caja)</mat-label>
+          <mat-select formControlName="sucursal_id">
+            <mat-option [value]="null">-- Sin Sucursal Específica (Global de la Empresa) --</mat-option>
+            <mat-option *ngFor="let suc of sucursales" [value]="suc.id">
+              🏪 {{ suc.nombre }} ({{ suc.ciudad }}) - {{ suc.direccion }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>Sucursal donde el personal atenderá las ventas POS en mostrador.</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Si es Cliente, aclaración de que no requiere sucursal -->
+      <div *ngIf="!esRolEmpleado" class="p-8 rounded" style="background: #f0fdf4; border: 1px dashed #86efac; color: #166534; font-size: 11px;">
+        ℹ️ Como <strong>Cliente</strong>, este usuario no pertenece a una sucursal fija; podrá comprar online y recoger en cualquiera de las tiendas de la empresa.
+      </div>
     </div>
 
   </form>
