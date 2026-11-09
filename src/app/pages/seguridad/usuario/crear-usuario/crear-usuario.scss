@@ -3,11 +3,27 @@
   width: 100%;
 }
 
+mat-dialog-content {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
 form {
   display: flex !important;
   flex-direction: column !important;
   gap: 16px !important;
   width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.p-16.rounded {
+  display: block !important;
+  width: 100% !important;
+  clear: both !important;
+  float: none !important;
   box-sizing: border-box !important;
 }
 
