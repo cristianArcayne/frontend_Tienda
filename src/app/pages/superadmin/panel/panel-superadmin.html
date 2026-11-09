@@ -16,9 +16,27 @@
       </div>
 
       <div class="header-actions">
-        <button mat-stroked-button color="primary" (click)="cargarEmpresas()" [disabled]="isLoading">
+        <button mat-stroked-button color="primary" (click)="cargarEmpresas(); cargarTelemetria()" [disabled]="isLoading">
           <mat-icon>refresh</mat-icon>
           Actualizar
+        </button>
+
+        <button mat-stroked-button (click)="toggleTelemetria()" [style.color]="mostrarTelemetria ? '#4f46e5' : '#64748b'">
+          <mat-icon>sensors</mat-icon>
+          Telemetría Clúster
+          <span style="font-size: 11px; margin-left: 4px; padding: 2px 6px; background: #dcfce7; color: #166534; border-radius: 10px; font-weight: 700;">
+            {{ telemetria?.cluster?.db_latencia_ms ? (telemetria.cluster.db_latencia_ms | number:'1.0-0') + ' ms' : 'Online' }}
+          </span>
+        </button>
+
+        <button mat-stroked-button color="accent" (click)="abrirAnuncioModal()">
+          <mat-icon>campaign</mat-icon>
+          Broadcast Global
+        </button>
+
+        <button mat-stroked-button style="color: #0d9488; border-color: #0d9488;" (click)="exportarBalancePDF()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          Balance PDF
         </button>
 
         <button mat-flat-button color="accent" (click)="restablecerContextoGlobal()">
@@ -32,6 +50,170 @@
         </button>
       </div>
     </mat-card-header>
+  </mat-card>
+
+  <!-- MODAL / DIALOG INLINE DE EMISIÓN DE ANUNCIO GLOBAL BROADCAST -->
+  <mat-card *ngIf="mostrarModalAnuncio" class="cardWithShadow m-b-24" style="border-left: 4px solid #ec4899; background: #fdf2f8;">
+    <mat-card-content class="p-24">
+      <div class="d-flex justify-content-between align-items-center m-b-16">
+        <div class="d-flex align-items-center gap-12">
+          <mat-icon style="color: #db2777; font-size: 28px; width: 28px; height: 28px;">campaign</mat-icon>
+          <div>
+            <h3 class="m-0" style="font-size: 18px; font-weight: 700; color: #831843;">Emitir Anuncio Global (Broadcast a Todos los Tenants)</h3>
+            <p class="m-0 text-muted" style="font-size: 12px;">Transmite un comunicado urgente, mantenimiento o aviso comercial a los administradores de todas las empresas.</p>
+          </div>
+        </div>
+        <button mat-icon-button (click)="cerrarAnuncioModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="d-flex flex-column gap-16">
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <mat-label>Título del Anuncio</mat-label>
+          <input matInput [(ngModel)]="anuncioForm.titulo" placeholder="Ej: Actualización de Servicios y Mantenimiento" />
+          <mat-icon matPrefix class="m-r-8">title</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <mat-label>Mensaje Detallado para los Tenants</mat-label>
+          <textarea matInput [(ngModel)]="anuncioForm.mensaje" rows="3" placeholder="Redacta el comunicado para los administradores de tienda..."></textarea>
+          <mat-icon matPrefix class="m-r-8">chat</mat-icon>
+        </mat-form-field>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-12">
+          <div class="d-flex align-items-center gap-8">
+            <span style="font-size: 13px; font-weight: 600; color: #475569;">Prioridad:</span>
+            <mat-chip-listbox [(ngModel)]="anuncioForm.tipo">
+              <mat-chip-option value="BROADCAST" selected color="primary">Informativo</mat-chip-option>
+              <mat-chip-option value="MANTENIMIENTO" color="warn">Mantenimiento</mat-chip-option>
+              <mat-chip-option value="ACTUALIZACION" color="accent">Nueva Función IA</mat-chip-option>
+            </mat-chip-listbox>
+          </div>
+
+          <div class="d-flex gap-8">
+            <button mat-button (click)="cerrarAnuncioModal()" [disabled]="enviandoAnuncio">Cancelar</button>
+            <button mat-flat-button color="accent" (click)="enviarAnuncioGlobal()" [disabled]="enviandoAnuncio" style="background: #db2777; color: white;">
+              <mat-icon *ngIf="!enviandoAnuncio">send</mat-icon>
+              <mat-spinner *ngIf="enviandoAnuncio" diameter="18" class="m-r-8"></mat-spinner>
+              {{ enviandoAnuncio ? 'Transmitiendo...' : 'Transmitir Anuncio Global' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- CENTRO DE TELEMETRÍA DEVOPS & SALUD DEL CLÚSTER SAAS -->
+  <mat-card *ngIf="mostrarTelemetria && telemetria" class="cardWithShadow m-b-24" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; border: 1px solid #334155;">
+    <mat-card-header class="p-20 d-flex justify-content-between align-items-center flex-wrap gap-12" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <div class="d-flex align-items-center gap-12">
+        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+          <mat-icon>memory</mat-icon>
+        </div>
+        <div>
+          <mat-card-title class="m-0" style="color: white; font-size: 16px; font-weight: 700;">
+            Centro de Telemetría DevOps & Salud del Clúster SaaS
+          </mat-card-title>
+          <mat-card-subtitle class="m-t-2" style="color: #94a3b8; font-size: 12px;">
+            Monitoreo en vivo de microservicios, latencia de base de datos Neon Cloud y consumo de IA/AR por inquilino.
+          </mat-card-subtitle>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-12">
+        <span style="font-size: 11px; padding: 4px 10px; background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 20px; font-weight: 700;">
+          SLA: {{ telemetria.metricas_globales.tasa_disponibilidad_sla }}
+        </span>
+        <button mat-icon-button style="color: #94a3b8;" (click)="toggleTelemetria()" matTooltip="Ocultar telemetría">
+          <mat-icon>expand_less</mat-icon>
+        </button>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content class="p-20">
+      <!-- Grid de Servicios del Clúster -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px;" class="m-b-20">
+
+        <!-- DB PostgreSQL -->
+        <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">PostgreSQL Cloud</span>
+            <span style="font-size: 10px; padding: 2px 6px; background: rgba(34, 197, 94, 0.25); color: #4ade80; border-radius: 4px; font-weight: 700;">ONLINE</span>
+          </div>
+          <div style="font-size: 20px; font-weight: 800; color: #38bdf8; margin-top: 6px;">
+            {{ telemetria.cluster.db_latencia_ms | number:'1.0-0' }} ms
+          </div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">AWS us-east-2 (Neon)</div>
+        </div>
+
+        <!-- Microservicio CNN Visión IA -->
+        <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">Visión IA (CNN)</span>
+            <span style="font-size: 10px; padding: 2px 6px; background: rgba(34, 197, 94, 0.25); color: #4ade80; border-radius: 4px; font-weight: 700;">ONLINE</span>
+          </div>
+          <div style="font-size: 20px; font-weight: 800; color: #a855f7; margin-top: 6px;">
+            Puerto {{ telemetria.cluster.vision_ia_port }}
+          </div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">MobileNetV2 Ropa & Calzado</div>
+        </div>
+
+        <!-- Backend REST -->
+        <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">API Gateway REST</span>
+            <span style="font-size: 10px; padding: 2px 6px; background: rgba(34, 197, 94, 0.25); color: #4ade80; border-radius: 4px; font-weight: 700;">ONLINE</span>
+          </div>
+          <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 6px;">
+            Puerto {{ telemetria.cluster.backend_port }}
+          </div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">FastAPI Uvicorn Multi-Tenant</div>
+        </div>
+
+        <!-- Frontend SPA -->
+        <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">Frontend SPA Web</span>
+            <span style="font-size: 10px; padding: 2px 6px; background: rgba(34, 197, 94, 0.25); color: #4ade80; border-radius: 4px; font-weight: 700;">ONLINE</span>
+          </div>
+          <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 6px;">
+            Puerto {{ telemetria.cluster.frontend_spa_port }}
+          </div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Angular 19 Material</div>
+        </div>
+
+        <!-- Consumo Global IA/AR -->
+        <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">Inferencias IA / AR</span>
+            <span style="font-size: 10px; padding: 2px 6px; background: rgba(168, 85, 247, 0.25); color: #c084fc; border-radius: 4px; font-weight: 700;">METERING</span>
+          </div>
+          <div style="font-size: 20px; font-weight: 800; color: #f472b6; margin-top: 6px;">
+            {{ telemetria.metricas_globales.total_inferencias_ia }} fotos
+          </div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">{{ telemetria.metricas_globales.total_sesiones_ar }} sesiones AR WebXR</div>
+        </div>
+
+      </div>
+
+      <!-- Barra de Consumo de IA por Tenant -->
+      <div *ngIf="telemetria.consumo_por_empresa?.length" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 10px; display: flex; justify-content: space-between;">
+          <span>Distribución de Consumo de Cómputo IA & AR por Inquilino</span>
+          <span style="color: #94a3b8; font-size: 11px; font-weight: normal;">Cuota mensual promedio: 150 inferencias</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+          <div *ngFor="let c of telemetria.consumo_por_empresa" style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px;">
+            <div class="d-flex justify-content-between align-items-center" style="font-size: 12px;">
+              <span style="font-weight: 600; color: #f1f5f9;">{{ c.nombre }}</span>
+              <span style="color: #a855f7; font-weight: 700;">{{ c.inferencias_ia_mes }} fotos ({{ c.cuota_ia_usada_pct }}%)</span>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="c.cuota_ia_usada_pct" style="margin-top: 6px; height: 5px; border-radius: 4px;"></mat-progress-bar>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
   </mat-card>
 
   <!-- Tarjetas de Métricas Ejecutivas (KPIs de Ingeniería SaaS) -->

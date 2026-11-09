@@ -76,8 +76,16 @@ export class CrearProductoComponent implements OnInit, OnDestroy {
       marca_id: [data?.producto?.marca || '', Validators.required]
     });
 
-    if (data?.producto?.imagen_principal || data?.producto?.imagen_uri) {
-      this.previewUrl = data.producto.imagen_principal || data.producto.imagen_uri;
+    let rawImg = '';
+    if (data?.producto?.imagenes && data.producto.imagenes.length > 0) {
+      const principal = data.producto.imagenes.find((img: any) => img.es_principal);
+      rawImg = principal ? principal.archivo_url : data.producto.imagenes[0].archivo_url;
+    } else {
+      rawImg = data?.producto?.imagen_principal || data?.producto?.imagen_uri || data?.producto?.imagen_url || '';
+    }
+
+    if (rawImg) {
+      this.previewUrl = this.configService.formatImageUrl(rawImg);
       this.previewFileName = 'Imagen actual';
     }
   }
@@ -250,6 +258,12 @@ export class CrearProductoComponent implements OnInit, OnDestroy {
 
     const multimediosUrl = this.configService.getApiUrl('multimedios');
     return this.http.post(multimediosUrl, formData);
+  }
+
+    onImgError(event: any): void {
+    if (event?.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = 'assets/images/products/product-1.png';
+    }
   }
 
   cancelar(): void {

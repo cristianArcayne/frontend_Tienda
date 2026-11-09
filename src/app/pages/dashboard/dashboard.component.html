@@ -558,13 +558,15 @@
 
             <button mat-raised-button color="primary" class="w-100 btn-classify m-t-16"
                     (click)="ejecutarInferenciaVision()" [disabled]="clasificandoVision() || !imagenPrevia()">
-              @if (!clasificandoVision()) {
-                <mat-icon>psychology</mat-icon>
-                <span>Clasificar con Red Neuronal Convolucional (CNN)</span>
-              } @else {
-                <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
-                <span>Ejecutando inferencia MobileNetV2...</span>
-              }
+              <ng-container>
+                @if (!clasificandoVision()) {
+                  <mat-icon>psychology</mat-icon>
+                  <span>Clasificar con Red Neuronal Convolucional (CNN)</span>
+                } @else {
+                  <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+                  <span>Ejecutando inferencia MobileNetV2...</span>
+                }
+              </ng-container>
             </button>
           </div>
 

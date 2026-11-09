@@ -24,7 +24,7 @@
       <!-- Previsualización si hay imagen seleccionada -->
       <div *ngIf="previewUrl" class="image-preview-card">
         <div class="preview-img-container">
-          <img [src]="previewUrl" alt="Previsualización" class="preview-img" />
+          <img [src]="previewUrl" alt="Previsualización" (error)="onImgError($event)" class="preview-img" />
         </div>
         <div class="preview-info">
           <span class="preview-name" [title]="previewFileName">{{ previewFileName || 'Imagen seleccionada' }}</span>
