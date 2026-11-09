@@ -1,5 +1,21 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { PermisosService } from '../../services/permisos.service';
 
+const canAccessWithPermiso = (permiso: string) => {
+  return () => {
+    const permisosService = inject(PermisosService);
+    const router = inject(Router);
+
+    if (permisosService.tiene(permiso)) {
+      return true;
+    }
+
+    router.navigate(['/dashboard']);
+    return false;
+  };
+};
 
 // pages
 import { AppIconsComponent } from './icons/icons.component';
@@ -29,6 +45,7 @@ export const ExtraRoutes: Routes = [
       {
         path: 'catalogo',
         component: CatalogoComponent,
+        canActivate: [canAccessWithPermiso(PermisosService.INVENTARIO_VIEW_CATALOGO)],
       },
       {
         path: 'comparador',
