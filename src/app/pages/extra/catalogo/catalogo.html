@@ -131,7 +131,7 @@
           <span *ngIf="!sucursalSeleccionadaId"
                 style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #475569; background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">
             <mat-icon style="font-size: 14px; width: 14px; height: 14px;">inventory_2</mat-icon>
-            {{ (prod.stock_total || 0) > 0 ? (prod.stock_total + ' uds en stock') : 'Disponibilidad según tienda' }}
+            {{ (prod.stock_total || 0) > 0 ? (prod.stock_total + ' uds en stock') : '0 uds en stock' }}
           </span>
         </div>
 
