@@ -495,17 +495,9 @@
 
         <div class="chart-header-controls">
           <div class="model-toggle-pill">
-            <button mat-button [class.active-pill]="modeloVision() === 'ropa'" (click)="onModeloVisionChange('ropa')">
+            <button mat-button class="active-pill">
               <mat-icon>checkroom</mat-icon>
-              <span>👗 Ropa & Prendas (8 clases)</span>
-            </button>
-            <button mat-button [class.active-pill]="modeloVision() === 'calzado'" (click)="onModeloVisionChange('calzado')">
-              <mat-icon>shopping_bag</mat-icon>
-              <span>👟 Calzado Manaco (10 clases)</span>
-            </button>
-            <button mat-button [class.active-pill]="modeloVision() === 'objetos'" (click)="onModeloVisionChange('objetos')">
-              <mat-icon>recycling</mat-icon>
-              <span>🍾 Objetos & Botellas (7 clases)</span>
+              <span>👗 Catálogo Moda & Ropa</span>
             </button>
           </div>
         </div>
@@ -539,19 +531,19 @@
               <span class="quick-label">O prueba una prenda de ejemplo con 1 clic:</span>
               <div class="quick-btn-group">
                 <button mat-stroked-button (click)="cargarEjemploVision('chamarra')" [disabled]="clasificandoVision()">
-                  🧥 Chamarra de Trabajo / Invierno
+                  🧥 Chamarra / Parka Invierno
+                </button>
+                <button mat-stroked-button (click)="cargarEjemploVision('camisa')" [disabled]="clasificandoVision()">
+                  👔 Camisa Formal Manga Larga
                 </button>
                 <button mat-stroked-button (click)="cargarEjemploVision('polera')" [disabled]="clasificandoVision()">
                   👕 Polera Cotton Casual
                 </button>
                 <button mat-stroked-button (click)="cargarEjemploVision('vestido')" [disabled]="clasificandoVision()">
-                  👗 Vestido de Seda Gala
+                  👗 Vestido Elegante de Gala
                 </button>
                 <button mat-stroked-button (click)="cargarEjemploVision('deportivo')" [disabled]="clasificandoVision()">
-                  👟 Zapatilla Sport
-                </button>
-                <button mat-stroked-button (click)="cargarEjemploVision('botella')" [disabled]="clasificandoVision()">
-                  🍾 Botella Reciclable
+                  👟 Zapatillas Sport
                 </button>
               </div>
             </div>
@@ -629,13 +621,17 @@
 
                 <!-- Productos coincidentes en PostgreSQL -->
                 <div class="catalog-matches-box m-t-20">
-                  <div class="d-flex justify-content-between align-items-center m-b-12">
+                  <div class="d-flex justify-content-between align-items-center m-b-8">
                     <h4 class="matches-title">
                       <mat-icon>inventory_2</mat-icon>
-                      Prendas Coincidentes en Stock (PostgreSQL)
+                      Prendas en Stock de {{ currentEmpresaNombre }} (PostgreSQL)
                     </h4>
                     <span class="matches-count">{{ res.catalogo_coincidente.total_encontrados }} disponibles</span>
                   </div>
+                  <p class="matches-criteria text-muted m-b-16" style="font-size: 13px; line-height: 1.4;">
+                    <mat-icon style="font-size: 16px; vertical-align: text-bottom; width: 16px; height: 16px;">storefront</mat-icon>
+                    {{ res.catalogo_coincidente.criterio_busqueda }}
+                  </p>
 
                   <div class="products-mini-grid">
                     @for (prod of res.catalogo_coincidente.productos; track prod.id) {

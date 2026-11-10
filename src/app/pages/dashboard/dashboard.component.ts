@@ -377,6 +377,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       nombreEjemplo = 'chamarra_parka_termica.jpg';
       urlImagen = '/assets/images/products/chamarra_usuario.jpg';
       this.modeloVision.set('ropa');
+    } else if (tipo === 'camisa') {
+      nombreEjemplo = 'camisa_manga_larga_azul.jpg';
+      urlImagen = '/assets/images/products/camisa_manga_larga_azul.jpg';
+      this.modeloVision.set('ropa');
     } else if (tipo === 'polera') {
       nombreEjemplo = 'polera_cotton_casual.jpg';
       urlImagen = 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400';
@@ -388,19 +392,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } else if (tipo === 'deportivo') {
       nombreEjemplo = 'calzado_deportivo_sport.jpg';
       urlImagen = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400';
-      this.modeloVision.set('calzado');
-    } else if (tipo === 'mocasin') {
-      nombreEjemplo = 'mocasin_casual_cuero.jpg';
-      urlImagen = 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400';
-      this.modeloVision.set('calzado');
-    } else if (tipo === 'bota') {
-      nombreEjemplo = 'bota_seguridad_industrial.jpg';
-      urlImagen = 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=400';
-      this.modeloVision.set('calzado');
-    } else if (tipo === 'botella') {
-      nombreEjemplo = 'agua_botella.jpg';
-      urlImagen = 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400';
-      this.modeloVision.set('objetos');
+      this.modeloVision.set('ropa');
     }
 
     this.imagenPrevia.set(urlImagen);
@@ -429,7 +421,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const formData = new FormData();
     formData.append('archivo', file);
 
-    const apiUrl = `${this.configService.getApiBaseUrl()}/v1/ia/busqueda-visual?tipo_modelo=${this.modeloVision()}`;
+    const empresaId = this.authService.getEmpresaId();
+    let apiUrl = `${this.configService.getApiBaseUrl()}/v1/ia/busqueda-visual?tipo_modelo=${this.modeloVision()}`;
+    if (empresaId) {
+      apiUrl += `&empresa_id=${empresaId}`;
+    }
 
     this.http.post<any>(apiUrl, formData)
       .pipe(takeUntil(this.destroy$))

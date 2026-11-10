@@ -81,8 +81,8 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
 
   // Control de Acceso: Llave del Desarrollador (CU-17)
   readonly LLAVE_OFICIAL_DEFECTO = 'DEV-KEY-FASHIONSTORE-SECURE-2026';
-  developerKeyInput: string = 'DEV-KEY-FASHIONSTORE-SECURE-2026';
-  hideDevKey: boolean = false;
+  developerKeyInput: string = '';
+  hideDevKey: boolean = true;
   isDevUnlocked: boolean = false; // Comienza bloqueado estrictamente
   isDevLoading: boolean = false;
   isDownloadingLog: boolean = false;
