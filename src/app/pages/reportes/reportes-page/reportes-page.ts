@@ -117,6 +117,12 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
       query: 'Comparar ventas por canal presencial pos versus digital'
     },
     {
+      id: 'top10_sucursal',
+      label: 'Top 10 Productos por Sucursal (3 meses)',
+      icon: 'storefront',
+      query: 'Los 10 productos más vendidos por sucursal en los últimos 3 meses'
+    },
+    {
       id: 'ranking',
       label: 'Prendas Más Vendidas',
       icon: 'local_fire_department',
@@ -414,9 +420,10 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
   }
 
   // Handlers para las pestañas de entrada
-  onEjecutarNLP(respuesta: NLPRespuesta): void {
-    // Si la respuesta proviene de NLP tradicional, intentar consultar la IA para generar el análisis completo
-    const query = respuesta.query_interpretada?.['consulta'] || respuesta.query_interpretada?.['intencion'] || 'Reporte de ventas';
+  onEjecutarNLP(respuesta: any): void {
+    // Preservar la consulta original exacta para no perder entidades como 'por sucursal' o 'últimos 3 meses'
+    const rawQuery = respuesta?.consulta_original || respuesta?.query_interpretada?.['consulta'] || (typeof respuesta === 'string' ? respuesta : null);
+    const query = rawQuery || respuesta?.query_interpretada?.['intencion'] || 'Reporte de ventas';
     this.ejecutarComandoIA(query);
   }
 

@@ -150,8 +150,11 @@ export class VozComponent implements OnInit, OnDestroy {
         finalize(() => this.procesando = false)
       )
       .subscribe({
-        next: (res) => {
+        next: (res: any) => {
           this.queryInterpretada = res.query_interpretada;
+          if (!res.consulta_original) {
+            res.consulta_original = this.textoCorregido;
+          }
           this.ejecutar.emit(res);
           const total = res.resultados?.paginacion?.total_registros || 0;
           this.snackBar.open(`Reporte ejecutado: ${total} registros`, 'OK', { duration: 3000 });
