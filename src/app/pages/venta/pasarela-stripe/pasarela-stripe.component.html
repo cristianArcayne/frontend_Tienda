@@ -96,7 +96,7 @@
                 <mat-label>Seleccionar Prenda / Variante</mat-label>
                 <mat-select [(ngModel)]="varianteSeleccionadaId" placeholder="Elegir prenda del catálogo...">
                   <mat-option *ngFor="let v of variantesDisponibles" [value]="v.id">
-                    {{ v.ropa_nombre || v.producto_nombre }} — {{ v.talla }} / {{ v.color }} (Bs. {{ v.precio || v.precio_base }})
+                    {{ v.ropa_nombre || v.producto_nombre }} — {{ v.tallaNombre || v.talla }} / {{ v.colorNombre || v.color }} (Bs. {{ v.precio || v.precio_base }})
                   </mat-option>
                 </mat-select>
               </mat-form-field>

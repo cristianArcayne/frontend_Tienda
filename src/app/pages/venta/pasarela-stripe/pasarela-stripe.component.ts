@@ -161,7 +161,12 @@ export class PasarelaStripeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          this.variantesDisponibles = Array.isArray(data) ? data : [];
+          const list = Array.isArray(data) ? data : [];
+          this.variantesDisponibles = list.map((v: any) => ({
+            ...v,
+            tallaNombre: typeof v.talla === 'object' ? (v.talla?.nombre || 'M') : (v.talla || 'M'),
+            colorNombre: typeof v.color === 'object' ? (v.color?.nombre || 'General') : (v.color || 'General'),
+          }));
           // Pre-cargar al menos un item si la orden está vacía
           if (this.variantesDisponibles.length > 0 && this.itemsOrden.length === 0) {
             const primera = this.variantesDisponibles[0];
@@ -176,6 +181,8 @@ export class PasarelaStripeComponent implements OnInit, OnDestroy {
     if (!variante) return;
     const existente = this.itemsOrden.find(i => i.variante_id === variante.id);
     const precio = Number(variante.precio || variante.precio_base || 149.99);
+    const tallaStr = typeof variante.talla === 'object' ? (variante.talla?.nombre || 'M') : (variante.tallaNombre || variante.talla || 'M');
+    const colorStr = typeof variante.color === 'object' ? (variante.color?.nombre || 'General') : (variante.colorNombre || variante.color || 'General');
 
     if (existente) {
       existente.cantidad += cantidad;
@@ -186,8 +193,8 @@ export class PasarelaStripeComponent implements OnInit, OnDestroy {
         variante_id: variante.id,
         ropa_nombre: nombrePrenda,
         sku: variante.sku || ('SKU-' + variante.id),
-        talla: variante.talla || 'M',
-        color: variante.color || 'Negro',
+        talla: tallaStr,
+        color: colorStr,
         precio_unitario: precio,
         cantidad: cantidad,
         subtotal: Number((precio * cantidad).toFixed(2))
