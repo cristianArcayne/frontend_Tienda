@@ -233,7 +233,7 @@ export class ProductoComponent implements OnInit, OnDestroy {
 
   onImgError(event: any): void {
     if (event?.target && !event.target.src.includes('product-1.png')) {
-      event.target.src = 'assets/images/products/product-1.png';
+      event.target.src = '/assets/images/products/product-1.png';
     }
   }
 }

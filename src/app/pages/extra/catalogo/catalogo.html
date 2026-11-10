@@ -91,7 +91,7 @@
           -{{ prod.porcentaje_descuento }}% OFF
         </div>
 
-        <div class="category-badge">{{ prod.categoria_nombre }}</div>
+        <div class="category-badge" [style.top]="prod.en_oferta ? '44px' : '10px'">{{ prod.categoria_nombre }}</div>
 
         <button class="fav-btn" mat-icon-button (click)="$event.stopPropagation(); toggleFavorito(prod)"
           [matTooltip]="esFavorito(prod.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'">

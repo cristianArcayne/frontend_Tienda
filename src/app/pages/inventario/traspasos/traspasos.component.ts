@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -14,33 +13,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
-import { ConfigService } from 'src/app/services/config.service';
 
-export interface DetalleTraspasoItem {
-  id: number;
-  variante_id: number;
-  ropa_nombre: string;
-  sku: string;
-  talla: string;
-  color: string;
-  cantidad: number;
-}
-
-export interface TraspasoItem {
-  id: number;
-  sucursal_origen_id: number;
-  sucursal_origen_nombre: string;
-  sucursal_origen_ciudad: string;
-  sucursal_destino_id: number;
-  sucursal_destino_nombre: string;
-  sucursal_destino_ciudad: string;
-  estado: string; // 'SOLICITADO', 'EN_TRANSITO', 'RECIBIDO', 'CANCELADO'
-  observacion?: string;
-  fecha_solicitud?: string;
-  fecha_recepcion?: string;
-  total_unidades: number;
-  detalles: DetalleTraspasoItem[];
-}
+import {
+  TraspasosService,
+  TraspasoItem,
+  TraspasoMetricas,
+  VarianteDisponible
+} from '../../../services/traspasos.service';
 
 @Component({
   selector: 'app-traspasos',
@@ -60,224 +39,60 @@ export interface TraspasoItem {
     MatInputModule,
     MatSelectModule
   ],
-  template: `
-    <div class="traspasos-container">
-      <div class="m-b-16 d-flex align-items-center justify-content-between flex-wrap gap-12">
-        <div>
-          <h2 class="m-b-4 font-weight-bold" style="color: #1e293b;">[CU10] Traspasos de Stock entre Sucursales</h2>
-          <p class="text-muted m-0">Gestión logística de traslados de mercadería para rebalanceo de existencias inter-tiendas</p>
-        </div>
-        <button mat-raised-button color="primary" (click)="abrirFormulario()">
-          <mat-icon class="m-r-8">compare_arrows</mat-icon>
-          Nuevo Traspaso
-        </button>
-      </div>
-
-      <!-- Formulario de Nuevo Traspaso -->
-      <mat-card *ngIf="mostrarForm" class="m-b-20" style="border: 2px solid #6366f1;">
-        <mat-card-header>
-          <mat-card-title>Registrar Solicitud de Traspaso Inter-Sucursal</mat-card-title>
-          <mat-card-subtitle>Seleccione la tienda origen (donde sale stock) y la tienda destino (donde ingresa)</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content class="p-t-16">
-          <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-            <mat-form-field appearance="outline" style="flex: 1; min-width: 240px;">
-              <mat-label>Sucursal Origen (Salida)</mat-label>
-              <mat-select [(ngModel)]="formData.sucursal_origen_id" (selectionChange)="onOrigenChange()">
-                <mat-option *ngFor="let s of sucursales" [value]="s.id">
-                  {{ s.nombre }} ({{ s.ciudad }})
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" style="flex: 1; min-width: 240px;">
-              <mat-label>Sucursal Destino (Recepción)</mat-label>
-              <mat-select [(ngModel)]="formData.sucursal_destino_id">
-                <mat-option *ngFor="let s of sucursales" [value]="s.id" [disabled]="s.id === formData.sucursal_origen_id">
-                  {{ s.nombre }} ({{ s.ciudad }})
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px;">
-            <mat-form-field appearance="outline" style="flex: 2; min-width: 260px;">
-              <mat-label>Prenda / Variante a Traspasar</mat-label>
-              <mat-select [(ngModel)]="formData.variante_id">
-                <mat-option *ngFor="let item of variantesDisponibles" [value]="item.variante_id">
-                  {{ item.ropa_nombre }} (Talla: {{ item.talla }}, Color: {{ item.color }}) — Disponible: {{ item.stock_disponible }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" style="flex: 1; min-width: 140px;">
-              <mat-label>Cantidad a Enviar</mat-label>
-              <input matInput type="number" [(ngModel)]="formData.cantidad" min="1" placeholder="Ej. 2" required />
-            </mat-form-field>
-          </div>
-
-          <div style="margin-top: 8px;">
-            <mat-form-field appearance="outline" style="width: 100%;">
-              <mat-label>Motivo / Observación del Traspaso</mat-label>
-              <input matInput [(ngModel)]="formData.observacion" placeholder="Ej. Rebalanceo por alta demanda en Mall" />
-            </mat-form-field>
-          </div>
-
-          <div class="d-flex justify-content-end gap-12 m-t-8">
-            <button mat-button (click)="mostrarForm = false">Cancelar</button>
-            <button mat-raised-button color="primary" [disabled]="!formData.sucursal_origen_id || !formData.sucursal_destino_id || !formData.variante_id || !formData.cantidad || guardando" (click)="guardarTraspaso()">
-              <mat-icon *ngIf="!guardando">send</mat-icon>
-              <mat-spinner *ngIf="guardando" diameter="20"></mat-spinner>
-              Emitir Traspaso
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Tabla de Traspasos -->
-      <mat-card>
-        <mat-card-content>
-          <div *ngIf="isLoading" class="d-flex justify-content-center p-y-40">
-            <mat-spinner diameter="50"></mat-spinner>
-          </div>
-
-          <div *ngIf="!isLoading && traspasos.length > 0" class="table-responsive">
-            <table mat-table [dataSource]="traspasos" class="w-full">
-              <ng-container matColumnDef="id">
-                <th mat-header-cell *matHeaderCellDef style="width: 70px;">N° Guía</th>
-                <td mat-cell *matCellDef="let element">#{{ element.id }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="origen">
-                <th mat-header-cell *matHeaderCellDef>Tienda Origen</th>
-                <td mat-cell *matCellDef="let element">
-                  <div>
-                    <strong>{{ element.sucursal_origen_nombre }}</strong>
-                    <div class="text-muted" style="font-size: 11px;">{{ element.sucursal_origen_ciudad }}</div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="destino">
-                <th mat-header-cell *matHeaderCellDef>Tienda Destino</th>
-                <td mat-cell *matCellDef="let element">
-                  <div>
-                    <strong>{{ element.sucursal_destino_nombre }}</strong>
-                    <div class="text-muted" style="font-size: 11px;">{{ element.sucursal_destino_ciudad }}</div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="unidades">
-                <th mat-header-cell *matHeaderCellDef style="text-align: center;">Unidades</th>
-                <td mat-cell *matCellDef="let element" style="text-align: center;">
-                  <span class="badge bg-light-primary text-primary p-x-10 p-y-4 rounded font-weight-bold">
-                    {{ element.total_unidades }} uds.
-                  </span>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="detalles">
-                <th mat-header-cell *matHeaderCellDef>Prendas Trasladadas</th>
-                <td mat-cell *matCellDef="let element">
-                  <div *ngFor="let det of element.detalles" style="font-size: 12px; margin-bottom: 2px;">
-                    • <strong>{{ det.ropa_nombre }}</strong> ({{ det.talla }}, {{ det.color }}): {{ det.cantidad }} uds.
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="estado">
-                <th mat-header-cell *matHeaderCellDef style="text-align: center;">Estado</th>
-                <td mat-cell *matCellDef="let element" style="text-align: center;">
-                  <span [ngClass]="{
-                    'badge-recibido': element.estado === 'RECIBIDO',
-                    'badge-transito': element.estado === 'EN_TRANSITO',
-                    'badge-solicitado': element.estado === 'SOLICITADO'
-                  }" class="badge-status">
-                    {{ element.estado }}
-                  </span>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="acciones">
-                <th mat-header-cell *matHeaderCellDef style="width: 140px; text-align: center;">Recepción</th>
-                <td mat-cell *matCellDef="let element" style="text-align: center;">
-                  <button *ngIf="element.estado !== 'RECIBIDO'" mat-stroked-button color="primary" (click)="confirmarRecepcion(element)">
-                    <mat-icon class="m-r-4">done_all</mat-icon>
-                    Confirmar
-                  </button>
-                  <span *ngIf="element.estado === 'RECIBIDO'" class="text-success" style="font-size: 12px; font-weight: 600;">
-                    <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">check_circle</mat-icon>
-                    Recibido
-                  </span>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
-          </div>
-
-          <div *ngIf="!isLoading && traspasos.length === 0" class="p-32 text-center text-muted">
-            <mat-icon style="font-size: 48px; height: 48px; width: 48px; color: #a5b4fc;">sync_alt</mat-icon>
-            <h4 class="m-t-12">No hay movimientos de traspaso registrados</h4>
-            <p>Haga clic en "Nuevo Traspaso" para trasladar prendas entre tiendas.</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  `,
-  styles: [`
-    .badge { display: inline-block; }
-    .bg-light-primary { background-color: #eff6ff; }
-    .text-primary { color: #2563eb; }
-    .gap-8 { gap: 8px; }
-    .gap-12 { gap: 12px; }
-    .badge-status {
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-weight: bold;
-      font-size: 11px;
-      text-transform: uppercase;
-      display: inline-block;
-    }
-    .badge-recibido { background-color: #dcfce7; color: #15803d; }
-    .badge-transito { background-color: #fef9c3; color: #a16207; }
-    .badge-solicitado { background-color: #e0e7ff; color: #4338ca; }
-  `]
+  templateUrl: './traspasos.component.html',
+  styleUrls: ['./traspasos.component.scss']
 })
 export class TraspasosComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = ['id', 'origen', 'destino', 'unidades', 'detalles', 'estado', 'acciones'];
+  columnasTabla: string[] = ['guia', 'origen', 'destino', 'prendas', 'unidades', 'estado', 'acciones'];
+
   traspasos: TraspasoItem[] = [];
+  traspasosFiltrados: TraspasoItem[] = [];
+  metricas: TraspasoMetricas | null = null;
   sucursales: any[] = [];
-  variantesDisponibles: any[] = [];
+  variantesDisponibles: VarianteDisponible[] = [];
+
+  activeTab: 'TABLERO' | 'NUEVO_TRASPASO' | 'SCANNER_QR' = 'TABLERO';
+  filtroEstado: string = 'TODOS';
+  terminoBusqueda: string = '';
 
   isLoading = false;
-  guardando = false;
-  mostrarForm = false;
+  cargandoVariantes = false;
+  guardandoTraspaso = false;
 
-  formData = {
+  // Formulario de Nuevo Traspaso Multi-Prenda
+  nuevoTraspaso = {
     sucursal_origen_id: 1,
     sucursal_destino_id: 2,
-    variante_id: 0,
-    cantidad: 2,
-    observacion: 'Rebalanceo logístico inter-sucursal'
+    observacion: 'Rebalanceo de inventario inter-tiendas',
+    solicitado_por_ci: '1001',
+    despachar_inmediato: false
   };
 
+  varianteSeleccionadaId: number = 0;
+  cantidadParaAgregar: number = 1;
+  varianteActualStockMax: number = 1;
+  itemsOrden: any[] = [];
+
+  // Modales
+  guiaSeleccionadaModal: TraspasoItem | null = null;
+  traspasoDiscrepanciaModal: TraspasoItem | null = null;
+  discrepanciaForm: { observacion: string; items: any[] } = { observacion: '', items: [] };
+
+  // Búsqueda rápida QR
+  inputGuiaCodigo: string = '';
+  guiaConsultada: TraspasoItem | null = null;
+
   private destroy$ = new Subject<void>();
-  private apiBase: string;
 
   constructor(
-    private http: HttpClient,
-    private configService: ConfigService,
-    private snackBar: MatSnackBar
-  ) {
-    this.apiBase = this.configService.getApiBaseUrl().replace('/api', '/api/v1');
-  }
+    private traspasosService: TraspasosService,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.cargarSucursales();
-    this.cargarTraspasos();
+    this.cargarDatos();
   }
 
   ngOnDestroy(): void {
@@ -285,101 +100,364 @@ export class TraspasosComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  activarTab(tab: 'TABLERO' | 'NUEVO_TRASPASO' | 'SCANNER_QR'): void {
+    this.activeTab = tab;
+    if (tab === 'NUEVO_TRASPASO') {
+      this.onOrigenChange();
+    }
+  }
+
+  cargarDatos(): void {
+    this.cargarMetricas();
+    this.cargarTraspasos();
+  }
+
   cargarSucursales(): void {
-    this.http.get<any[]>(`${this.apiBase}/sucursales/`)
+    this.traspasosService.getSucursales()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          this.sucursales = data;
-          if (data.length > 1) {
-            this.formData.sucursal_origen_id = data[0].id;
-            this.formData.sucursal_destino_id = data[1].id;
+          this.sucursales = data || [];
+          if (this.sucursales.length >= 2) {
+            this.nuevoTraspaso.sucursal_origen_id = this.sucursales[0].id;
+            this.nuevoTraspaso.sucursal_destino_id = this.sucursales[1].id;
           }
-          this.onOrigenChange();
-        }
+          this.cdr.markForCheck();
+        },
+        error: (err) => console.error('Error cargando sucursales:', err)
       });
   }
 
-  onOrigenChange(): void {
-    if (!this.formData.sucursal_origen_id) return;
-    this.http.get<any>(`${this.apiBase}/inventario/sucursal/${this.formData.sucursal_origen_id}`)
+  cargarMetricas(): void {
+    this.traspasosService.getMetricas()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.variantesDisponibles = (data.items || []).filter((i: any) => i.stock_disponible > 0);
-          if (this.variantesDisponibles.length > 0) {
-            this.formData.variante_id = this.variantesDisponibles[0].variante_id;
-          }
-        }
+        next: (m) => {
+          this.metricas = m;
+          this.cdr.markForCheck();
+        },
+        error: (err) => console.error('Error cargando métricas:', err)
       });
   }
 
   cargarTraspasos(): void {
     this.isLoading = true;
-    this.http.get<TraspasoItem[]>(`${this.apiBase}/traspasos/`)
+    this.traspasosService.getTraspasos()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          this.traspasos = data;
+          this.traspasos = data || [];
+          this.filtrarTraspasos();
           this.isLoading = false;
+          this.cdr.markForCheck();
         },
         error: (err) => {
-          console.error('Error al cargar traspasos:', err);
           this.isLoading = false;
-          this.snackBar.open('Error al cargar traspasos', 'Cerrar', { duration: 4000 });
+          console.error('Error al cargar traspasos:', err);
+          this.snackBar.open('Error al sincronizar traspasos desde el servidor', 'Cerrar', { duration: 4000 });
+          this.cdr.markForCheck();
         }
       });
   }
 
-  abrirFormulario(): void {
-    this.mostrarForm = true;
-    this.onOrigenChange();
+  filtrarPorEstado(estado: string): void {
+    this.filtroEstado = estado;
+    this.filtrarTraspasos();
   }
 
-  guardarTraspaso(): void {
-    if (!this.formData.sucursal_origen_id || !this.formData.sucursal_destino_id || !this.formData.variante_id || !this.formData.cantidad) return;
-    this.guardando = true;
+  filtrarTraspasos(): void {
+    let result = [...this.traspasos];
 
-    const payload = {
-      sucursal_origen_id: this.formData.sucursal_origen_id,
-      sucursal_destino_id: this.formData.sucursal_destino_id,
-      observacion: this.formData.observacion,
-      despachar_inmediato: true,
-      detalles: [
-        {
-          variante_id: this.formData.variante_id,
-          cantidad: Number(this.formData.cantidad)
+    if (this.filtroEstado !== 'TODOS') {
+      result = result.filter(t => t.estado === this.filtroEstado);
+    }
+
+    if (this.terminoBusqueda && this.terminoBusqueda.trim() !== '') {
+      const q = this.terminoBusqueda.toLowerCase().trim();
+      result = result.filter(t =>
+        (t.guia_remision_codigo && t.guia_remision_codigo.toLowerCase().includes(q)) ||
+        (t.sucursal_origen_nombre && t.sucursal_origen_nombre.toLowerCase().includes(q)) ||
+        (t.sucursal_destino_nombre && t.sucursal_destino_nombre.toLowerCase().includes(q)) ||
+        t.detalles.some(d => d.ropa_nombre.toLowerCase().includes(q) || d.sku.toLowerCase().includes(q))
+      );
+    }
+
+    this.traspasosFiltrados = result;
+    this.cdr.markForCheck();
+  }
+
+  getCountPorEstado(estado: string): number {
+    return this.traspasos.filter(t => t.estado === estado).length;
+  }
+
+  onOrigenChange(): void {
+    if (!this.nuevoTraspaso.sucursal_origen_id) return;
+    this.cargandoVariantes = true;
+    this.variantesDisponibles = [];
+    this.itemsOrden = [];
+    this.varianteSeleccionadaId = 0;
+
+    this.traspasosService.getVariantesDisponibles(this.nuevoTraspaso.sucursal_origen_id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.variantesDisponibles = items || [];
+          this.cargandoVariantes = false;
+          if (this.variantesDisponibles.length > 0) {
+            this.varianteSeleccionadaId = this.variantesDisponibles[0].variante_id;
+            this.onVarianteSelectChange();
+          }
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.cargandoVariantes = false;
+          console.error('Error cargando variantes:', err);
+          this.cdr.markForCheck();
         }
-      ]
+      });
+  }
+
+  onVarianteSelectChange(): void {
+    const v = this.variantesDisponibles.find(item => item.variante_id === this.varianteSeleccionadaId);
+    if (v) {
+      this.varianteActualStockMax = v.stock_disponible;
+      this.cantidadParaAgregar = Math.min(1, v.stock_disponible);
+    } else {
+      this.varianteActualStockMax = 1;
+      this.cantidadParaAgregar = 1;
+    }
+  }
+
+  agregarItemALista(): void {
+    const v = this.variantesDisponibles.find(item => item.variante_id === this.varianteSeleccionadaId);
+    if (!v || this.cantidadParaAgregar <= 0) return;
+
+    const existente = this.itemsOrden.find(i => i.variante_id === v.variante_id);
+    if (existente) {
+      if (existente.cantidad + this.cantidadParaAgregar > v.stock_disponible) {
+        this.snackBar.open(`Stock insuficiente: disponible máximo ${v.stock_disponible} unidades.`, 'OK', { duration: 3000 });
+        return;
+      }
+      existente.cantidad += this.cantidadParaAgregar;
+    } else {
+      this.itemsOrden.push({
+        variante_id: v.variante_id,
+        ropa_nombre: v.ropa_nombre,
+        sku: v.sku,
+        talla: v.talla,
+        color: v.color,
+        color_hex: v.color_hex,
+        cantidad: this.cantidadParaAgregar
+      });
+    }
+
+    this.snackBar.open(`Línea agregada: ${v.ropa_nombre} (${this.cantidadParaAgregar} uds.)`, 'OK', { duration: 2000 });
+  }
+
+  eliminarItemOrden(index: number): void {
+    this.itemsOrden.splice(index, 1);
+  }
+
+  emitirOrdenTraspaso(): void {
+    if (this.nuevoTraspaso.sucursal_origen_id === this.nuevoTraspaso.sucursal_destino_id) {
+      this.snackBar.open('La sucursal de origen y destino no pueden ser iguales', 'Cerrar', { duration: 3500 });
+      return;
+    }
+
+    if (this.itemsOrden.length === 0) {
+      this.snackBar.open('Debe incluir al menos una prenda en el traspaso', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.guardandoTraspaso = true;
+    const payload = {
+      sucursal_origen_id: this.nuevoTraspaso.sucursal_origen_id,
+      sucursal_destino_id: this.nuevoTraspaso.sucursal_destino_id,
+      observacion: this.nuevoTraspaso.observacion,
+      solicitado_por_ci: this.nuevoTraspaso.solicitado_por_ci || '1001',
+      despachar_inmediato: this.nuevoTraspaso.despachar_inmediato,
+      detalles: this.itemsOrden.map(item => ({
+        variante_id: item.variante_id,
+        cantidad: item.cantidad
+      }))
     };
 
-    this.http.post(`${this.apiBase}/traspasos/`, payload)
+    this.traspasosService.crearTraspaso(payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarForm = false;
-          this.snackBar.open('Traspaso emitido exitosamente', 'OK', { duration: 3000 });
-          this.cargarTraspasos();
+        next: (creado) => {
+          this.guardandoTraspaso = false;
+          this.itemsOrden = [];
+          this.snackBar.open(`Orden de Traspaso #${creado.id} (${creado.guia_remision_codigo}) emitida con éxito`, 'OK', { duration: 3500 });
+          this.activarTab('TABLERO');
+          this.cargarDatos();
         },
         error: (err) => {
-          this.guardando = false;
-          this.snackBar.open(err?.error?.detail || 'Error al registrar traspaso', 'Cerrar', { duration: 4000 });
+          this.guardandoTraspaso = false;
+          const msg = err?.error?.detail || 'Error al emitir orden de traspaso';
+          this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
+          this.cdr.markForCheck();
         }
       });
   }
 
-  confirmarRecepcion(item: TraspasoItem): void {
-    this.http.put(`${this.apiBase}/traspasos/${item.id}/confirmar-recepcion`, {})
+  despacharTraspaso(t: TraspasoItem): void {
+    this.traspasosService.despacharTraspaso(t.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (despachado) => {
+          this.snackBar.open(`Traspaso #${t.id} despachado. Nuevo estado: EN_TRANSITO`, 'OK', { duration: 3000 });
+          this.cargarDatos();
+        },
+        error: (err) => {
+          this.snackBar.open(err?.error?.detail || 'Error al despachar carga', 'Cerrar', { duration: 4000 });
+        }
+      });
+  }
+
+  confirmarRecepcionDirecta(t: TraspasoItem): void {
+    this.traspasosService.confirmarRecepcion(t.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.snackBar.open(`Traspaso #${item.id} recibido y stock actualizado`, 'OK', { duration: 3000 });
-          this.cargarTraspasos();
+          this.snackBar.open(`Traspaso #${t.id} recepcionado conforme. Stock sumado en destino.`, 'OK', { duration: 3500 });
+          this.cargarDatos();
+          if (this.guiaConsultada && this.guiaConsultada.id === t.id) {
+            this.guiaConsultada.estado = 'RECIBIDO';
+          }
         },
         error: (err) => {
           this.snackBar.open(err?.error?.detail || 'Error al confirmar recepción', 'Cerrar', { duration: 4000 });
         }
       });
+  }
+
+  // Flujo Alternativo 6a: Discrepancia / Merma
+  abrirModalDiscrepancia(t: TraspasoItem): void {
+    this.traspasoDiscrepanciaModal = t;
+    this.discrepanciaForm = {
+      observacion: '',
+      items: t.detalles.map(d => ({
+        variante_id: d.variante_id,
+        ropa_nombre: d.ropa_nombre,
+        sku: d.sku,
+        talla: d.talla,
+        color: d.color,
+        total_enviado: d.cantidad,
+        cantidad_recibida_conforme: d.cantidad,
+        cantidad_danada_o_merma: 0,
+        motivo_merma: ''
+      }))
+    };
+  }
+
+  cerrarModalDiscrepancia(): void {
+    this.traspasoDiscrepanciaModal = null;
+  }
+
+  procesarDiscrepancia(): void {
+    if (!this.traspasoDiscrepanciaModal) return;
+
+    const payload = {
+      observacion: this.discrepanciaForm.observacion,
+      recibido_por_ci: 'EMP-DESTINO-01',
+      detalles: this.discrepanciaForm.items.map(item => ({
+        variante_id: item.variante_id,
+        cantidad_recibida_conforme: Number(item.cantidad_recibida_conforme || 0),
+        cantidad_danada_o_merma: Number(item.cantidad_danada_o_merma || 0),
+        motivo_merma: item.motivo_merma || 'Merma reportada en recepción'
+      }))
+    };
+
+    this.traspasosService.confirmarRecepcionConDiscrepancia(this.traspasoDiscrepanciaModal.id, payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.snackBar.open('Recepción con discrepancia auditada en Kardex exitosamente', 'OK', { duration: 4000 });
+          this.cerrarModalDiscrepancia();
+          this.cargarDatos();
+        },
+        error: (err) => {
+          this.snackBar.open(err?.error?.detail || 'Error procesando discrepancia', 'Cerrar', { duration: 4000 });
+        }
+      });
+  }
+
+  verGuiaRemision(t: TraspasoItem): void {
+    this.traspasosService.getGuiaRemision(t.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (guia) => {
+          this.guiaSeleccionadaModal = guia;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.guiaSeleccionadaModal = t;
+          this.cdr.markForCheck();
+        }
+      });
+  }
+
+  cerrarModalGuia(): void {
+    this.guiaSeleccionadaModal = null;
+  }
+
+  imprimirGuia(): void {
+    window.print();
+  }
+
+  cancelarTraspaso(t: TraspasoItem): void {
+    if (!confirm(`¿Estás seguro de cancelar el Traspaso #${t.id}? Si estaba en tránsito, las existencias se restituirán a origen.`)) {
+      return;
+    }
+
+    this.traspasosService.cancelarTraspaso(t.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.snackBar.open(`Traspaso #${t.id} cancelado y existencias restituidas a origen`, 'OK', { duration: 3500 });
+          this.cargarDatos();
+        },
+        error: (err) => {
+          this.snackBar.open(err?.error?.detail || 'Error cancelando traspaso', 'Cerrar', { duration: 4000 });
+        }
+      });
+  }
+
+  consultarGuiaPorCodigo(): void {
+    if (!this.inputGuiaCodigo || this.inputGuiaCodigo.trim() === '') {
+      this.snackBar.open('Ingrese un código de guía o ID válido', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const term = this.inputGuiaCodigo.trim().toLowerCase();
+    const encontrada = this.traspasos.find(t =>
+      (t.guia_remision_codigo && t.guia_remision_codigo.toLowerCase().includes(term)) ||
+      String(t.id) === term
+    );
+
+    if (encontrada) {
+      this.guiaConsultada = encontrada;
+      this.snackBar.open(`Guía ${encontrada.guia_remision_codigo} localizada`, 'OK', { duration: 2500 });
+    } else {
+      const numId = parseInt(term, 10);
+      if (!isNaN(numId)) {
+        this.traspasosService.getGuiaRemision(numId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (g) => {
+              this.guiaConsultada = g;
+              this.snackBar.open(`Guía localizada: ${g.guia_remision_codigo}`, 'OK', { duration: 2500 });
+            },
+            error: () => {
+              this.guiaConsultada = null;
+              this.snackBar.open('No se encontró ninguna guía con ese identificador', 'Cerrar', { duration: 3000 });
+            }
+          });
+      } else {
+        this.guiaConsultada = null;
+        this.snackBar.open('No se encontró ninguna guía con ese identificador', 'Cerrar', { duration: 3000 });
+      }
+    }
   }
 }

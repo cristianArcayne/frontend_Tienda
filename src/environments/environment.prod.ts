@@ -3,4 +3,3 @@ export const environment = {
   isMultitenant: false,
   apiBaseUrl: 'https://tienda-backend-kvfk.onrender.com/api'
 };
-
