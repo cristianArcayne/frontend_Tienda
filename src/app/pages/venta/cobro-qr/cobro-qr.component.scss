@@ -394,3 +394,25 @@
     box-shadow: none !important;
   }
 }
+
+  // Campos de cliente verticales 100% garantizados
+  .cliente-campos-vertical {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+
+    > div {
+      width: 100% !important;
+      display: block !important;
+    }
+
+    mat-form-field {
+      width: 100% !important;
+      display: block !important;
+
+      .mat-mdc-form-field-wrapper {
+        width: 100% !important;
+      }
+    }
+  }

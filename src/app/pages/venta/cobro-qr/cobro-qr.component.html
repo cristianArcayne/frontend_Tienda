@@ -248,30 +248,38 @@
               </button>
             </div>
 
-            <div class="d-flex flex-column gap-12">
-              <mat-form-field appearance="outline" class="w-100 m-0" subscriptSizing="dynamic">
-                <mat-label>Nombre / Razón Social</mat-label>
-                <input matInput [(ngModel)]="clienteNombre" placeholder="Consumidor Final" [disabled]="isGenerando">
-                <mat-icon matSuffix>business</mat-icon>
-              </mat-form-field>
+            <div class="cliente-campos-vertical" style="display: flex !important; flex-direction: column !important; gap: 14px !important; width: 100% !important;">
+              <div style="width: 100% !important; display: block !important;">
+                <mat-form-field appearance="outline" style="width: 100% !important; display: block !important;" subscriptSizing="dynamic">
+                  <mat-label>Nombre / Razón Social</mat-label>
+                  <input matInput [(ngModel)]="clienteNombre" placeholder="Consumidor Final" [disabled]="isGenerando">
+                  <mat-icon matSuffix>business</mat-icon>
+                </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="outline" class="w-100 m-0" subscriptSizing="dynamic">
-                <mat-label>NIT / CI</mat-label>
-                <input matInput [(ngModel)]="clienteNit" placeholder="0" [disabled]="isGenerando">
-                <mat-icon matSuffix>credit_card</mat-icon>
-              </mat-form-field>
+              <div style="width: 100% !important; display: block !important;">
+                <mat-form-field appearance="outline" style="width: 100% !important; display: block !important;" subscriptSizing="dynamic">
+                  <mat-label>NIT / CI</mat-label>
+                  <input matInput [(ngModel)]="clienteNit" placeholder="0" [disabled]="isGenerando">
+                  <mat-icon matSuffix>credit_card</mat-icon>
+                </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="outline" class="w-100 m-0" subscriptSizing="dynamic">
-                <mat-label>Teléfono (WhatsApp)</mat-label>
-                <input matInput [(ngModel)]="clienteTelefono" placeholder="77123456" [disabled]="isGenerando">
-                <mat-icon matSuffix>phone</mat-icon>
-              </mat-form-field>
+              <div style="width: 100% !important; display: block !important;">
+                <mat-form-field appearance="outline" style="width: 100% !important; display: block !important;" subscriptSizing="dynamic">
+                  <mat-label>Teléfono (WhatsApp)</mat-label>
+                  <input matInput [(ngModel)]="clienteTelefono" placeholder="77123456" [disabled]="isGenerando">
+                  <mat-icon matSuffix>phone</mat-icon>
+                </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="outline" class="w-100 m-0" subscriptSizing="dynamic">
-                <mat-label>Correo Electrónico</mat-label>
-                <input matInput [(ngModel)]="clienteEmail" placeholder="cliente@correo.com" [disabled]="isGenerando">
-                <mat-icon matSuffix>email</mat-icon>
-              </mat-form-field>
+              <div style="width: 100% !important; display: block !important;">
+                <mat-form-field appearance="outline" style="width: 100% !important; display: block !important;" subscriptSizing="dynamic">
+                  <mat-label>Correo Electrónico</mat-label>
+                  <input matInput [(ngModel)]="clienteEmail" placeholder="cliente@correo.com" [disabled]="isGenerando">
+                  <mat-icon matSuffix>email</mat-icon>
+                </mat-form-field>
+              </div>
             </div>
           </div>
 
