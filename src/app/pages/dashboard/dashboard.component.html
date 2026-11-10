@@ -636,7 +636,10 @@
                   <div class="products-mini-grid">
                     @for (prod of res.catalogo_coincidente.productos; track prod.id) {
                       <div class="product-mini-card">
-                        <img [src]="prod.imagen_url" alt="{{ prod.nombre }}" class="prod-thumb">
+                        <img [src]="getImagenUrl(prod.imagen_url)"
+                             [alt]="prod.nombre"
+                             (error)="onImgError($event)"
+                             class="prod-thumb">
                         <div class="prod-details">
                           <span class="prod-category">{{ prod.categoria }}</span>
                           <strong class="prod-name">{{ prod.nombre }}</strong>

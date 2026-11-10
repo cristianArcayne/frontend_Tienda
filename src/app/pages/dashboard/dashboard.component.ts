@@ -447,4 +447,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       });
   }
+
+  getImagenUrl(url: string | null): string {
+    if (!url) return '/assets/images/products/product-1.png';
+    const formatted = this.configService.formatImageUrl(url);
+    return formatted || '/assets/images/products/product-1.png';
+  }
+
+  onImgError(event: any): void {
+    if (event && event.target && !event.target.src.includes('product-1.png')) {
+      event.target.src = '/assets/images/products/product-1.png';
+    }
+  }
 }
