@@ -407,10 +407,42 @@ export class BitacoraAuditoriaComponent implements OnInit, OnDestroy {
   }
 
   getHora(registro: any): string | null {
+    if (registro.hora) return registro.hora;
     if (registro.fecha_hora) return registro.fecha_hora;
     if (registro.created_at) return registro.created_at;
     if (registro.timestamp) return registro.timestamp;
-    if (registro.fecha && registro.hora) return `${registro.fecha}T${registro.hora}Z`;
     return null;
+  }
+
+  formatearFechaVisual(registro: any): string {
+    if (!registro) return 'Sin fecha';
+    if (registro.fecha && typeof registro.fecha === 'string' && registro.fecha.includes('-')) {
+      const parts = registro.fecha.split('T')[0].split(' ')[0].split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    const val = registro.fecha_hora || registro.created_at || registro.timestamp;
+    if (val && typeof val === 'string') {
+      const datePart = val.split('T')[0].split(' ')[0];
+      const parts = datePart.split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return registro.fecha || 'Sin fecha';
+  }
+
+  formatearHoraVisual(registro: any): string {
+    if (!registro) return '-';
+    if (registro.hora && typeof registro.hora === 'string') {
+      return registro.hora.substring(0, 8);
+    }
+    const val = registro.fecha_hora || registro.created_at || registro.timestamp;
+    if (val && typeof val === 'string') {
+      if (val.includes('T')) {
+        return val.split('T')[1].substring(0, 8);
+      }
+      if (val.includes(' ')) {
+        return val.split(' ')[1].substring(0, 8);
+      }
+    }
+    return '-';
   }
 }
