@@ -421,9 +421,11 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
 
   // Handlers para las pestañas de entrada
   onEjecutarNLP(respuesta: any): void {
-    // Preservar la consulta original exacta para no perder entidades como 'por sucursal' o 'últimos 3 meses'
-    const rawQuery = respuesta?.consulta_original || respuesta?.query_interpretada?.['consulta'] || (typeof respuesta === 'string' ? respuesta : null);
-    const query = rawQuery || respuesta?.query_interpretada?.['intencion'] || 'Reporte de ventas';
+    // Preservar la consulta original exacta sin perder exclusiones ni parámetros
+    const rawQuery = typeof respuesta === 'string'
+      ? respuesta
+      : (respuesta?.consulta_original || respuesta?.texto || respuesta?.query_interpretada?.['consulta'] || null);
+    const query = (rawQuery && rawQuery.trim()) ? rawQuery.trim() : (respuesta?.query_interpretada?.['intencion'] || 'Reporte de ventas');
     this.ejecutarComandoIA(query);
   }
 

@@ -41,28 +41,13 @@ export class TextoNLPComponent implements OnDestroy {
     if (!this.texto.trim() || this.procesando) return;
 
     this.queryInterpretada = null;
-    this.procesando = true;
+    this.procesando = false;
 
-    this.reportesService.ejecutarNLP({ texto: this.texto })
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.procesando = false)
-      )
-      .subscribe({
-        next: (res: any) => {
-          this.queryInterpretada = res.query_interpretada;
-          if (!res.consulta_original) {
-            res.consulta_original = this.texto;
-          }
-          this.ejecutar.emit(res);
-          const total = res.resultados?.paginacion?.total_registros || 0;
-          this.snackBar.open(`Reporte ejecutado: ${total} registros`, 'OK', { duration: 3000 });
-        },
-        error: (err) => {
-          const msg = err.error?.error || err.error?.detail || 'Error al procesar el texto';
-          this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
-        }
-      });
+    // CU-15: Enviar la consulta en lenguaje natural directamente al motor analítico generativo de IA
+    this.ejecutar.emit({
+      consulta_original: this.texto.trim(),
+      texto: this.texto.trim()
+    } as any);
   }
 
   ngOnDestroy(): void {

@@ -62,7 +62,7 @@
         [disabled]="procesando || !textoCorregido.trim()">
         <mat-spinner *ngIf="procesando" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
         <mat-icon *ngIf="!procesando">auto_awesome</mat-icon>
-        {{ procesando ? 'Procesando...' : 'Enviar a NLP' }}
+        {{ procesando ? 'Procesando...' : 'Consultar con IA' }}
       </button>
 
       <button mat-stroked-button (click)="limpiar(); state='idle'" [disabled]="procesando">

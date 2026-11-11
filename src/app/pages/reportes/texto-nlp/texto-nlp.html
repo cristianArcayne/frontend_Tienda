@@ -10,7 +10,7 @@
     <button mat-raised-button color="primary" (click)="enviar()" [disabled]="procesando || !texto.trim()">
       <mat-spinner *ngIf="procesando" diameter="18" style="display:inline-block;margin-right:8px;"></mat-spinner>
       <mat-icon *ngIf="!procesando">auto_awesome</mat-icon>
-      {{ procesando ? 'Interpretando...' : 'Interpretar y Ejecutar' }}
+      {{ procesando ? 'Procesando...' : 'Consultar con IA' }}
     </button>
   </div>
 </div>
