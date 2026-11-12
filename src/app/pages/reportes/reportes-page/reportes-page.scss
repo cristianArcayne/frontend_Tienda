@@ -596,6 +596,64 @@
       }
     }
 
+    // 4.1 SQL Audit Card
+    .sql-audit-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 18px 22px;
+      color: #e2e8f0;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+
+      .sql-audit-header {
+        margin-bottom: 12px;
+
+        .sql-title-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          .sql-icon {
+            color: #38bdf8;
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+          }
+
+          h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.2px;
+          }
+
+          p {
+            margin: 2px 0 0 0;
+            font-size: 11.5px;
+            color: #94a3b8;
+          }
+        }
+      }
+
+      .sql-code-container {
+        background: #020617;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        padding: 14px 16px;
+        overflow-x: auto;
+
+        .sql-code {
+          margin: 0;
+          font-family: 'Consolas', 'Fira Code', monospace;
+          font-size: 13px;
+          color: #38bdf8;
+          line-height: 1.5;
+          white-space: pre-wrap;
+        }
+      }
+    }
+
     // 5. Sugerencias Inteligentes de la IA
     .suggestions-card {
       background: #f0fdf4;

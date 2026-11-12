@@ -257,6 +257,22 @@
       ></mat-paginator>
     </mat-card>
 
+    <!-- 4.1 Consulta SQL Ejecutada (Auditoría Técnica Text-to-SQL) -->
+    <mat-card *ngIf="reporteIA.sql_generado" class="sql-audit-card">
+      <div class="sql-audit-header">
+        <div class="sql-title-group">
+          <mat-icon class="sql-icon">terminal</mat-icon>
+          <div>
+            <h4>Consulta SQL Ejecutada (Auditoría Text-to-SQL en PostgreSQL Neon)</h4>
+            <p>Sentencia SQL generada dinámicamente con proyección adaptativa de columnas y agregaciones</p>
+          </div>
+        </div>
+      </div>
+      <div class="sql-code-container">
+        <pre class="sql-code"><code>{{ reporteIA.sql_generado }}</code></pre>
+      </div>
+    </mat-card>
+
     <!-- 5. Sugerencias Inteligentes de la IA (Follow-up Prompts) -->
     <mat-card *ngIf="reporteIA.sugerencias_siguientes_comandos && reporteIA.sugerencias_siguientes_comandos.length > 0" class="suggestions-card">
       <div class="suggestions-header">

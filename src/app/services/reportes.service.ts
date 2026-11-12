@@ -25,6 +25,7 @@ export interface ReporteIAResponse {
   datos_tabla?: any[];
   columnas_tabla?: Array<{ key: string; label: string }>;
   sugerencias_siguientes_comandos?: string[];
+  sql_generado?: string;
   timestamp?: string;
 }
 
