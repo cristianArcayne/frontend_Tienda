@@ -128,12 +128,27 @@
 }
 
 .variante-agotada {
-    opacity: 0.5;
-    cursor: not-allowed;
+    opacity: 0.85;
+    background-color: #fff1f2;
 }
 
 .variante-agotada .variante-actions {
-    pointer-events: none;
+    /* Permitir interacción para disparar Flujo Alternativo 3a */
+    pointer-events: auto;
+}
+
+.btn-flujo-3a {
+    border-color: #f87171 !important;
+    color: #dc2626 !important;
+    font-size: 11.5px !important;
+    height: 30px !important;
+    line-height: 28px !important;
+    padding: 0 8px !important;
+    font-weight: 700 !important;
+
+    &:hover {
+        background: #fee2e2 !important;
+    }
 }
 
 .variante-sku {

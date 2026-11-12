@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -103,6 +103,10 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
 
   currentPageProductos = 0;
   pageSizeProductos = 5;
+
+  // CU-09 Flujo Alternativo 3a: Stock Local Insuficiente
+  @ViewChild('stockInsuficienteDialog') stockInsuficienteDialogRef!: TemplateRef<any>;
+  varianteSeleccionadaAgotada: VarianteDisponible | null = null;
 
   cartItems: CartItem[] = [];
   usuarios: UsuarioOption[] = [];
@@ -482,6 +486,27 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
       grouped.get(v.producto)!.variantes.push(v);
     }
 
+    // Asegurar que prendas del catálogo sin variantes registradas también aparezcan en el mostrador (CU-09 Flujo 3a)
+    for (const p of this.productos) {
+      if (!grouped.has(p.id)) {
+        grouped.set(p.id, {
+          producto_id: p.id,
+          producto_nombre: p.nombre,
+          categoria_nombre: p.categoria_nombre || '',
+          marca_nombre: p.marca_nombre || '',
+          imagen_url: this.getProductoImagen(p.id),
+          variantes: [{
+            id: -(p.id),
+            sku: `${p.nombre.substring(0, 4).toUpperCase()}-STD`,
+            precio: Number(p.precio_minimo || (p as any).precio || 0),
+            cantidad: 0,
+            producto_nombre: p.nombre,
+            producto: p.id
+          }],
+        });
+      }
+    }
+
     this.allProductGroups = Array.from(grouped.values());
     this.applyFilterAndPagination();
     this.isLoading = false;
@@ -494,7 +519,10 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
       this.filteredProductGroups = [...this.allProductGroups];
     } else {
       this.filteredProductGroups = this.allProductGroups.filter(g =>
-        g.producto_nombre.toLowerCase().includes(term)
+        g.producto_nombre.toLowerCase().includes(term) ||
+        (g.categoria_nombre && g.categoria_nombre.toLowerCase().includes(term)) ||
+        (g.marca_nombre && g.marca_nombre.toLowerCase().includes(term)) ||
+        g.variantes.some(v => v.sku.toLowerCase().includes(term))
       );
     }
 
@@ -574,7 +602,8 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          this.variantes = data.results.filter(v => v.cantidad > 0);
+          // Mantener todas las variantes, incluso con stock 0, para permitir la verificación del Flujo 3a (Stock Insuficiente)
+          this.variantes = Array.isArray(data?.results) ? data.results : [];
           if (typeof localStorage !== 'undefined') {
             try {
               localStorage.setItem(`fashionstore_pos_cached_variantes_suc_${targetSuc || 'default'}`, JSON.stringify(this.variantes));
@@ -696,8 +725,13 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
   }
 
   incrementarCantidad(varianteId: number): void {
-    const variante = this.variantes.find(v => v.id === varianteId);
+    const variante = this.variantes.find(v => v.id === varianteId)
+      || this.allProductGroups.flatMap(g => g.variantes).find(v => v.id === varianteId);
     if (!variante) return;
+    if (variante.cantidad <= 0) {
+      this.advertirStockInsuficiente(variante);
+      return;
+    }
     const actual = this.cantidadesSeleccionadas[varianteId] || 1;
     if (actual < variante.cantidad) {
       this.cantidadesSeleccionadas[varianteId] = actual + 1;
@@ -706,6 +740,10 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
 
   validarCantidad(varianteId: number, max: number): void {
     const val = this.cantidadesSeleccionadas[varianteId];
+    if (max <= 0) {
+      this.cantidadesSeleccionadas[varianteId] = 0;
+      return;
+    }
     if (!val || val < 1 || isNaN(val)) {
       this.cantidadesSeleccionadas[varianteId] = 1;
     } else if (val > max) {
@@ -714,8 +752,15 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
   }
 
   agregarAlCarrito(varianteId: number): void {
-    const variante = this.variantes.find(v => v.id === varianteId);
+    const variante = this.variantes.find(v => v.id === varianteId)
+      || this.allProductGroups.flatMap(g => g.variantes).find(v => v.id === varianteId);
     if (!variante) return;
+
+    // CU-09 Flujo Alternativo 3a: Stock local insuficiente (0 existencias físicas)
+    if (variante.cantidad <= 0) {
+      this.advertirStockInsuficiente(variante);
+      return;
+    }
 
     const cantidad = this.cantidadesSeleccionadas[varianteId] || 1;
 
@@ -724,10 +769,7 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
       .reduce((sum, item) => sum + item.cantidad, 0);
 
     if (enCarrito + cantidad > variante.cantidad) {
-      this.snackBar.open(
-        `Stock insuficiente. Disponible: ${variante.cantidad - enCarrito}`,
-        'OK', { duration: 3000 }
-      );
+      this.advertirStockInsuficiente(variante);
       return;
     }
 
@@ -756,6 +798,44 @@ export class CrearVentaComponent implements OnInit, OnDestroy {
     }
 
     this.cantidadesSeleccionadas[varianteId] = 1;
+  }
+
+  // --- CU-09 Flujo Alternativo 3a: Stock Local Insuficiente ---
+  advertirStockInsuficiente(variante: VarianteDisponible): void {
+    this.varianteSeleccionadaAgotada = variante;
+    if (this.stockInsuficienteDialogRef) {
+      this.dialog.open(this.stockInsuficienteDialogRef, {
+        width: '520px',
+        disableClose: true
+      });
+    } else {
+      const confirmacion = confirm(
+        `[CU-09 Flujo Alternativo 3a] Stock local insuficiente.\n\n` +
+        `El sistema advierte que según la última base de datos sincronizada no hay existencias físicas en '${this.selectedSucursalNombre}'.\n\n` +
+        `Artículo: ${variante.producto_nombre} (${variante.sku})\n` +
+        `Stock disponible: ${variante.cantidad} unidades.\n\n` +
+        `¿Desea confirmar la anulación al cajero?`
+      );
+      if (confirmacion) {
+        this.confirmarAnulacionStock();
+      }
+    }
+  }
+
+  confirmarAnulacionStock(): void {
+    const sku = this.varianteSeleccionadaAgotada?.sku || 'artículo';
+    this.dialog.closeAll();
+    this.snackBar.open(
+      `🚫 [Flujo Alternativo 3a] Confirmada anulación por el cajero: '${sku}' no cuenta con existencias físicas en ${this.selectedSucursalNombre}.`,
+      'Entendido',
+      { duration: 6000 }
+    );
+    this.varianteSeleccionadaAgotada = null;
+  }
+
+  cancelarAdvertenciaStock(): void {
+    this.dialog.closeAll();
+    this.varianteSeleccionadaAgotada = null;
   }
 
   eliminarDelCarrito(index: number): void {
